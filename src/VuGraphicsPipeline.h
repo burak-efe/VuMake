@@ -1,21 +1,21 @@
 #pragma once
-#include "EngineContext.h"
+#include "VuContext.h"
 #include "Mesh.h"
-#include "RenderPass.h"
-#include "Shader.h"
-#include"VulkanUtils.h"
+#include "VuShader.h"
+#include "VuDepthStencil.h"
+#include"VuUtils.h"
 
-class GraphicsPipeline {
+class VuGraphicsPipeline {
 public:
     VkPipeline Pipeline;
     VkPipelineLayout PipelineLayout;
 
-    void CreateGraphicsPipeline(RenderPass &renderPass, const VkDescriptorSetLayout descriptorSetLayout) {
-        auto vertShaderCode = readFile("shaders/vert.spv");
-        auto fragShaderCode = readFile("shaders/frag.spv");
+    void CreateGraphicsPipeline(const VkDescriptorSetLayout descriptorSetLayout, const VuDepthStencil& depthStencil) {
+        auto vertShaderCode = Vu::ReadFile("shaders/vert.spv");
+        auto fragShaderCode = Vu::ReadFile("shaders/frag.spv");
 
-        VkShaderModule vertShaderModule = Shader::CreateShaderModule(vertShaderCode);
-        VkShaderModule fragShaderModule = Shader::CreateShaderModule(fragShaderCode);
+        VkShaderModule vertShaderModule = VuShader::CreateShaderModule(vertShaderCode);
+        VkShaderModule fragShaderModule = VuShader::CreateShaderModule(fragShaderCode);
 
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
         vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -100,13 +100,26 @@ public:
         pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
         pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-        VK_CHECK(vkCreatePipelineLayout(EngineContext::Device, &pipelineLayoutInfo, nullptr, &PipelineLayout));
+        VK_CHECK(vkCreatePipelineLayout(VuContext::Device, &pipelineLayoutInfo, nullptr, &PipelineLayout));
 
+        //For dynamic rendering
+         VkFormat colorRenderingFormats[1] = {
+             VK_FORMAT_B8G8R8A8_SRGB,
+         };
 
-        renderPass.DepthStencil = RenderPass::DepthStencilCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
+        VkPipelineRenderingCreateInfoKHR rfInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
+            .pNext = nullptr,
+            .colorAttachmentCount = 1,
+            .pColorAttachmentFormats = colorRenderingFormats,
+            .depthAttachmentFormat = depthStencil.DepthFormat,
+            .stencilAttachmentFormat = depthStencil.DepthFormat
+        };
+
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineInfo.pNext = &rfInfo;
         pipelineInfo.stageCount = 2;
         pipelineInfo.pStages = shaderStages;
         pipelineInfo.pVertexInputState = &vertexInputInfo;
@@ -117,20 +130,19 @@ public:
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.layout = PipelineLayout;
-        pipelineInfo.renderPass = renderPass.VkRenderPass;
-        pipelineInfo.subpass = 0;
-        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-        pipelineInfo.pDepthStencilState = &renderPass.DepthStencil;
 
-        VK_CHECK(vkCreateGraphicsPipelines(EngineContext::Device,
+        auto depth = VuDepthStencil::CreateDepthStencilCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
+        pipelineInfo.pDepthStencilState = &depth;
+
+        VK_CHECK(vkCreateGraphicsPipelines(VuContext::Device,
             VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &Pipeline));
 
-        vkDestroyShaderModule(EngineContext::Device, fragShaderModule, nullptr);
-        vkDestroyShaderModule(EngineContext::Device, vertShaderModule, nullptr);
+        vkDestroyShaderModule(VuContext::Device, fragShaderModule, nullptr);
+        vkDestroyShaderModule(VuContext::Device, vertShaderModule, nullptr);
     }
 
     void Dispose() {
-        vkDestroyPipeline(EngineContext::Device, Pipeline, nullptr);
-        vkDestroyPipelineLayout(EngineContext::Device, PipelineLayout, nullptr);
+        vkDestroyPipeline(VuContext::Device, Pipeline, nullptr);
+        vkDestroyPipelineLayout(VuContext::Device, PipelineLayout, nullptr);
     }
 };

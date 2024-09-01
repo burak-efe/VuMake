@@ -2,8 +2,10 @@
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
+#include "VuUtils.h"
 
-class Shader {
+
+class VuShader {
 public:
 
    static VkShaderModule CreateShaderModule(const std::vector<char> &code) {
@@ -15,10 +17,10 @@ public:
       createInfo.pNext = nullptr;
 
       VkShaderModule shaderModule;
-      //VK_CHECK(vkCreateShaderModule(EngineContext::Device, &createInfo, nullptr, &shaderModule));
-      if (vkCreateShaderModule(EngineContext::Device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-         throw std::runtime_error("failed to create shader module!");
-      }
+      VK_CHECK(vkCreateShaderModule(VuContext::Device, &createInfo, nullptr, &shaderModule));
+      // if (vkCreateShaderModule(VuContext::Device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+      //    throw std::runtime_error("failed to create shader module!");
+      // }
 
       return shaderModule;
    }

@@ -5,21 +5,21 @@
 #include "Mesh.h"
 
 struct AllocatedImage {
-    VkImage _image;
-    VmaAllocation _allocation;
-
+    VkImage Image;
+    VmaAllocation Allocation;
 };
+
 
 
 const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f,0.0f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, -0.5f,0.0f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f,0.0f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f,0.0f}, {1.0f, 1.0f, 1.0f}}
+    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}
 };
 
 const std::vector<uint16> indices = {
-    0,1,2,2,3,0
+    0, 1, 2, 2, 3, 0
 };
 
 struct UniformBufferObject {
@@ -29,11 +29,11 @@ struct UniformBufferObject {
 };
 
 
-const std::vector<const char*> k_ValidationLayers = {
+const std::vector<const char *> k_ValidationLayers = {
     "VK_LAYER_KHRONOS_validation"
 };
 
-const std::vector<const char*> k_DeviceExtensions = {
+const std::vector<const char *> k_DeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     "VK_EXT_mesh_shader",
     "VK_KHR_spirv_1_4",
@@ -43,13 +43,11 @@ const std::vector<const char*> k_DeviceExtensions = {
 };
 
 
-
 struct QueueFamilyIndices {
     std::optional<uint32> graphicsFamily;
     std::optional<uint32> presentFamily;
 
-    bool isComplete()
-    {
+    bool IsComplete() {
         return graphicsFamily.has_value() && presentFamily.has_value();
     }
 };

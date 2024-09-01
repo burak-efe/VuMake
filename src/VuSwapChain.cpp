@@ -1,23 +1,19 @@
-#include "SwapChain.h"
+#include "VuSwapChain.h"
 
-#include "VulkanUtils.h"
+#include "VuUtils.h"
 #include <cassert>
 #include <iostream>
 #include "Common.h"
+#include "VuContext.h"
 
-namespace VuMake {
-    void SwapChain::SetContext(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device) {
-        _instance = instance;
-        _physicalDevice = physicalDevice;
-        _device = device;
-    }
+namespace Vu {
 
-    void SwapChain::CreateSwapChain(GLFWwindow *window, VkSurfaceKHR surface) {
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(_physicalDevice, surface);
+    void VuSwapChain::CreateSwapChain(GLFWwindow *window, VkSurfaceKHR surface) {
+        SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(VuContext::PhysicalDevice, surface);
 
-        VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-        VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-        VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, window);
+        VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
+        VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
+        VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities, window);
 
         uint32 imageCount = swapChainSupport.capabilities.minImageCount + 1;
 
@@ -37,7 +33,7 @@ namespace VuMake {
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        QueueFamilyIndices indices = findQueueFamilies(_physicalDevice, surface);
+        QueueFamilyIndices indices = FindQueueFamilies(VuContext::PhysicalDevice, surface);
         uint32 queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
         if (indices.graphicsFamily != indices.presentFamily) {
@@ -55,31 +51,27 @@ namespace VuMake {
 
         createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-        VK_CHECK(vkCreateSwapchainKHR(_device, &createInfo, nullptr, &swapChain))
+        VK_CHECK(vkCreateSwapchainKHR(VuContext::Device, &createInfo, nullptr, &swapChain))
 
-        vkGetSwapchainImagesKHR(_device, swapChain, &imageCount, nullptr);
+        vkGetSwapchainImagesKHR(VuContext::Device, swapChain, &imageCount, nullptr);
         swapChainImages.resize(imageCount);
-        vkGetSwapchainImagesKHR(_device, swapChain, &imageCount, swapChainImages.data());
+        vkGetSwapchainImagesKHR(VuContext::Device, swapChain, &imageCount, swapChainImages.data());
 
         swapChainImageFormat = surfaceFormat.format;
         swapChainExtent = extent;
-        CreateImageViews(_device);
+        CreateImageViews(VuContext::Device);
     }
 
 
-    void SwapChain::CleanupSwapchain() {
-        for (auto framebuffer: swapChainFramebuffers) {
-            vkDestroyFramebuffer(_device, framebuffer, nullptr);
-        }
-
+    void VuSwapChain::CleanupSwapchain() {
         for (auto imageView: swapChainImageViews) {
-            vkDestroyImageView(_device, imageView, nullptr);
+            vkDestroyImageView(VuContext::Device, imageView, nullptr);
         }
 
-        vkDestroySwapchainKHR(_device, swapChain, nullptr);
+        vkDestroySwapchainKHR(VuContext::Device, swapChain, nullptr);
     }
 
-    SwapChainSupportDetails SwapChain::querySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
+    SwapChainSupportDetails VuSwapChain::QuerySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
         SwapChainSupportDetails details;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
 
@@ -103,7 +95,7 @@ namespace VuMake {
         return details;
     }
 
-    VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
+    VkSurfaceFormatKHR VuSwapChain::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
         for (const auto &availableFormat: availableFormats) {
             if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB
                 && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
@@ -114,7 +106,7 @@ namespace VuMake {
         return availableFormats[0];
     }
 
-    VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
+    VkPresentModeKHR VuSwapChain::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
         for (const auto &availablePresentMode: availablePresentModes) {
             if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
                 return availablePresentMode;
@@ -124,7 +116,7 @@ namespace VuMake {
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, GLFWwindow *window) {
+    VkExtent2D VuSwapChain::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, GLFWwindow *window) {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32>::max()) {
             return capabilities.currentExtent;
         }
@@ -144,7 +136,7 @@ namespace VuMake {
         return actualExtent;
     }
 
-    QueueFamilyIndices SwapChain::findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
+    QueueFamilyIndices VuSwapChain::FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
         //Logic to find graphics queue family
         QueueFamilyIndices indices;
 
@@ -170,7 +162,7 @@ namespace VuMake {
                 indices.presentFamily = i;
             }
 
-            if (indices.isComplete()) {
+            if (indices.IsComplete()) {
                 break;
             }
 
@@ -181,7 +173,7 @@ namespace VuMake {
     }
 
 
-    void SwapChain::CreateImageViews(VkDevice device) {
+    void VuSwapChain::CreateImageViews(VkDevice device) {
         swapChainImageViews.resize(swapChainImages.size());
 
         for (size_t i = 0; i < swapChainImages.size(); i++) {

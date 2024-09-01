@@ -3,11 +3,11 @@
 #include <cassert>
 #include <vulkan/vulkan_core.h>
 #include "Common.h"
-#include "VulkanUtils.h"
+#include "VuUtils.h"
 #include "GLFW/glfw3.h"
 #include <print>
 
-namespace VM_Init {
+namespace VuInit {
     static VkResult CreateDebugUtilsMessengerEXT(
         VkInstance instance,
         const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
@@ -110,7 +110,7 @@ namespace VM_Init {
         appInfo.applicationVersion = VK_MAKE_API_VERSION(1, 0, 0, 0);
         appInfo.pEngineName = "None :C";
         appInfo.engineVersion = VK_MAKE_API_VERSION(1, 0, 0, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_2;
+        appInfo.apiVersion = VK_API_VERSION_1_3;
 
         VkInstanceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -160,7 +160,44 @@ namespace VM_Init {
         PopulateDebugMessengerCreateInfo(createInfo);
 
         VkDebugUtilsMessengerEXT debugMessenger;
-        VK_CHECK(VM_Init::CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger))
+        VK_CHECK(VuInit::CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger))
         return debugMessenger;
+    }
+
+    inline VkImageMemoryBarrier ImageMemoryBarrier() {
+        VkImageMemoryBarrier imageMemoryBarrier{};
+        imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        return imageMemoryBarrier;
+    }
+
+    inline void InsertImageMemoryBarrier(
+        VkCommandBuffer cmdbuffer,
+        VkImage image,
+        VkAccessFlags srcAccessMask,
+        VkAccessFlags dstAccessMask,
+        VkImageLayout oldImageLayout,
+        VkImageLayout newImageLayout,
+        VkPipelineStageFlags srcStageMask,
+        VkPipelineStageFlags dstStageMask,
+        VkImageSubresourceRange subresourceRange) {
+        VkImageMemoryBarrier imageMemoryBarrier = ImageMemoryBarrier();
+        imageMemoryBarrier.srcAccessMask = srcAccessMask;
+        imageMemoryBarrier.dstAccessMask = dstAccessMask;
+        imageMemoryBarrier.oldLayout = oldImageLayout;
+        imageMemoryBarrier.newLayout = newImageLayout;
+        imageMemoryBarrier.image = image;
+        imageMemoryBarrier.subresourceRange = subresourceRange;
+
+        vkCmdPipelineBarrier(
+            cmdbuffer,
+            srcStageMask,
+            dstStageMask,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &imageMemoryBarrier
+        );
     }
 }

@@ -1,11 +1,11 @@
 #pragma once
 #include <set>
 
-#include "SwapChain.h"
-#include "VulkanTypes.h"
+#include "VuSwapChain.h"
+#include "VuTypes.h"
 #include "vulkan/vulkan.h"
 
-namespace DeviceUtils {
+namespace VuDeviceUtils {
     inline bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
         uint32 extensionCount;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -53,7 +53,7 @@ namespace DeviceUtils {
                 indices.presentFamily = i;
             }
 
-            if (indices.isComplete()) {
+            if (indices.IsComplete()) {
                 break;
             }
 
@@ -71,45 +71,45 @@ namespace DeviceUtils {
 
         bool swapChainAdequate = false;
         if (extensionsSupported) {
-            SwapChainSupportDetails swapChainSupport = VuMake::SwapChain::querySwapChainSupport(device, surface);
+            SwapChainSupportDetails swapChainSupport = Vu::VuSwapChain::QuerySwapChainSupport(device, surface);
             swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
         }
 
 
-        return queue_family_indices.isComplete() && extensionsSupported && swapChainAdequate;
+        return queue_family_indices.IsComplete() && extensionsSupported && swapChainAdequate;
     }
 
 
     inline void PickPhysicalDevice(VkSurfaceKHR surface) {
         uint32 deviceCount = 0;
 
-        vkEnumeratePhysicalDevices(EngineContext::Instance, &deviceCount, nullptr);
+        vkEnumeratePhysicalDevices(VuContext::Instance, &deviceCount, nullptr);
         if (deviceCount == 0) {
             throw std::runtime_error("failed to find GPUs with Vulkan support");
         }
 
         std::vector<VkPhysicalDevice> devices(deviceCount);
 
-        vkEnumeratePhysicalDevices(EngineContext::Instance, &deviceCount, devices.data());
+        vkEnumeratePhysicalDevices(VuContext::Instance, &deviceCount, devices.data());
 
         for (const auto &device: devices) {
             if (IsDeviceSuitable(device, surface)) {
-                EngineContext::PhysicalDevice = device;
+                VuContext::PhysicalDevice = device;
                 break;
             }
         }
 
-        if (EngineContext::PhysicalDevice == VK_NULL_HANDLE) {
+        if (VuContext::PhysicalDevice == VK_NULL_HANDLE) {
             throw std::runtime_error("failed to find a suitable GPU!");
         }
         VkPhysicalDeviceProperties deviceProperties = {};
-        vkGetPhysicalDeviceProperties(EngineContext::PhysicalDevice, &deviceProperties);
+        vkGetPhysicalDeviceProperties(VuContext::PhysicalDevice, &deviceProperties);
         std::cout << "Selected device: " << deviceProperties.deviceName << "\n";
     }
 
 
     inline void CreateLogicalDevice(VkSurfaceKHR& surface, VkQueue& graphicsQueue, VkQueue& presentQueue) {
-        QueueFamilyIndices indices = DeviceUtils::findQueueFamilies(EngineContext::PhysicalDevice, surface);
+        QueueFamilyIndices indices = VuDeviceUtils::findQueueFamilies(VuContext::PhysicalDevice, surface);
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         std::set<uint32> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -128,8 +128,15 @@ namespace DeviceUtils {
 
         VkPhysicalDeviceFeatures deviceFeatures{};
 
+
+        constexpr VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_feature {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+            .dynamicRendering = VK_TRUE,
+        };
+
         VkDeviceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.pNext = &dynamic_rendering_feature;
 
         createInfo.queueCreateInfoCount = static_cast<uint32>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos = queueCreateInfos.data();
@@ -144,9 +151,9 @@ namespace DeviceUtils {
             createInfo.enabledLayerCount = 0;
         }
 
-        VK_CHECK(vkCreateDevice(EngineContext::PhysicalDevice, &createInfo, nullptr, &EngineContext::Device))
+        VK_CHECK(vkCreateDevice(VuContext::PhysicalDevice, &createInfo, nullptr, &VuContext::Device))
 
-        vkGetDeviceQueue(EngineContext::Device, indices.graphicsFamily.value(), 0, &graphicsQueue);
-        vkGetDeviceQueue(EngineContext::Device, indices.presentFamily.value(), 0, &presentQueue);
+        vkGetDeviceQueue(VuContext::Device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+        vkGetDeviceQueue(VuContext::Device, indices.presentFamily.value(), 0, &presentQueue);
     }
 };
