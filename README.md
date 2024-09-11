@@ -4,84 +4,84 @@ This is a terrible vulkan renderer, barely functioning.
 It's a CMAKE project with C++ 23 required, because I used println twice 💀
 
 ### Capabilites
-✅ Render one object as unlit
-✅ Imgui
-✅ Depth Buffer
-❌ Vulkan Sync Abstraction
-❌ Textures
-❌ Normals / Tangents
-❌ Normal - Bump Mappping
-❌ Directional Ligths
-❌ Point Ligths
-❌ Spot Ligths
-❌ Area Ligths
-❌ PBR
-❌ Scene-Level Reperesntation
-❌ Ray Traced GI
-❌ Path Traced Gi
-❌ SSGI
-❌ Voxel GI
-❌ SDFGI
-❌ Probe Based GI
-❌ DDGI
-❌ ReSTIR GI
-❌ Surfels GI
-❌ Radiance Cascades GI
-❌ Skinned Geometry
-❌ Animations
-❌ Deffered Rendering
-❌ Tiled Forward Rendering
-❌ FXAA - TAA - SMAA - MSAA
-❌ FSR - DLSS - XESS
-❌ PSO Cache System
-❌ Bindless Rendering
-❌ Ligth Map Baking
-❌ Compute Shaders
-❌ Subdivison Surfaces
-❌ Mesh Shaders
-❌ Shadow Maps
-❌ Occlusion Culling
-❌ Screen Space Shadows
-❌ LOD System
-❌ HDR
-❌ Cube Maps- Sky Maps
-❌ Tonemapping
-❌ Bloom
-❌ Twenty Other Post Process Effects
-❌ SDF - Volume Rendering
-❌ Debug View
-❌ Tessallation
-❌ Geometry Shaders
-❌ Shader Editor
-❌ HLSL Support
-❌ ECS
-❌ SSAO / HBAO
-❌ SSR - SSSR
-❌ RayTraycing
-❌ Sub-Surface Scattering
-❌ GPU Driven Rendering
-❌ Work Graphs
-❌ Visibility Buffer
-❌ Compute Rasterizer
-❌ FBX - OBJ Support
-❌ Font Rendering
-❌ Instanceing
-❌ Batching
-❌ Lens Flares
-❌ Particles
-❌ Hair Rendering
-❌ Texture Streaming
-❌ Variable Rate Shading
-❌ Decals
-❌ Frame Profiler - Debugger
-❌ Displacement Mapping
-❌ Morph Target
-❌ Planar Reflections
-❌ Volumetric Ligths
-❌ Water Rendering
-❌ Outline Shaders
-❌ Contact SHadows
-❌ Caustics
+- ✅ Render one object as unlit
+- ✅ Imgui
+- ✅ Depth Buffer
+- ❌ Vulkan Sync Abstraction
+- ❌ Textures
+- ❌ Normals / Tangents
+- ❌ Normal - Bump Mappping
+- ❌ Directional Ligths
+- ❌ Point Ligths
+- ❌ Spot Ligths
+- ❌ Area Ligths
+- ❌ PBR
+- ❌ Scene-Level Reperesntation
+- ❌ Ray Traced GI
+- ❌ Path Traced Gi
+- ❌ SSGI
+- ❌ Voxel GI
+- ❌ SDFGI
+- ❌ Probe Based GI
+- ❌ DDGI
+- ❌ ReSTIR GI
+- ❌ Surfels GI
+- ❌ Radiance Cascades GI
+- ❌ Skinned Geometry
+- ❌ Animations
+- ❌ Deffered Rendering
+- ❌ Tiled Forward Rendering
+- ❌ FXAA - TAA - SMAA - MSAA
+- ❌ FSR - DLSS - XESS
+- ❌ PSO Cache System
+- ❌ Bindless Rendering
+- ❌ Ligth Map Baking
+- ❌ Compute Shaders
+- ❌ Subdivison Surfaces
+- ❌ Mesh Shaders
+- ❌ Shadow Maps
+- ❌ Occlusion Culling
+- ❌ Screen Space Shadows
+- ❌ LOD System
+- ❌ HDR
+- ❌ Cube Maps- Sky Maps
+- ❌ Tonemapping
+- ❌ Bloom
+- ❌ Twenty Other Post Process Effects
+- ❌ SDF - Volume Rendering
+- ❌ Debug View
+- ❌ Tessallation
+- ❌ Geometry Shaders
+- ❌ Shader Editor
+- ❌ HLSL Support
+- ❌ ECS
+- ❌ SSAO / HBAO
+- ❌ SSR - SSSR
+- ❌ RayTraycing
+- ❌ Sub-Surface Scattering
+- ❌ GPU Driven Rendering
+- ❌ Work Graphs
+- ❌ Visibility Buffer
+- ❌ Compute Rasterizer
+- ❌ FBX - OBJ Support
+- ❌ Font Rendering
+- ❌ Instanceing
+- ❌ Batching
+- ❌ Lens Flares
+- ❌ Particles
+- ❌ Hair Rendering
+- ❌ Texture Streaming
+- ❌ Variable Rate Shading
+- ❌ Decals
+- ❌ Frame Profiler - Debugger
+- ❌ Displacement Mapping
+- ❌ Morph Target
+- ❌ Planar Reflections
+- ❌ Volumetric Ligths
+- ❌ Water Rendering
+- ❌ Outline Shaders
+- ❌ Contact SHadows
+- ❌ Caustics
 
 ### It Uses:
 - Vulkan Memory Allocator
