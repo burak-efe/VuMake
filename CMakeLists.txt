@@ -44,40 +44,10 @@ add_executable(${PROJECT_NAME}
         src/imgui/imstb_textedit.h
         src/imgui/imstb_truetype.h
         src/imgui/imgui_impl_glfw.cpp
-        src/LegitProfiler/ImGuiProfilerRenderer.h
-        src/LegitProfiler/ProfilerTask.h
+
 
 )
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
-
-#include(FetchContent)
-#
-#FetchContent_Declare(imgui
-#        URL https://github.com/ocornut/imgui/archive/refs/tags/v1.91.0.tar.gz
-#        EXCLUDE_FROM_ALL
-#)
-#FetchContent_MakeAvailable(imgui)
-#
-#target_sources(${PROJECT_NAME} PRIVATE
-#        ${imgui_SOURCE_DIR}/imgui.h
-#        ${imgui_SOURCE_DIR}/imgui.cpp
-#        ${imgui_SOURCE_DIR}/imconfig.h
-#        ${imgui_SOURCE_DIR}/imgui_internal.h
-#        ${imgui_SOURCE_DIR}/imgui_demo.cpp
-#        ${imgui_SOURCE_DIR}/imgui_draw.cpp
-#        ${imgui_SOURCE_DIR}/imgui_tables.cpp
-#        ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-#        ${imgui_SOURCE_DIR}/backends/imgui_impl_allegro5.h
-#        #${imgui_SOURCE_DIR}/backends/imgui_impl_allegro5.cpp
-#        ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.h
-#        ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
-#        ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.h
-#        ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-#)
-#target_include_directories(${PROJECT_NAME} PRIVATE ${imgui_SOURCE_DIR})
-#target_include_directories(${PROJECT_NAME} PRIVATE ${imgui_SOURCE_DIR/backends})
-#target_link_libraries(${PROJECT_NAME} PRIVATE imgui)
-
 
 #set(VULKAN_SDK "C:/VulkanSDK/1.3.290.0")
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${VULKAN_SDK}/lib/cmake")
