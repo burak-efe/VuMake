@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+/.vs/
+/cmake-build-debug-visual-studio/
+/cmake-build-release-visual-studio/
+/RenderDoc.cap
