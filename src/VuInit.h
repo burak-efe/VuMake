@@ -64,7 +64,7 @@ namespace VuInit {
         VkDebugUtilsMessageSeverityFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
         void *pUserData) {
-        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+        std::cerr << std::endl << pCallbackData->pMessage << std::endl;
         return VK_FALSE;
     }
 

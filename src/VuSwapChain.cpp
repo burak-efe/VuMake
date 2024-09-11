@@ -92,13 +92,14 @@ namespace Vu {
                                                       details.presentModes.data());
         }
 
+
         return details;
     }
 
     VkSurfaceFormatKHR VuSwapChain::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
         for (const auto &availableFormat: availableFormats) {
             if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB
-                && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ) {
                 return availableFormat;
             }
         }
@@ -183,6 +184,7 @@ namespace Vu {
 
             createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
             createInfo.format = swapChainImageFormat;
+
 
             createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
             createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
