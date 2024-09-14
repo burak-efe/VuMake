@@ -75,7 +75,8 @@ add_subdirectory(external/VulkanMemoryAllocator)
 target_include_directories(${PROJECT_NAME} SYSTEM INTERFACE external/VulkanMemoryAllocator/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC VulkanMemoryAllocator)
 
-
+add_subdirectory(external/flecs)
+target_link_libraries(${PROJECT_NAME} PUBLIC flecs::flecs_static)
 
 #Copy asset files to build directory
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

@@ -55,12 +55,6 @@ bool VuRenderer::ShouldWindowClose() {
     return glfwWindowShouldClose(window);
 }
 
-void VuRenderer::Tick() {
-    UpdateFpsCounter();
-    glfwPollEvents();
-    DrawFrame();
-}
-
 void VuRenderer::CreateVulkanMemoryAllocator() {
     VmaAllocatorCreateInfo createInfo{};
     createInfo.device = VuContext::Device;
@@ -77,63 +71,36 @@ void VuRenderer::WaitIdle() {
     vkDeviceWaitIdle(VuContext::Device);
 }
 
-void VuRenderer::SetupDebugMessenger() {
-    if constexpr (!enableValidationLayers) return;
-    debugMessenger = VuInit::CreateDebugMessenger(VuContext::Instance);
-}
+void VuRenderer::BeginFrame() {
+    UpdateFpsCounter();
+    glfwPollEvents();
 
-void VuRenderer::RecreateSwapChain() {
-    int width = 0;
-    int height = 0;
-    glfwGetFramebufferSize(window, &width, &height);
-    while (width == 0 || height == 0) {
-        glfwGetFramebufferSize(window, &width, &height);
-        glfwWaitEvents();
+    vkWaitForFences(VuContext::Device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+
+
+    VkResult result = vkAcquireNextImageKHR(VuContext::Device, SwapChain.swapChain, UINT64_MAX,
+                                            imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &currentFrameImageIndex);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        RecreateSwapChain();
+        //return;
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        throw std::runtime_error("failed to acquire swap chain image!");
     }
-    vkDeviceWaitIdle(VuContext::Device);
-    SwapChain.CleanupSwapchain();
-    CreateSwapChain();
 
-    ImGui_ImplVulkan_SetMinImageCount(SwapChain.imageCount);
-    // ImGui_ImplVulkanH_CreateWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData,
-    //         g_QueueFamily, g_Allocator, g_SwapChainResizeWidth, g_SwapChainResizeHeight, g_MinImageCount);
-    // g_MainWindowData.FrameIndex = 0;
+    vkResetFences(VuContext::Device, 1, &inFlightFences[currentFrame]);
+
+    vkResetCommandBuffer(commandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
+
+    //Record
+    //UpdateUniformBuffer(currentFrame);
+    BeginRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
+    //RecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
+
+    //return commandBuffers[currentFrame];
 }
 
-void VuRenderer::CreateSwapChain() {
-    SwapChain = Vu::VuSwapChain{};
-    SwapChain.CreateSwapChain(window, surface);
-}
-
-void VuRenderer::CreateGraphicsPipeline() {
-    DebugPipeline = VuGraphicsPipeline{};
-    DebugPipeline.CreateGraphicsPipeline(descriptorSetLayout, DepthStencil);
-}
-
-void VuRenderer::CreateCommandPool() {
-    QueueFamilyIndices queueFamilyIndices = VuDeviceUtils::findQueueFamilies(VuContext::PhysicalDevice, surface);
-
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-
-    VK_CHECK(vkCreateCommandPool(VuContext::Device, &poolInfo, nullptr, &commandPool))
-}
-
-void VuRenderer::CreateCommandBuffers() {
-    commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = static_cast<uint32>(commandBuffers.size());
-
-    VK_CHECK(vkAllocateCommandBuffers(VuContext::Device, &allocInfo, commandBuffers.data()))
-}
-
-void VuRenderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex) {
+void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex) {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -213,31 +180,9 @@ void VuRenderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 image
     scissor.offset = {0, 0};
     scissor.extent = SwapChain.swapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+}
 
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, DebugPipeline.Pipeline);
-
-    for (auto mesh: meshes) {
-        VkBuffer vertexBuffers[] = {mesh->vertexBuffer.VulkanBuffer, mesh->normalBuffer.VulkanBuffer};
-        VkDeviceSize offsets[] = {0, 0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 2, vertexBuffers, offsets);
-
-        vkCmdBindIndexBuffer(commandBuffer, mesh->indexBuffer.VulkanBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, DebugPipeline.PipelineLayout, 0, 1,
-                                &descriptorSets[currentFrame], 0, nullptr);
-
-        vkCmdDrawIndexed(commandBuffer, mesh->indexBuffer.Lenght, 1, 0, 0, 0);
-    }
-
-    /////
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-    ImGui::ShowDemoWindow();
-    ImGui::Render();
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-    ////
-
+void VuRenderer::EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex) {
     vkCmdEndRendering(commandBuffer);
 
     // This set of barriers prepares the color image for presentation, we don't need to care for the depth image
@@ -256,30 +201,35 @@ void VuRenderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 image
     VK_CHECK(vkEndCommandBuffer(commandBuffer));
 }
 
-void VuRenderer::BeginRecord() {
+void VuRenderer::RenderMesh(Mesh& mesh) {
+    auto commandBuffer = commandBuffers[currentFrame];
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, DebugPipeline.Pipeline);
+
+
+    VkBuffer vertexBuffers[] = {mesh.vertexBuffer.VulkanBuffer, mesh.normalBuffer.VulkanBuffer};
+    VkDeviceSize offsets[] = {0, 0};
+    vkCmdBindVertexBuffers(commandBuffer, 0, 2, vertexBuffers, offsets);
+
+    vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.VulkanBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, DebugPipeline.PipelineLayout,
+                            0, 1, &descriptorSets[currentFrame], 0, nullptr);
+
+    vkCmdDrawIndexed(commandBuffer, mesh.indexBuffer.Lenght, 1, 0, 0, 0);
 }
 
-void VuRenderer::DrawFrame() {
-    vkWaitForFences(VuContext::Device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+void VuRenderer::RenderImgui() {
+    auto commandBuffer = commandBuffers[currentFrame];
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    ImGui::ShowDemoWindow();
+    ImGui::Render();
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+}
 
-    uint32 imageIndex;
-    VkResult result = vkAcquireNextImageKHR(VuContext::Device, SwapChain.swapChain, UINT64_MAX,
-                                            imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        RecreateSwapChain();
-        return;
-    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        throw std::runtime_error("failed to acquire swapcahin image!");
-    }
-    UpdateUniformBuffer(currentFrame);
-
-    vkResetFences(VuContext::Device, 1, &inFlightFences[currentFrame]);
-
-    vkResetCommandBuffer(commandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
-    //Record
-    RecordCommandBuffer(commandBuffers[currentFrame], imageIndex);
-
+void VuRenderer::EndFrame() {
+    EndRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -308,9 +258,9 @@ void VuRenderer::DrawFrame() {
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapChains;
 
-    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pImageIndices = &currentFrameImageIndex;
 
-    result = vkQueuePresentKHR(presentQueue, &presentInfo);
+    auto result = vkQueuePresentKHR(presentQueue, &presentInfo);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         RecreateSwapChain();
@@ -319,6 +269,99 @@ void VuRenderer::DrawFrame() {
     }
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void VuRenderer::UpdateUniformBuffer() {
+
+    static auto startTime = std::chrono::high_resolution_clock::now();
+
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>
+            (currentTime - startTime).count();
+
+    UniformBufferObject ubo{};
+
+    //ubo.model = glm::mat4(1.0f);
+    ubo.model = glm::rotate(glm::mat4(1.0f),
+                            time * glm::radians(60.0f),
+                            glm::vec3(0.0f, 1.0f, 0.0f));
+
+    ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),
+                           glm::vec3(0.0f, 0.0f, 0.0f),
+                           glm::vec3(0.0f, 1.0f, 0.0f));
+
+    ubo.proj = glm::perspective(
+        glm::radians(90.0f),
+        static_cast<float>(SwapChain.swapChainExtent.width) / static_cast<float>(SwapChain.swapChainExtent.height),
+        0.1f,
+        10.0f);
+    ubo.proj[1][1] *= -1;
+
+    memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
+}
+
+void VuRenderer::UpdateFpsCounter() {
+    double lastTime = glfwGetTime() * 1000 * 1000;
+    auto elapsed_seconds = lastTime - PrevTime;
+    auto s = std::to_string(elapsed_seconds);
+    glfwSetWindowTitle(window, s.c_str());
+    PrevTime = lastTime;
+}
+
+void VuRenderer::SetupDebugMessenger() {
+    if constexpr (!enableValidationLayers) return;
+    debugMessenger = VuInit::CreateDebugMessenger(VuContext::Instance);
+}
+
+void VuRenderer::RecreateSwapChain() {
+    int width = 0;
+    int height = 0;
+    glfwGetFramebufferSize(window, &width, &height);
+    while (width == 0 || height == 0) {
+        glfwGetFramebufferSize(window, &width, &height);
+        glfwWaitEvents();
+    }
+    vkDeviceWaitIdle(VuContext::Device);
+    SwapChain.CleanupSwapchain();
+    CreateSwapChain();
+
+    ImGui_ImplVulkan_SetMinImageCount(SwapChain.imageCount);
+    // ImGui_ImplVulkanH_CreateWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData,
+    //         g_QueueFamily, g_Allocator, g_SwapChainResizeWidth, g_SwapChainResizeHeight, g_MinImageCount);
+    // g_MainWindowData.FrameIndex = 0;
+}
+
+void VuRenderer::CreateSwapChain() {
+    SwapChain = Vu::VuSwapChain{};
+    SwapChain.CreateSwapChain(window, surface);
+}
+
+void VuRenderer::CreateGraphicsPipeline() {
+    DebugPipeline = VuGraphicsPipeline{};
+    DebugPipeline.CreateGraphicsPipeline(descriptorSetLayout, DepthStencil);
+}
+
+void VuRenderer::CreateCommandPool() {
+    QueueFamilyIndices queueFamilyIndices = VuDeviceUtils::findQueueFamilies(VuContext::PhysicalDevice, surface);
+
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+    VK_CHECK(vkCreateCommandPool(VuContext::Device, &poolInfo, nullptr, &commandPool))
+}
+
+void VuRenderer::CreateCommandBuffers() {
+    commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = commandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = static_cast<uint32>(commandBuffers.size());
+
+    VK_CHECK(vkAllocateCommandBuffers(VuContext::Device, &allocInfo, commandBuffers.data()))
 }
 
 void VuRenderer::CreateSyncObjects() {
@@ -356,39 +399,6 @@ void VuRenderer::CreateUniformBuffers() {
 
         vkMapMemory(VuContext::Device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
     }
-}
-
-void VuRenderer::UpdateUniformBuffer(uint32 currentImage) {
-    static auto startTime = std::chrono::high_resolution_clock::now();
-
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>
-            (currentTime - startTime).count();
-
-    UniformBufferObject ubo{};
-
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
-                            glm::vec3(0.0f, 0.0f, 1.0f));
-
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
-                           glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    ubo.proj = glm::perspective(
-        glm::radians(90.0f),
-        static_cast<float>(SwapChain.swapChainExtent.width) / static_cast<float>(SwapChain.swapChainExtent.height),
-        0.1f,
-        10.0f);
-    ubo.proj[1][1] *= -1;
-
-    memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
-}
-
-void VuRenderer::UpdateFpsCounter() {
-    double lastTime = glfwGetTime() * 1000 * 1000;
-    auto elapsed_seconds = lastTime - PrevTime;
-    auto s = std::to_string(elapsed_seconds);
-    glfwSetWindowTitle(window, s.c_str());
-    PrevTime = lastTime;
 }
 
 void VuRenderer::CreateDescriptorSetLayout() {
@@ -511,7 +521,7 @@ void VuRenderer::SetupImGui() {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
     (void) io;
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls

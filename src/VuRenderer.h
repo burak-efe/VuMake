@@ -21,7 +21,7 @@ constexpr bool enableValidationLayers = true;
 class VuRenderer {
 public:
     GLFWwindow *window;
-    std::vector<Mesh *> meshes;
+    //std::vector<Mesh *> meshes;
     inline static VkCommandPool commandPool;
     inline static VkQueue graphicsQueue;
     VkQueue presentQueue;
@@ -30,11 +30,18 @@ public:
 
     bool ShouldWindowClose();
 
-    void Tick();
+    //void Tick();
 
     void Cleanup();
 
     void WaitIdle();
+
+    void BeginFrame();
+    void EndFrame();
+
+    void RenderMesh(Mesh& mesh);
+    void RenderImgui();
+    void UpdateUniformBuffer();
 
 private:
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -61,10 +68,14 @@ private:
     ImGui_ImplVulkanH_Window g_MainWindowData;
 
     uint32 currentFrame = 0;
+    uint32 currentFrameImageIndex = 0;
     double PrevTime = 0;
 
     VkDescriptorPool uiDescriptorPool;
 
+
+    void BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
+    void EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
 
     void InitWindow();
 
@@ -84,8 +95,6 @@ private:
 
     void CreateCommandBuffers();
 
-
-
     void CreateSyncObjects();
 
     void UpdateFpsCounter();
@@ -96,7 +105,6 @@ private:
 
     void CreateDescriptorSets();
 
-    void UpdateUniformBuffer(uint32 currentImage);
 
     void CreateDescriptorSetLayout();
 
@@ -104,10 +112,4 @@ private:
 
     void SetupImGui();
 
-    void DrawFrame();
-
-    void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
-
-    void BeginRecord();
-    void EndRecord();
 };

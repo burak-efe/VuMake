@@ -12,6 +12,7 @@ Mesh::Mesh(std::filesystem::path gltfPath, VmaAllocator allocator) {
     fastgltf::Parser parser;
 
     auto data = fastgltf::GltfDataBuffer::FromPath(gltfPath);
+
     if (data.error() != fastgltf::Error::None) {
         std::cout << "gltf file cannot be loaded!" << "\n";
     }
