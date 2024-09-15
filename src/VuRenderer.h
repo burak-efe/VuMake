@@ -27,12 +27,9 @@ public:
     VkQueue presentQueue;
 
     void Init();
+    void Dispose();
 
     bool ShouldWindowClose();
-
-    //void Tick();
-
-    void Cleanup();
 
     void WaitIdle();
 
@@ -82,8 +79,6 @@ private:
     void InitVulkan();
 
     void CreateVulkanMemoryAllocator();
-
-    void SetupDebugMessenger();
 
     void CreateSurface();
 

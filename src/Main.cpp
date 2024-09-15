@@ -12,6 +12,7 @@
 
 struct Transform {
     glm::vec3 Pos;
+    glm::vec3 Rot;
 };
 
 struct Spinning {
@@ -21,30 +22,6 @@ struct Spinning {
 
 void RunEngine() {
 
-    VuRenderer renderer;
-    renderer.Init();
-
-    Mesh monke("shaders/monka500k.glb", VuContext::VmaAllocator);
-
-    while (!renderer.ShouldWindowClose()) {
-
-        renderer.BeginFrame();
-        renderer.UpdateUniformBuffer();
-        renderer.RenderMesh(monke);
-        //renderer.RenderImgui();
-        renderer.EndFrame();
-    }
-
-    renderer.WaitIdle();
-    monke.Dispose();
-    renderer.Cleanup();
-    system("pause");
-}
-
-
-int main() {
-    RunEngine();
-    return 0;
     flecs::world world;
     auto ent = world.entity("Monke")
             .set(Transform{.Pos = glm::vec3(0.5f, 1, 0)});
@@ -57,6 +34,33 @@ int main() {
             });
 
     sys.run();
+
+
+
+    VuRenderer renderer;
+    renderer.Init();
+
+    Mesh monke("shaders/monka500k.glb", VuContext::VmaAllocator);
+
+    while (!renderer.ShouldWindowClose()) {
+
+        renderer.BeginFrame();
+        renderer.UpdateUniformBuffer();
+        renderer.RenderMesh(monke);
+        renderer.RenderImgui();
+        renderer.EndFrame();
+    }
+
+    renderer.WaitIdle();
+    monke.Dispose();
+    renderer.Dispose();
+    system("pause");
+}
+
+
+int main() {
+    RunEngine();
+
 
     return EXIT_SUCCESS;
 }

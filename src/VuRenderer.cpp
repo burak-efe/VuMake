@@ -1,4 +1,5 @@
 #include "VuRenderer.h"
+#include "VkBootstrap.h"
 
 #include <set>
 
@@ -31,12 +32,72 @@ void VuRenderer::InitWindow() {
 }
 
 void VuRenderer::InitVulkan() {
-    VuContext::Instance = VuInit::CreateVulkanInstance(enableValidationLayers, k_ValidationLayers);
-    SetupDebugMessenger();
+    // Vulkan Instance
+    vkb::InstanceBuilder builder;
+    auto inst_ret = builder.set_app_name("VuMake")
+            .request_validation_layers()
+            .use_default_debug_messenger()
+            .require_api_version(1, 3)
+            .build();
+    if (!inst_ret) {
+        std::cerr << "Failed to create Vulkan instance. Error: " << inst_ret.error().message() << "\n";
+    }
+    vkb::Instance vkb_inst = inst_ret.value();
+    VuContext::Instance = vkb_inst.instance;
+    debugMessenger = vkb_inst.debug_messenger;
+
+    //Surface
     CreateSurface();
-    VuDeviceUtils::PickPhysicalDevice(surface);
-    VuDeviceUtils::CreateLogicalDevice(surface, graphicsQueue, presentQueue);
+
+    //PhysicalDevice
+    vkb::PhysicalDeviceSelector selector{vkb_inst};
+    auto phys_ret = selector.set_surface(surface)
+            .set_minimum_version(1, 3) // require a vulkan 1.3 capable device
+            .require_dedicated_transfer_queue()
+            .select();
+    if (!phys_ret) {
+        std::cerr << "Failed to select Vulkan Physical Device. Error: " << phys_ret.error().message() << "\n";
+    }
+
+    VuContext::PhysicalDevice = phys_ret.value().physical_device;
+    // Enable Dynamic Rendering
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_feature{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+        .dynamicRendering = VK_TRUE,
+    };
+
+    // Device
+    vkb::DeviceBuilder device_builder{phys_ret.value()};
+    // automatically propagate needed data from instance & physical device
+    auto dev_ret = device_builder.add_pNext(&dynamic_rendering_feature).build();
+    if (!dev_ret) {
+        std::cerr << "Failed to create Vulkan device. Error: " << dev_ret.error().message() << "\n";
+    }
+    vkb::Device vkb_device = dev_ret.value();
+
+    // Get the VkDevice handle used in the rest of a vulkan application
+    VuContext::Device = vkb_device.device;
+
+    // Get the graphics queue with a helper function
+    auto graphics_queue_ret = vkb_device.get_queue(vkb::QueueType::graphics);
+    if (!graphics_queue_ret) {
+        std::cerr << "Failed to get graphics queue. Error: " << graphics_queue_ret.error().message() << "\n";
+    }
+    graphicsQueue = graphics_queue_ret.value();
+
+    // Get the present queue with a helper function
+    auto presentQueueRet = vkb_device.get_queue(vkb::QueueType::present);
+    if (!presentQueueRet) {
+        std::cerr << "Failed to get present queue. Error: " << presentQueueRet.error().message() << "\n";
+    }
+    presentQueue = presentQueueRet.value();
+
+    //VuContext::Instance = VuInit::CreateVulkanInstance(enableValidationLayers, k_ValidationLayers);
+    //SetupDebugMessenger();
+    //VuDeviceUtils::PickPhysicalDevice(surface);
+    //VuDeviceUtils::CreateLogicalDevice(surface, graphicsQueue, presentQueue);
     CreateVulkanMemoryAllocator();
+
     CreateSwapChain();
     DepthStencil = VuDepthStencil{};
     DepthStencil.Create(SwapChain);
@@ -83,7 +144,7 @@ void VuRenderer::BeginFrame() {
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         RecreateSwapChain();
-        //return;
+        std::cerr << "[INFO]: SwapChain Recreated because of VK_ERROR_OUT_OF_DATE_KHR" << "\n";
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
@@ -272,7 +333,6 @@ void VuRenderer::EndFrame() {
 }
 
 void VuRenderer::UpdateUniformBuffer() {
-
     static auto startTime = std::chrono::high_resolution_clock::now();
 
     auto currentTime = std::chrono::high_resolution_clock::now();
@@ -308,11 +368,6 @@ void VuRenderer::UpdateFpsCounter() {
     PrevTime = lastTime;
 }
 
-void VuRenderer::SetupDebugMessenger() {
-    if constexpr (!enableValidationLayers) return;
-    debugMessenger = VuInit::CreateDebugMessenger(VuContext::Instance);
-}
-
 void VuRenderer::RecreateSwapChain() {
     int width = 0;
     int height = 0;
@@ -325,7 +380,7 @@ void VuRenderer::RecreateSwapChain() {
     SwapChain.CleanupSwapchain();
     CreateSwapChain();
 
-    ImGui_ImplVulkan_SetMinImageCount(SwapChain.imageCount);
+    //ImGui_ImplVulkan_SetMinImageCount(SwapChain.imageCount);
     // ImGui_ImplVulkanH_CreateWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData,
     //         g_QueueFamily, g_Allocator, g_SwapChainResizeWidth, g_SwapChainResizeHeight, g_MinImageCount);
     // g_MainWindowData.FrameIndex = 0;
@@ -461,7 +516,7 @@ void VuRenderer::CreateDescriptorSets() {
     }
 }
 
-void VuRenderer::Cleanup() {
+void VuRenderer::Dispose() {
     vkDeviceWaitIdle(VuContext::Device);
 
     ImGui_ImplVulkan_Shutdown();
