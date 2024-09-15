@@ -20,13 +20,14 @@ constexpr bool enableValidationLayers = true;
 
 class VuRenderer {
 public:
-    GLFWwindow *window;
+    GLFWwindow* window;
     //std::vector<Mesh *> meshes;
     inline static VkCommandPool commandPool;
     inline static VkQueue graphicsQueue;
     VkQueue presentQueue;
 
     void Init();
+
     void Dispose();
 
     bool ShouldWindowClose();
@@ -34,11 +35,16 @@ public:
     void WaitIdle();
 
     void BeginFrame();
+
     void EndFrame();
 
-    void RenderMesh(Mesh& mesh);
+    void RenderMesh(Mesh& mesh, glm::mat4 trs);
+
     void RenderImgui();
+
     void UpdateUniformBuffer();
+
+    void PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32_t size, const void* pValues);
 
 private:
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -72,6 +78,7 @@ private:
 
 
     void BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
+
     void EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
 
     void InitWindow();
@@ -106,5 +113,4 @@ private:
     void CreateUniformBuffers();
 
     void SetupImGui();
-
 };

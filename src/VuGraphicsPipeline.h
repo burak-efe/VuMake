@@ -70,8 +70,7 @@ public:
 
         VkPipelineColorBlendAttachmentState colorBlendAttachment{};
         colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                                              VK_COLOR_COMPONENT_B_BIT
-                                              | VK_COLOR_COMPONENT_A_BIT;
+                                              VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
         colorBlendAttachment.blendEnable = VK_FALSE;
 
         VkPipelineColorBlendStateCreateInfo colorBlending{};
@@ -94,18 +93,26 @@ public:
         dynamicState.dynamicStateCount = static_cast<uint32>(dynamicStates.size());
         dynamicState.pDynamicStates = dynamicStates.data();
 
+        //setup push constants
+        VkPushConstantRange push_constant;
+        push_constant.offset = 0;
+        push_constant.size = sizeof(float) * 4 * 4;
+        push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;
         pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-        pipelineLayoutInfo.pushConstantRangeCount = 0;
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
+        pipelineLayoutInfo.pPushConstantRanges = &push_constant;
 
         VK_CHECK(vkCreatePipelineLayout(VuContext::Device, &pipelineLayoutInfo, nullptr, &PipelineLayout));
 
         //For dynamic rendering
-         VkFormat colorRenderingFormats[1] = {
-             VK_FORMAT_B8G8R8A8_SRGB,
-         };
+        VkFormat colorRenderingFormats[1] = {
+            VK_FORMAT_B8G8R8A8_SRGB,
+        };
 
         VkPipelineRenderingCreateInfo rfInfo = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,

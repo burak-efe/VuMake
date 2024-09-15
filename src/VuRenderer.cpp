@@ -4,6 +4,8 @@
 #include <set>
 
 #define GLM_FORCE_RADIANS
+#include "Mesh.h"
+#include "Mesh.h"
 #include "glm/glm.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_transform.hpp"
@@ -262,10 +264,11 @@ void VuRenderer::EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 im
     VK_CHECK(vkEndCommandBuffer(commandBuffer));
 }
 
-void VuRenderer::RenderMesh(Mesh& mesh) {
+void VuRenderer::RenderMesh(::Mesh& mesh, glm::mat4 trs) {
     auto commandBuffer = commandBuffers[currentFrame];
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, DebugPipeline.Pipeline);
 
+    PushConstants(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(trs), &trs);
 
     VkBuffer vertexBuffers[] = {mesh.vertexBuffer.VulkanBuffer, mesh.normalBuffer.VulkanBuffer};
     VkDeviceSize offsets[] = {0, 0};
@@ -342,9 +345,16 @@ void VuRenderer::UpdateUniformBuffer() {
     UniformBufferObject ubo{};
 
     //ubo.model = glm::mat4(1.0f);
-    ubo.model = glm::rotate(glm::mat4(1.0f),
-                            time * glm::radians(60.0f),
-                            glm::vec3(0.0f, 1.0f, 0.0f));
+    // ubo.model = glm::rotate(glm::mat4(1.0f),
+    //                         time * glm::radians(60.0f),
+    //                         glm::vec3(0.0f, 1.0f, 0.0f));
+    //
+    // float x = -glfwGetKey(window,GLFW_KEY_LEFT) + glfwGetKey(window,GLFW_KEY_RIGHT);
+    // glm::vec3 move{x, 0, 0};
+    // move *= 0.2f;
+
+
+    //ubo.model = glm::translate(ubo.model, move);
 
     ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),
                            glm::vec3(0.0f, 0.0f, 0.0f),
@@ -357,7 +367,16 @@ void VuRenderer::UpdateUniformBuffer() {
         10.0f);
     ubo.proj[1][1] *= -1;
 
+    // vkCmdPushConstants(commandBuffers[currentFrame], DebugPipeline.PipelineLayout,
+    //                    VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 4 * 4,
+    //                    &ubo.model);
+
     memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
+}
+
+void VuRenderer::PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32_t size, const void* pValues) {
+    vkCmdPushConstants(commandBuffers[currentFrame], DebugPipeline.PipelineLayout,
+                       stage, offset, size, pValues);
 }
 
 void VuRenderer::UpdateFpsCounter() {
