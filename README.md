@@ -1,12 +1,21 @@
 # Terrible Vulkan Renderer
 
 This is a terrible vulkan renderer, barely functioning.
-It's a CMAKE project with C++ 23 required, because I used println twice 💀
+It's a CMAKE project with C++ 23 required.
+(c++ 23 requreid because I used println twice 💀)
 
 ### Capabilites
-- ✅ Render one object as unlit
-- ✅ Imgui
-- ✅ Depth Buffer
+- ✅ Render one object as unlit 💀
+- ✅ Imgui 🧡
+- ✅ Depth Buffer 🤡
+- ✅ Push Constants 👌
+- 👷‍♂️ ECS
+
+<details> 
+  <summary>
+  Incapabilities (there is only few 🤓)
+  </summary>
+  
 - ❌ Vulkan Sync Abstraction
 - ❌ Textures
 - ❌ Normals / Tangents
@@ -16,7 +25,7 @@ It's a CMAKE project with C++ 23 required, because I used println twice 💀
 - ❌ Spot Ligths
 - ❌ Area Ligths
 - ❌ PBR
-- ❌ Scene-Level Reperesntation
+- ❌ Scene-Level Representation
 - ❌ Ray Traced GI
 - ❌ Path Traced Gi
 - ❌ SSGI
@@ -54,7 +63,6 @@ It's a CMAKE project with C++ 23 required, because I used println twice 💀
 - ❌ Geometry Shaders
 - ❌ Shader Editor
 - ❌ HLSL Support
-- ❌ ECS
 - ❌ SSAO / HBAO
 - ❌ SSR - SSSR
 - ❌ RayTraycing
@@ -83,6 +91,7 @@ It's a CMAKE project with C++ 23 required, because I used println twice 💀
 - ❌ Contact SHadows
 - ❌ Caustics
 - ❌ Render Graph
+</details>
 
 ### It Uses:
 - Vulkan Memory Allocator
@@ -90,6 +99,8 @@ It's a CMAKE project with C++ 23 required, because I used println twice 💀
 - FastGLTF
 - GLFW
 - GLM
+- flecs
+- Vk-Bootstrap
 
 ### Vulkan Notes
 - It uses Dynamic Rendering so there is no Render Pass (It's a good thing)
