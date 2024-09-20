@@ -1,4 +1,4 @@
-# Terrible Vulkan Renderer
+# VuMake: A Terrible Vulkan Renderer
 
 This is a terrible vulkan renderer, barely functioning.
 It's a CMAKE project with C++ 23 required.
