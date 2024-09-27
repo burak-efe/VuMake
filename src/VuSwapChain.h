@@ -1,10 +1,11 @@
 #pragma once
 
 #include <vector>
-#include<vulkan/vulkan.h>
+#include <vulkan/vulkan.h>
 
-#include "VuTypes.h"
+#include "VuUtils.h"
 #include "GLFW/glfw3.h"
+//class GLFWwindow;
 
 namespace Vu {
     class VuSwapChain {
@@ -22,17 +23,17 @@ namespace Vu {
         std::vector<VkImage> swapChainImages;
         std::vector<VkImageView> swapChainImageViews;
 
-        void CreateSwapChain(GLFWwindow *window, VkSurfaceKHR surface);
+        void CreateSwapChain(GLFWwindow* window, VkSurfaceKHR surface);
 
         void CleanupSwapchain();
 
         static SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 
-        static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
+        static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 
-        static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
+        static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 
-        static VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, GLFWwindow *window);
+        static VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window);
 
         static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
     };

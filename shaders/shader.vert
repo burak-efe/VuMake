@@ -2,7 +2,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 layout(binding = 0) uniform UniformBufferObject {
-    mat4 model;
+    //mat4 model;
     mat4 view;
     mat4 proj;
 } ubo;
@@ -14,7 +14,10 @@ layout( push_constant ) uniform constants
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
+layout(location = 2) in vec2 inUV;
+
 layout(location = 0) out vec3 fragNormal;
+layout(location = 1) out vec2 fragUV;
 
 
 void main() {
@@ -22,5 +25,6 @@ void main() {
 
     fragNormal.xyz = inNormal *0.5f + 0.5f;
 
+    fragUV = inUV;
     //fragColor = vec3(1,1,1);
 }

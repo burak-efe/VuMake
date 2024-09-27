@@ -10,4 +10,9 @@ namespace VuContext {
     inline VkDevice Device = VK_NULL_HANDLE;
 
     inline VuRenderer* Renderer;
+
+    inline float DeltaTime = 0;
+
+    inline double MouseX = 0;
+    inline double MouseY = 0;
 }

@@ -1,10 +1,8 @@
 ﻿#pragma once
 
-#include <span>
-#include <vk_mem_alloc.h>
-
 #include "Common.h"
 #include <vulkan/vulkan.h>
+#include <vk_mem_alloc.h>
 
 class VuBuffer {
 public:
@@ -16,20 +14,21 @@ public:
 
 
     VuBuffer();
-    VkResult Init(VmaAllocator allocator, uint32 lenght, uint32 stride, VkBufferUsageFlagBits usage);
+
+    VkResult Init(VmaAllocator allocator, uint32 lenght, uint32 stride, VkBufferUsageFlags usage);
 
     void Dispose();
 
-    VkResult SetData(void *data, VkDeviceSize byteSize);
+    VkResult SetData(void* data, VkDeviceSize byteSize);
 
 
     //TEMP
-    static uint32 findMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties);
+    //static uint32 findMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties);
 
     static void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-    static void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer,
-                      VkDeviceMemory &bufferMemory);
+    static void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer,
+                             VkDeviceMemory& bufferMemory);
 
     //
     // void Map();

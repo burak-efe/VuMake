@@ -1,10 +1,11 @@
 #include "VuSwapChain.h"
 
-#include "VuUtils.h"
-#include <cassert>
-#include <iostream>
+#include <algorithm>
+
 #include "Common.h"
+#include "VuUtils.h"
 #include "VuContext.h"
+//#include "GLFW/glfw3.h"
 
 namespace Vu {
 
@@ -51,7 +52,7 @@ namespace Vu {
 
         createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-        VK_CHECK(vkCreateSwapchainKHR(VuContext::Device, &createInfo, nullptr, &swapChain))
+        VK_CHECK(vkCreateSwapchainKHR(VuContext::Device, &createInfo, nullptr, &swapChain));
 
         vkGetSwapchainImagesKHR(VuContext::Device, swapChain, &imageCount, nullptr);
         swapChainImages.resize(imageCount);

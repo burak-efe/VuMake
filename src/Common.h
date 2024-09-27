@@ -1,9 +1,20 @@
 #pragma once
-#include <cstdint>
-typedef uint8_t uint8;
-typedef uint16_t uint16;
-typedef uint32_t uint32;
 
-typedef int8_t int8;
-typedef int16_t int16;
-typedef int32_t int32;
+#include <cstdint>
+#include "glm/fwd.hpp"
+#include "glm/mat4x4.hpp"
+
+using uint8 = uint8_t;
+using uint16 = uint16_t;
+using uint32 = uint32_t;
+
+using int8 = int8_t;
+using int16 = int16_t;
+using int32 = int32_t;
+
+
+using float2 = glm::vec2;
+using float3 = glm::vec3;
+using float4 = glm::vec4;
+using quat = glm::quat;
+using float4x4 = glm::mat4;

@@ -1,9 +1,6 @@
 #pragma once
-#include <cassert>
-#include <iostream>
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
-
 #include "VuContext.h"
 #include "VuSwapChain.h"
 #include "VuUtils.h"
@@ -44,7 +41,7 @@ public:
         VkImageViewCreateInfo dview_info = Vu::CreateImageViewCreateInfo(DepthFormat, Image,
                                                                          VK_IMAGE_ASPECT_DEPTH_BIT);
 
-        VK_CHECK(vkCreateImageView(VuContext::Device, &dview_info, nullptr, &View))
+        VK_CHECK(vkCreateImageView(VuContext::Device, &dview_info, nullptr, &View));
     }
 
     void Dispose() {

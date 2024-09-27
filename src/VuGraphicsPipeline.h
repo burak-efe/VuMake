@@ -3,7 +3,7 @@
 #include "Mesh.h"
 #include "VuShader.h"
 #include "VuDepthStencil.h"
-#include"VuUtils.h"
+
 
 class VuGraphicsPipeline {
 public:
@@ -31,10 +31,8 @@ public:
 
         VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
-
         auto bindingDescriptions = Mesh::getBindingDescription();
         auto attributeDescriptions = Mesh::getAttributeDescriptions();
-
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -141,14 +139,14 @@ public:
         auto depth = VuDepthStencil::CreateDepthStencilCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
         pipelineInfo.pDepthStencilState = &depth;
 
-        VK_CHECK(vkCreateGraphicsPipelines(VuContext::Device,
-            VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &Pipeline));
+        VK_CHECK(vkCreateGraphicsPipelines(VuContext::Device,VK_NULL_HANDLE,
+            1, &pipelineInfo, nullptr, &Pipeline));
 
         vkDestroyShaderModule(VuContext::Device, fragShaderModule, nullptr);
         vkDestroyShaderModule(VuContext::Device, vertShaderModule, nullptr);
     }
 
-    void Dispose() {
+    void Dispose() const {
         vkDestroyPipeline(VuContext::Device, Pipeline, nullptr);
         vkDestroyPipelineLayout(VuContext::Device, PipelineLayout, nullptr);
     }

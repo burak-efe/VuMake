@@ -1,23 +1,72 @@
 #pragma once
 
-#include "vulkan/vk_enum_string_helper.h"
+#include "Common.h"
+#include <optional>
+#include <vector>
 #include <fstream>
+#include <stacktrace>
+#include <iostream>
 #include <vulkan/vulkan.h>
 
 
-#define VK_CHECK(f)																				\
-{																										\
-VkResult res = (f);																					\
-if (res != VK_SUCCESS)																				\
-{																									\
-std::cout << "Fatal : VkResult is \"" << string_VkResult(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n"; \
-assert(res == VK_SUCCESS);																		\
-}																									\
+#include "VuContext.h"
+#include <vk_mem_alloc.h>
+#include "vulkan/vk_enum_string_helper.h"
+
+__declspec(noinline) static void VK_CHECK(VkResult res) {
+    if (res != VK_SUCCESS) {
+        // creating and initializing stacktrace object
+        auto st = std::stacktrace::current();
+        // printing stacktrace
+        std::cout << "[ERROR] VkResult is " << string_VkResult(res) << " at "
+                << st[1].source_file() << " line " << st[1].source_line() << "\n";
+    }
 }
+
+struct AllocatedImage {
+    VkImage Image;
+    VmaAllocation Allocation;
+};
+
+struct FrameUBO {
+    //glm::mat4 model;
+    float4x4 view;
+    float4x4 proj;
+};
+
+
+struct QueueFamilyIndices {
+    std::optional<uint32> graphicsFamily;
+    std::optional<uint32> presentFamily;
+
+    bool IsComplete() {
+        return graphicsFamily.has_value() && presentFamily.has_value();
+    }
+};
+
+struct SwapChainSupportDetails {
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
+};
+
 
 
 namespace Vu {
-    static std::vector<char> ReadFile(const std::string &filename) {
+
+
+     inline void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
+                                              const VkAllocationCallbacks* pAllocator) {
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)
+                vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+
+        if (func != nullptr) {
+            func(instance, debugMessenger, pAllocator);
+        }
+    }
+
+
+    inline std::vector<char> ReadFile(const std::string& filename) {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()) {
@@ -36,7 +85,7 @@ namespace Vu {
     }
 
 
-    static VkImageCreateInfo CreateImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent) {
+    inline VkImageCreateInfo CreateImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent) {
         VkImageCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         info.pNext = nullptr;
@@ -55,7 +104,7 @@ namespace Vu {
         return info;
     }
 
-    static VkImageViewCreateInfo CreateImageViewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags) {
+    inline VkImageViewCreateInfo CreateImageViewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags) {
         //build a image-view for the depth image to use for rendering
         VkImageViewCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -71,5 +120,53 @@ namespace Vu {
         info.subresourceRange.aspectMask = aspectFlags;
 
         return info;
+    }
+
+    inline QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
+        //Logic to find graphics queue family
+        QueueFamilyIndices indices;
+
+        uint32 queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+        int i = 0;
+
+
+        for (const auto& queuefamily: queueFamilies) {
+            if (queuefamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                indices.graphicsFamily = i;
+            }
+
+            VkBool32 presentSupport = false;
+
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+
+            if (presentSupport) {
+                indices.presentFamily = i;
+            }
+
+            if (indices.IsComplete()) {
+                break;
+            }
+
+            i++;
+        }
+
+        return indices;
+    }
+
+    inline uint32 findMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties) {
+        VkPhysicalDeviceMemoryProperties memProperties{};
+        vkGetPhysicalDeviceMemoryProperties(VuContext::PhysicalDevice, &memProperties);
+        for (uint32 i = 0; i < memProperties.memoryTypeCount; i++) {
+            if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+                return i;
+            }
+        }
+
+        throw std::runtime_error("failed to find suitable memory type!");
     }
 }

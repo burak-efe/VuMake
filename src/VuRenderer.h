@@ -1,6 +1,8 @@
 #pragma once
 
 #include "imgui/imgui_impl_vulkan.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_vulkan.h"
 
 #include "Mesh.h"
 #include "VuGraphicsPipeline.h"
@@ -11,7 +13,6 @@ constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 constexpr uint32 WIDTH = 1280;
 constexpr uint32 HEIGHT = 720;
 
-
 #ifdef NDEBUG
 constexpr bool enableValidationLayers = false;
 #else
@@ -21,10 +22,29 @@ constexpr bool enableValidationLayers = true;
 class VuRenderer {
 public:
     GLFWwindow* window;
-    //std::vector<Mesh *> meshes;
     inline static VkCommandPool commandPool;
     inline static VkQueue graphicsQueue;
     VkQueue presentQueue;
+    float PrevTime = 0;
+    VkDebugUtilsMessengerEXT debugMessenger;
+    std::vector<VkCommandBuffer> commandBuffers;
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkFence> inFlightFences;
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VkDeviceMemory> uniformBuffersMemory;
+    std::vector<void *> uniformBuffersMapped;
+    VkDescriptorPool descriptorPool;
+    VkDescriptorSetLayout descriptorSetLayout;
+    std::vector<VkDescriptorSet> descriptorSets;
+    VkSurfaceKHR surface;
+    Vu::VuSwapChain SwapChain;
+    VuDepthStencil DepthStencil;
+    VuGraphicsPipeline DebugPipeline;
+    ImGui_ImplVulkanH_Window g_MainWindowData;
+    uint32 currentFrame = 0;
+    uint32 currentFrameImageIndex = 0;
+    VkDescriptorPool uiDescriptorPool;
 
     void Init();
 
@@ -40,41 +60,17 @@ public:
 
     void RenderMesh(Mesh& mesh, glm::mat4 trs);
 
-    void RenderImgui();
+    void BeginImgui();
 
-    void UpdateUniformBuffer();
+    void EndImgui();
+
+    void UpdateUniformBuffer(FrameUBO ubo);
 
     void PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32_t size, const void* pValues);
 
-private:
-    VkDebugUtilsMessengerEXT debugMessenger;
+    VkCommandBuffer beginSingleTimeCommands();
 
-    std::vector<VkCommandBuffer> commandBuffers;
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
-
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBuffersMemory;
-    std::vector<void *> uniformBuffersMapped;
-
-    VkDescriptorPool descriptorPool;
-    VkDescriptorSetLayout descriptorSetLayout;
-    std::vector<VkDescriptorSet> descriptorSets;
-
-    VkSurfaceKHR surface;
-    Vu::VuSwapChain SwapChain;
-    VuDepthStencil DepthStencil;
-
-    VuGraphicsPipeline DebugPipeline;
-
-    ImGui_ImplVulkanH_Window g_MainWindowData;
-
-    uint32 currentFrame = 0;
-    uint32 currentFrameImageIndex = 0;
-    double PrevTime = 0;
-
-    VkDescriptorPool uiDescriptorPool;
+    void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 
 
     void BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
@@ -99,18 +95,19 @@ private:
 
     void CreateSyncObjects();
 
-    void UpdateFpsCounter();
-
     void RecreateSwapChain();
 
     void CreateDescriptorPool();
 
     void CreateDescriptorSets();
 
-
     void CreateDescriptorSetLayout();
 
     void CreateUniformBuffers();
 
     void SetupImGui();
+    static void MouseCallback(GLFWwindow* window, double xpos, double ypos);
+
+
+
 };

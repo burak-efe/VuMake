@@ -6,13 +6,19 @@
 VuBuffer::VuBuffer() {
 }
 
-VkResult VuBuffer::Init(VmaAllocator allocator,uint32 lenght,uint32 stride,VkBufferUsageFlagBits usage) {
+VkResult VuBuffer::Init(VmaAllocator allocator, uint32 lenght, uint32 stride, VkBufferUsageFlags usage) {
     Allocator = allocator;
     Stride = stride;
     Lenght = lenght;
-    VkBufferCreateInfo bufCreateInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    bufCreateInfo.size = lenght * stride;
-    bufCreateInfo.usage = usage;
+
+    VkBufferCreateInfo bufCreateInfo {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .size = static_cast<VkDeviceSize>(lenght * stride),
+        .usage = usage
+    };
+
 
     VmaAllocationCreateInfo allocCreateInfo = {};
     allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
@@ -27,28 +33,17 @@ void VuBuffer::Dispose() {
 }
 
 
-VkResult VuBuffer::SetData(void *data, VkDeviceSize byteSize) {
+VkResult VuBuffer::SetData(void* data, VkDeviceSize byteSize) {
     return vmaCopyMemoryToAllocation(Allocator, data, Allocation, 0, byteSize);
 }
 
 
 
-uint32 VuBuffer::findMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties)  {
-    VkPhysicalDeviceMemoryProperties memProperties{};
-    vkGetPhysicalDeviceMemoryProperties(VuContext::PhysicalDevice, &memProperties);
-    for (uint32 i = 0; i < memProperties.memoryTypeCount; i++) {
-        if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-            return i;
-        }
-    }
-
-    throw std::runtime_error("failed to find suitable memory type!");
-}
 
 
 void VuBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                                  VkMemoryPropertyFlags properties, VkBuffer &buffer,
-                                  VkDeviceMemory &bufferMemory)  {
+                            VkMemoryPropertyFlags properties, VkBuffer& buffer,
+                            VkDeviceMemory& bufferMemory) {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
@@ -63,7 +58,7 @@ void VuBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = Vu::findMemoryType(memRequirements.memoryTypeBits, properties);
 
     VK_CHECK(vkAllocateMemory(VuContext::Device, &allocInfo, nullptr, &bufferMemory));
 

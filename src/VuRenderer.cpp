@@ -1,133 +1,15 @@
 #include "VuRenderer.h"
-#include "VkBootstrap.h"
 
-#include <set>
-
-#define GLM_FORCE_RADIANS
-#include "Mesh.h"
-#include "Mesh.h"
-#include "glm/glm.hpp"
-#include "glm/ext/matrix_clip_space.hpp"
-#include "glm/ext/matrix_transform.hpp"
+//#include "glm/glm.hpp"
+//#include "glm/ext/matrix_clip_space.hpp"
+//#include "imgui/imgui_impl_glfw.h"
+//#include "imgui/imgui.h"
 #include "GLFW/glfw3.h"
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui.h"
 
-#include "VuDeviceUtils.h"
-#include "VuContext.h"
-#include "VuShader.h"
-#include "VuInit.h"
-#include "VuUtils.h"
-#include "VuTypes.h"
-
-
-void VuRenderer::Init() {
-    InitWindow();
-    InitVulkan();
-}
-
-void VuRenderer::InitWindow() {
-    glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-}
-
-void VuRenderer::InitVulkan() {
-    // Vulkan Instance
-    vkb::InstanceBuilder builder;
-    auto inst_ret = builder.set_app_name("VuMake")
-            .request_validation_layers()
-            .use_default_debug_messenger()
-            .require_api_version(1, 3)
-            .build();
-    if (!inst_ret) {
-        std::cerr << "Failed to create Vulkan instance. Error: " << inst_ret.error().message() << "\n";
-    }
-    vkb::Instance vkb_inst = inst_ret.value();
-    VuContext::Instance = vkb_inst.instance;
-    debugMessenger = vkb_inst.debug_messenger;
-
-    //Surface
-    CreateSurface();
-
-    //PhysicalDevice
-    vkb::PhysicalDeviceSelector selector{vkb_inst};
-    auto phys_ret = selector.set_surface(surface)
-            .set_minimum_version(1, 3) // require a vulkan 1.3 capable device
-            .require_dedicated_transfer_queue()
-            .select();
-    if (!phys_ret) {
-        std::cerr << "Failed to select Vulkan Physical Device. Error: " << phys_ret.error().message() << "\n";
-    }
-
-    VuContext::PhysicalDevice = phys_ret.value().physical_device;
-    // Enable Dynamic Rendering
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_feature{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
-        .dynamicRendering = VK_TRUE,
-    };
-
-    // Device
-    vkb::DeviceBuilder device_builder{phys_ret.value()};
-    // automatically propagate needed data from instance & physical device
-    auto dev_ret = device_builder.add_pNext(&dynamic_rendering_feature).build();
-    if (!dev_ret) {
-        std::cerr << "Failed to create Vulkan device. Error: " << dev_ret.error().message() << "\n";
-    }
-    vkb::Device vkb_device = dev_ret.value();
-
-    // Get the VkDevice handle used in the rest of a vulkan application
-    VuContext::Device = vkb_device.device;
-
-    // Get the graphics queue with a helper function
-    auto graphics_queue_ret = vkb_device.get_queue(vkb::QueueType::graphics);
-    if (!graphics_queue_ret) {
-        std::cerr << "Failed to get graphics queue. Error: " << graphics_queue_ret.error().message() << "\n";
-    }
-    graphicsQueue = graphics_queue_ret.value();
-
-    // Get the present queue with a helper function
-    auto presentQueueRet = vkb_device.get_queue(vkb::QueueType::present);
-    if (!presentQueueRet) {
-        std::cerr << "Failed to get present queue. Error: " << presentQueueRet.error().message() << "\n";
-    }
-    presentQueue = presentQueueRet.value();
-
-    //VuContext::Instance = VuInit::CreateVulkanInstance(enableValidationLayers, k_ValidationLayers);
-    //SetupDebugMessenger();
-    //VuDeviceUtils::PickPhysicalDevice(surface);
-    //VuDeviceUtils::CreateLogicalDevice(surface, graphicsQueue, presentQueue);
-    CreateVulkanMemoryAllocator();
-
-    CreateSwapChain();
-    DepthStencil = VuDepthStencil{};
-    DepthStencil.Create(SwapChain);
-    CreateDescriptorSetLayout();
-    CreateGraphicsPipeline();
-    CreateCommandPool();
-    CreateUniformBuffers();
-    CreateDescriptorPool();
-    CreateDescriptorSets();
-    CreateCommandBuffers();
-    CreateSyncObjects();
-    SetupImGui();
-}
+#include "VuSync.h"
 
 bool VuRenderer::ShouldWindowClose() {
     return glfwWindowShouldClose(window);
-}
-
-void VuRenderer::CreateVulkanMemoryAllocator() {
-    VmaAllocatorCreateInfo createInfo{};
-    createInfo.device = VuContext::Device;
-    createInfo.physicalDevice = VuContext::PhysicalDevice;
-    createInfo.instance = VuContext::Instance;
-    VK_CHECK(vmaCreateAllocator(&createInfo, &VuContext::VmaAllocator));
-}
-
-void VuRenderer::CreateSurface() {
-    VK_CHECK(glfwCreateWindowSurface(VuContext::Instance, window, nullptr, &surface));
 }
 
 void VuRenderer::WaitIdle() {
@@ -135,7 +17,6 @@ void VuRenderer::WaitIdle() {
 }
 
 void VuRenderer::BeginFrame() {
-    UpdateFpsCounter();
     glfwPollEvents();
 
     vkWaitForFences(VuContext::Device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
@@ -152,15 +33,8 @@ void VuRenderer::BeginFrame() {
     }
 
     vkResetFences(VuContext::Device, 1, &inFlightFences[currentFrame]);
-
     vkResetCommandBuffer(commandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
-
-    //Record
-    //UpdateUniformBuffer(currentFrame);
     BeginRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
-    //RecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
-
-    //return commandBuffers[currentFrame];
 }
 
 void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex) {
@@ -171,7 +45,7 @@ void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 
 
     // With dynamic rendering there are no subpass dependencies, so we need to take care of proper layout transitions by using barriers
     // This set of barriers prepares the color and depth images for output
-    VuInit::InsertImageMemoryBarrier(
+    VuSync::InsertImageMemoryBarrier2(
         commandBuffer,
         SwapChain.swapChainImages[imageIndex],
         0,
@@ -182,7 +56,7 @@ void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
         VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
 
-    VuInit::InsertImageMemoryBarrier(
+    VuSync::InsertImageMemoryBarrier2(
         commandBuffer,
         DepthStencil.Image,
         0,
@@ -246,10 +120,11 @@ void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 
 }
 
 void VuRenderer::EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex) {
+
     vkCmdEndRendering(commandBuffer);
 
     // This set of barriers prepares the color image for presentation, we don't need to care for the depth image
-    VuInit::InsertImageMemoryBarrier(
+    VuSync::InsertImageMemoryBarrier2(
         commandBuffer,
         SwapChain.swapChainImages[imageIndex],
         VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
@@ -270,9 +145,9 @@ void VuRenderer::RenderMesh(::Mesh& mesh, glm::mat4 trs) {
 
     PushConstants(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(trs), &trs);
 
-    VkBuffer vertexBuffers[] = {mesh.vertexBuffer.VulkanBuffer, mesh.normalBuffer.VulkanBuffer};
-    VkDeviceSize offsets[] = {0, 0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 2, vertexBuffers, offsets);
+    std::array vertexBuffers = {mesh.vertexBuffer.VulkanBuffer, mesh.normalBuffer.VulkanBuffer, mesh.uvBuffer.VulkanBuffer};
+    VkDeviceSize offsets[] = {0, 0, 0};
+    vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), offsets);
 
     vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.VulkanBuffer, 0, VK_INDEX_TYPE_UINT32);
 
@@ -282,12 +157,14 @@ void VuRenderer::RenderMesh(::Mesh& mesh, glm::mat4 trs) {
     vkCmdDrawIndexed(commandBuffer, mesh.indexBuffer.Lenght, 1, 0, 0, 0);
 }
 
-void VuRenderer::RenderImgui() {
-    auto commandBuffer = commandBuffers[currentFrame];
+void VuRenderer::BeginImgui() {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    ImGui::ShowDemoWindow();
+}
+
+void VuRenderer::EndImgui() {
+    auto commandBuffer = commandBuffers[currentFrame];
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 }
@@ -335,41 +212,25 @@ void VuRenderer::EndFrame() {
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void VuRenderer::UpdateUniformBuffer() {
-    static auto startTime = std::chrono::high_resolution_clock::now();
-
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>
-            (currentTime - startTime).count();
-
-    UniformBufferObject ubo{};
-
-    //ubo.model = glm::mat4(1.0f);
-    // ubo.model = glm::rotate(glm::mat4(1.0f),
-    //                         time * glm::radians(60.0f),
-    //                         glm::vec3(0.0f, 1.0f, 0.0f));
+void VuRenderer::UpdateUniformBuffer(FrameUBO ubo) {
+    // static auto startTime = std::chrono::high_resolution_clock::now();
     //
-    // float x = -glfwGetKey(window,GLFW_KEY_LEFT) + glfwGetKey(window,GLFW_KEY_RIGHT);
-    // glm::vec3 move{x, 0, 0};
-    // move *= 0.2f;
+    // auto currentTime = std::chrono::high_resolution_clock::now();
+    // float time = std::chrono::duration<float, std::chrono::seconds::period>
+    //         (currentTime - startTime).count();
 
-
-    //ubo.model = glm::translate(ubo.model, move);
-
-    ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),
-                           glm::vec3(0.0f, 0.0f, 0.0f),
-                           glm::vec3(0.0f, 1.0f, 0.0f));
-
-    ubo.proj = glm::perspective(
-        glm::radians(90.0f),
-        static_cast<float>(SwapChain.swapChainExtent.width) / static_cast<float>(SwapChain.swapChainExtent.height),
-        0.1f,
-        10.0f);
-    ubo.proj[1][1] *= -1;
-
-    // vkCmdPushConstants(commandBuffers[currentFrame], DebugPipeline.PipelineLayout,
-    //                    VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 4 * 4,
-    //                    &ubo.model);
+    // FrameUBO ubo{};
+    //
+    // ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),
+    //                        glm::vec3(0.0f, 0.0f, 0.0f),
+    //                        glm::vec3(0.0f, 1.0f, 0.0f));
+    //
+    // ubo.proj = glm::perspective(
+    //     glm::radians(90.0f),
+    //     static_cast<float>(SwapChain.swapChainExtent.width) / static_cast<float>(SwapChain.swapChainExtent.height),
+    //     0.1f,
+    //     10.0f);
+    // ubo.proj[1][1] *= -1;
 
     memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
 }
@@ -377,14 +238,6 @@ void VuRenderer::UpdateUniformBuffer() {
 void VuRenderer::PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32_t size, const void* pValues) {
     vkCmdPushConstants(commandBuffers[currentFrame], DebugPipeline.PipelineLayout,
                        stage, offset, size, pValues);
-}
-
-void VuRenderer::UpdateFpsCounter() {
-    double lastTime = glfwGetTime() * 1000 * 1000;
-    auto elapsed_seconds = lastTime - PrevTime;
-    auto s = std::to_string(elapsed_seconds);
-    glfwSetWindowTitle(window, s.c_str());
-    PrevTime = lastTime;
 }
 
 void VuRenderer::RecreateSwapChain() {
@@ -405,234 +258,35 @@ void VuRenderer::RecreateSwapChain() {
     // g_MainWindowData.FrameIndex = 0;
 }
 
-void VuRenderer::CreateSwapChain() {
-    SwapChain = Vu::VuSwapChain{};
-    SwapChain.CreateSwapChain(window, surface);
-}
-
-void VuRenderer::CreateGraphicsPipeline() {
-    DebugPipeline = VuGraphicsPipeline{};
-    DebugPipeline.CreateGraphicsPipeline(descriptorSetLayout, DepthStencil);
-}
-
-void VuRenderer::CreateCommandPool() {
-    QueueFamilyIndices queueFamilyIndices = VuDeviceUtils::findQueueFamilies(VuContext::PhysicalDevice, surface);
-
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-
-    VK_CHECK(vkCreateCommandPool(VuContext::Device, &poolInfo, nullptr, &commandPool))
-}
-
-void VuRenderer::CreateCommandBuffers() {
-    commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
+VkCommandBuffer VuRenderer::beginSingleTimeCommands() {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = static_cast<uint32>(commandBuffers.size());
+    allocInfo.commandPool = commandPool;
+    allocInfo.commandBufferCount = 1;
 
-    VK_CHECK(vkAllocateCommandBuffers(VuContext::Device, &allocInfo, commandBuffers.data()))
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(VuContext::Device, &allocInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    return commandBuffer;
 }
 
-void VuRenderer::CreateSyncObjects() {
-    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+void VuRenderer::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+    vkEndCommandBuffer(commandBuffer);
 
-    VkSemaphoreCreateInfo semaphoreInfo{};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
 
-    VkFenceCreateInfo fenceInfo{};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(graphicsQueue);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VK_CHECK(vkCreateSemaphore(VuContext::Device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]));
-        VK_CHECK(vkCreateSemaphore(VuContext::Device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]));
-        VK_CHECK(vkCreateFence(VuContext::Device, &fenceInfo, nullptr, &inFlightFences[i]));
-    }
-}
-
-void VuRenderer::CreateUniformBuffers() {
-    uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-    uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-    uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-        VuBuffer::createBuffer(
-            bufferSize,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            uniformBuffers[i],
-            uniformBuffersMemory[i]);
-
-        vkMapMemory(VuContext::Device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
-    }
-}
-
-void VuRenderer::CreateDescriptorSetLayout() {
-    VkDescriptorSetLayoutBinding uboLayoutBinding{};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    uboLayoutBinding.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &uboLayoutBinding;
-
-    VK_CHECK(vkCreateDescriptorSetLayout(VuContext::Device, &layoutInfo, nullptr, &descriptorSetLayout));
-}
-
-void VuRenderer::CreateDescriptorPool() {
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
-    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-    VK_CHECK(vkCreateDescriptorPool(VuContext::Device, &poolInfo, nullptr, &descriptorPool));
-}
-
-void VuRenderer::CreateDescriptorSets() {
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    allocInfo.pSetLayouts = layouts.data();
-
-    descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-    VK_CHECK(vkAllocateDescriptorSets(VuContext::Device, &allocInfo, descriptorSets.data()));
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = uniformBuffers[i];
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformBufferObject);
-
-        VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = descriptorSets[i];
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pBufferInfo = &bufferInfo;
-
-        vkUpdateDescriptorSets(VuContext::Device, 1, &descriptorWrite, 0, nullptr);
-    }
-}
-
-void VuRenderer::Dispose() {
-    vkDeviceWaitIdle(VuContext::Device);
-
-    ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-    SwapChain.CleanupSwapchain();
-    vkDestroyDescriptorSetLayout(VuContext::Device, descriptorSetLayout, nullptr);
-    vkDestroyDescriptorPool(VuContext::Device, descriptorPool, nullptr);
-    vkDestroyDescriptorPool(VuContext::Device, uiDescriptorPool, nullptr);
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroySemaphore(VuContext::Device, renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(VuContext::Device, imageAvailableSemaphores[i], nullptr);
-        vkDestroyFence(VuContext::Device, inFlightFences[i], nullptr);
-    }
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyBuffer(VuContext::Device, uniformBuffers[i], nullptr);
-        vkFreeMemory(VuContext::Device, uniformBuffersMemory[i], nullptr);
-    }
-
-    DepthStencil.Dispose(); //renderPass.Dispose();
-    DebugPipeline.Dispose();
-
-    vkDestroyCommandPool(VuContext::Device, commandPool, nullptr);
-    vmaDestroyAllocator(VuContext::VmaAllocator);
-    vkDestroyDevice(VuContext::Device, nullptr);
-    if (enableValidationLayers) {
-        VuInit::DestroyDebugUtilsMessengerEXT(VuContext::Instance, debugMessenger, nullptr);
-    }
-    vkDestroySurfaceKHR(VuContext::Instance, surface, nullptr);
-    vkDestroyInstance(VuContext::Instance, nullptr);
-    glfwDestroyWindow(window);
-    glfwTerminate();
-}
-
-void VuRenderer::SetupImGui() {
-    // VkDescriptorPoolSize poolSize{};
-    // poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    // poolSize.descriptorCount = static_cast<uint32_t>(1000);
-
-    VkDescriptorPoolSize pool_sizes[] =
-    {
-        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
-    };
-
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = pool_sizes;
-    poolInfo.maxSets = 1000;
-    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-
-    VK_CHECK(vkCreateDescriptorPool(VuContext::Device, &poolInfo, nullptr, &uiDescriptorPool));
-
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    (void) io;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
-
-    // Setup Platform/Renderer bindings
-    ImGui_ImplGlfw_InitForVulkan(window, true);
-    ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = VuContext::Instance;
-    init_info.PhysicalDevice = VuContext::PhysicalDevice;
-    init_info.Device = VuContext::Device;
-    init_info.QueueFamily = Vu::VuSwapChain::FindQueueFamilies(VuContext::PhysicalDevice, surface).graphicsFamily.
-            value();
-    init_info.Queue = graphicsQueue;
-    init_info.DescriptorPool = uiDescriptorPool;
-    init_info.MinImageCount = 2;
-    init_info.ImageCount = 2;
-    init_info.UseDynamicRendering = true;
-    //init_info.CheckVkResultFn = check_vk_result;
-
-    VkFormat colorRenderingFormats[1] = {
-        VK_FORMAT_B8G8R8A8_SRGB,
-    };
-
-    VkPipelineRenderingCreateInfo rfInfo = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-        .pNext = nullptr,
-        .colorAttachmentCount = 1,
-        .pColorAttachmentFormats = colorRenderingFormats,
-        .depthAttachmentFormat = DepthStencil.DepthFormat,
-        .stencilAttachmentFormat = DepthStencil.DepthFormat
-    };
-
-    init_info.PipelineRenderingCreateInfo = rfInfo;
-    ImGui_ImplVulkan_Init(&init_info);
-    ImGui_ImplVulkan_CreateFontsTexture();
+    vkFreeCommandBuffers(VuContext::Device, commandPool, 1, &commandBuffer);
 }
