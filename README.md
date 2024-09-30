@@ -5,15 +5,15 @@ It's a CMAKE project with C++ 23 required.
 (c++ 23 requreid because I used println twice 💀)
 
 ### Capabilites
-- ✅ Render one object as unlit 💀
-- ✅ Imgui 🧡
-- ✅ Depth Buffer 🤡
-- ✅ Push Constants 👌
+- ✅ Render one object as unlit
+- ✅ Imgui 
+- ✅ Depth Buffer 
+- ✅ Push Constants 
 - 👷‍♂️ ECS
 
 <details> 
   <summary>
-  Incapabilities (there is only few 🤓)
+  Incapabilities (there is only few)
   </summary>
   
 - ❌ Vulkan Sync Abstraction
