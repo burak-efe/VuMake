@@ -10,42 +10,53 @@ struct Transform {
 
 
     void Rotate(const float3& axis, float angle) {
-        quat rotationQuat = glm::angleAxis(angle, glm::normalize(axis));
-        Rotation = rotationQuat * Rotation;
+        Rotation = glm::rotate(Rotation, angle, axis);
     }
 
     float4x4 ToTRS() {
-        float4x4 transform = float4x4(1.0f);
+        // Initialize transform to the identity matrix
+        float4x4 transform = glm::identity<float4x4>();
+
+        // Apply translation
         transform = glm::translate(transform, Position);
-        float4x4 rotationMatrix = glm::toMat4(Rotation);
-        transform *= rotationMatrix;
+
+        //glm::mat4(Position);
+
+        // Apply rotation from quaternion
+        transform *= glm::toMat4(Rotation);
+
+        // Apply scaling
         transform = glm::scale(transform, Scale);
+
         return transform;
     }
 
-    static quat lookAtQuaternion(const float3& eye, const float3& target, const float3& up) {
-        // Compute forward direction (from eye to target)
-        float3 forward = glm::normalize(target - eye);
 
-        // Compute right vector
-        float3 right = glm::normalize(glm::cross(up, forward));
+    static glm::quat safeQuatLookAt(
+        glm::vec3 const& lookFrom,
+        glm::vec3 const& lookTo,
+        glm::vec3 const& up,
+        glm::vec3 const& alternativeUp) {
+        glm::vec3 direction = lookTo - lookFrom;
+        float directionLength = glm::length(direction);
 
-        // Adjust up vector to ensure orthogonality
-        float3 adjustedUp = glm::cross(forward, right);
+        // Check if the direction is valid; Also deals with NaN
+        if (!(directionLength > 0.0001))
+            return glm::quat(1, 0, 0, 0); // Just return identity
 
-        // Create rotation matrix from right, adjusted up, and forward vectors
-        glm::mat3 rotationMatrix(right, adjustedUp, forward);
+        // Normalize direction
+        direction /= directionLength;
 
-        // Convert rotation matrix to quaternion
-        return glm::normalize(quat_cast(rotationMatrix));
+        // Is the normal up (nearly) parallel to direction?
+        if (glm::abs(glm::dot(direction, up)) > .9999f) {
+            // Use alternative up
+            return glm::quatLookAt(direction, alternativeUp);
+        } else {
+            return glm::quatLookAt(direction, up);
+        }
     }
 
-    // Constructor that sets position, rotation from look-at, and default scale
-    static Transform FromLook(const float3& pos, const float3& lookAtPoint,
-                              const float3& up = float3(0.0f, 1.0f, 0.0f)) {
-        Transform transform{};
-        transform.Position = pos;
-        transform.Rotation = lookAtQuaternion(pos, lookAtPoint, up);
-        return transform;
+    void SetEulerAngles(const float3& eulerAngles) {
+        Rotation = glm::quat(eulerAngles);
     }
 };

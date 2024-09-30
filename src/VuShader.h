@@ -18,7 +18,7 @@ public:
       createInfo.pNext = nullptr;
 
       VkShaderModule shaderModule;
-      VK_CHECK(vkCreateShaderModule(VuContext::Device, &createInfo, nullptr, &shaderModule));
+      VK_CHECK(vkCreateShaderModule(Vu::Device, &createInfo, nullptr, &shaderModule));
       // if (vkCreateShaderModule(VuContext::Device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
       //    throw std::runtime_error("failed to create shader module!");
       // }

@@ -1,17 +1,15 @@
 ﻿#include "VuBuffer.h"
 
-#include "VuRenderer.h"
+//#include "VuRenderer.h"
 #include "VuUtils.h"
 
-VuBuffer::VuBuffer() {
-}
 
 VkResult VuBuffer::Init(VmaAllocator allocator, uint32 lenght, uint32 stride, VkBufferUsageFlags usage) {
     Allocator = allocator;
     Stride = stride;
     Lenght = lenght;
 
-    VkBufferCreateInfo bufCreateInfo {
+    VkBufferCreateInfo bufCreateInfo{
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
@@ -38,10 +36,7 @@ VkResult VuBuffer::SetData(void* data, VkDeviceSize byteSize) {
 }
 
 
-
-
-
-void VuBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+void VuBuffer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                             VkMemoryPropertyFlags properties, VkBuffer& buffer,
                             VkDeviceMemory& bufferMemory) {
     VkBufferCreateInfo bufferInfo{};
@@ -50,48 +45,53 @@ void VuBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VK_CHECK(vkCreateBuffer(VuContext::Device, &bufferInfo, nullptr, &buffer));
+    VK_CHECK(vkCreateBuffer(Vu::Device, &bufferInfo, nullptr, &buffer));
 
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(VuContext::Device, buffer, &memRequirements);
+    vkGetBufferMemoryRequirements(Vu::Device, buffer, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = Vu::findMemoryType(memRequirements.memoryTypeBits, properties);
 
-    VK_CHECK(vkAllocateMemory(VuContext::Device, &allocInfo, nullptr, &bufferMemory));
+    VK_CHECK(vkAllocateMemory(Vu::Device, &allocInfo, nullptr, &bufferMemory));
 
-    vkBindBufferMemory(VuContext::Device, buffer, bufferMemory, 0);
+    vkBindBufferMemory(Vu::Device, buffer, bufferMemory, 0);
 }
 
 
-void VuBuffer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = VuRenderer::commandPool;
-    allocInfo.commandBufferCount = 1;
+void VuBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+    // VkCommandBufferAllocateInfo allocInfo{};
+    // allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    // allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    // allocInfo.commandPool = Vu::commandPool;
+    // allocInfo.commandBufferCount = 1;
+    //
+    // VkCommandBuffer commandBuffer;
+    // vkAllocateCommandBuffers(Vu::Device, &allocInfo, &commandBuffer);
+    //
+    // VkCommandBufferBeginInfo beginInfo{};
+    // beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    // beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    //
+    // vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
-    VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(VuContext::Device, &allocInfo, &commandBuffer);
+    VkCommandBuffer commandBuffer = Vu::BeginSingleTimeCommands();
 
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0;
     copyRegion.dstOffset = 0;
     copyRegion.size = size;
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-    vkEndCommandBuffer(commandBuffer);
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
-    vkQueueSubmit(VuRenderer::graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(VuRenderer::graphicsQueue);
-    vkFreeCommandBuffers(VuContext::Device, VuRenderer::commandPool, 1, &commandBuffer);
+
+    Vu::EndSingleTimeCommands(commandBuffer);
+    //     vkEndCommandBuffer(commandBuffer);
+    //     VkSubmitInfo submitInfo{};
+    //     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    //     submitInfo.commandBufferCount = 1;
+    //     submitInfo.pCommandBuffers = &commandBuffer;
+    //     vkQueueSubmit(Vu::graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    //     vkQueueWaitIdle(Vu::graphicsQueue);
+    //     vkFreeCommandBuffers(Vu::Device, Vu::commandPool, 1, &commandBuffer);
 }

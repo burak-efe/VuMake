@@ -29,15 +29,15 @@ set(HEADER_FILES
         src/VuSwapChain.h
         src/VuSync.h
         src/VuShader.h
-        src/VuContext.h
+        src/Vu.h
         src/VuDepthStencil.h
         src/VuGraphicsPipeline.h
         src/VuTexture.h
         src/components/Camera.h
         src/components/Transform.h
         #Imgui
-        src/imgui/imconfig.h
         src/imgui/imgui.h
+        src/imgui/imconfig.h
         src/imgui/imgui_internal.h
         src/imgui/imgui_impl_glfw.h
         src/imgui/imgui_impl_vulkan.h
@@ -69,7 +69,6 @@ set(SOURCE_FILES
 
 set(PCH
         src/Common.h
-        src/VuRenderer.h
 )
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})

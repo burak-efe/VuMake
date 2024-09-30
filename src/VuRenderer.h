@@ -1,7 +1,6 @@
 #pragma once
+#define IMGUI_DEFINE_MATH_OPERATORS
 
-#include "imgui/imgui_impl_vulkan.h"
-#include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_vulkan.h"
 
 #include "Mesh.h"
@@ -22,9 +21,9 @@ constexpr bool enableValidationLayers = true;
 class VuRenderer {
 public:
     GLFWwindow* window;
-    inline static VkCommandPool commandPool;
-    inline static VkQueue graphicsQueue;
-    VkQueue presentQueue;
+    //inline static VkCommandPool commandPool;
+    //inline static VkQueue graphicsQueue;
+    //VkQueue presentQueue;
     float PrevTime = 0;
     VkDebugUtilsMessengerEXT debugMessenger;
     std::vector<VkCommandBuffer> commandBuffers;
@@ -68,11 +67,6 @@ public:
 
     void PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32_t size, const void* pValues);
 
-    VkCommandBuffer beginSingleTimeCommands();
-
-    void endSingleTimeCommands(VkCommandBuffer commandBuffer);
-
-
     void BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
 
     void EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
@@ -107,6 +101,7 @@ public:
 
     void SetupImGui();
     static void MouseCallback(GLFWwindow* window, double xpos, double ypos);
+
 
 
 

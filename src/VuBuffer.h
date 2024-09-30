@@ -12,26 +12,15 @@ public:
     uint32 Lenght;
     uint32 Stride;
 
-
-    VuBuffer();
-
     VkResult Init(VmaAllocator allocator, uint32 lenght, uint32 stride, VkBufferUsageFlags usage);
 
     void Dispose();
 
     VkResult SetData(void* data, VkDeviceSize byteSize);
 
+    static void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-    //TEMP
-    //static uint32 findMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties);
-
-    static void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-
-    static void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer,
+    static void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer,
                              VkDeviceMemory& bufferMemory);
 
-    //
-    // void Map();
-    //
-    // void UnMap();
 };

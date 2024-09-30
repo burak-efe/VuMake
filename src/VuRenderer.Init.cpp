@@ -2,6 +2,8 @@
 #include "VuRenderer.h"
 
 #include "GLFW/glfw3.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
 
 void VuRenderer::Init() {
     InitWindow();
@@ -19,14 +21,14 @@ void VuRenderer::InitWindow() {
 
 void VuRenderer::CreateVulkanMemoryAllocator() {
     VmaAllocatorCreateInfo createInfo{};
-    createInfo.device = VuContext::Device;
-    createInfo.physicalDevice = VuContext::PhysicalDevice;
-    createInfo.instance = VuContext::Instance;
-    VK_CHECK(vmaCreateAllocator(&createInfo, &VuContext::VmaAllocator));
+    createInfo.device = Vu::Device;
+    createInfo.physicalDevice = Vu::PhysicalDevice;
+    createInfo.instance = Vu::Instance;
+    VK_CHECK(vmaCreateAllocator(&createInfo, &Vu::VmaAllocator));
 }
 
 void VuRenderer::CreateSurface() {
-    VK_CHECK(glfwCreateWindowSurface(VuContext::Instance, window, nullptr, &surface));
+    VK_CHECK(glfwCreateWindowSurface(Vu::Instance, window, nullptr, &surface));
 }
 
 void VuRenderer::InitVulkan() {
@@ -41,7 +43,7 @@ void VuRenderer::InitVulkan() {
         std::cerr << "Failed to create Vulkan instance. Error: " << inst_ret.error().message() << "\n";
     }
     vkb::Instance vkb_inst = inst_ret.value();
-    VuContext::Instance = vkb_inst.instance;
+    Vu::Instance = vkb_inst.instance;
     debugMessenger = vkb_inst.debug_messenger;
 
     //Surface
@@ -57,7 +59,7 @@ void VuRenderer::InitVulkan() {
         std::cerr << "Failed to select Vulkan Physical Device. Error: " << phys_ret.error().message() << "\n";
     }
 
-    VuContext::PhysicalDevice = phys_ret.value().physical_device;
+    Vu::PhysicalDevice = phys_ret.value().physical_device;
     // Enable Dynamic Rendering
     VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_feature{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
@@ -69,44 +71,27 @@ void VuRenderer::InitVulkan() {
         .synchronization2 = VK_TRUE,
     };
 
-    // //Enable Descriptor Indexing
-    // VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures{
-    //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
-    //     .
-    // };
 
     // Device
     vkb::DeviceBuilder device_builder{phys_ret.value()};
-    // automatically propagate needed data from instance & physical device
     auto dev_ret = device_builder.add_pNext(&dynamic_rendering_feature).add_pNext(&sync2).build();
     if (!dev_ret) {
         std::cerr << "Failed to create Vulkan device. Error: " << dev_ret.error().message() << "\n";
     }
     vkb::Device vkb_device = dev_ret.value();
-
-    // Get the VkDevice handle used in the rest of a vulkan application
-    VuContext::Device = vkb_device.device;
-
-    // Get the graphics queue with a helper function
+    Vu::Device = vkb_device.device;
     auto graphics_queue_ret = vkb_device.get_queue(vkb::QueueType::graphics);
     if (!graphics_queue_ret) {
         std::cerr << "Failed to get graphics queue. Error: " << graphics_queue_ret.error().message() << "\n";
     }
-    graphicsQueue = graphics_queue_ret.value();
-
-    // Get the present queue with a helper function
+    Vu::graphicsQueue = graphics_queue_ret.value();
     auto presentQueueRet = vkb_device.get_queue(vkb::QueueType::present);
     if (!presentQueueRet) {
         std::cerr << "Failed to get present queue. Error: " << presentQueueRet.error().message() << "\n";
     }
-    presentQueue = presentQueueRet.value();
+    Vu::presentQueue = presentQueueRet.value();
 
-    //VuContext::Instance = VuInit::CreateVulkanInstance(enableValidationLayers, k_ValidationLayers);
-    //SetupDebugMessenger();
-    //VuDeviceUtils::PickPhysicalDevice(surface);
-    //VuDeviceUtils::CreateLogicalDevice(surface, graphicsQueue, presentQueue);
     CreateVulkanMemoryAllocator();
-
     CreateSwapChain();
     DepthStencil = VuDepthStencil{};
     DepthStencil.Create(SwapChain);
@@ -132,24 +117,24 @@ void VuRenderer::CreateGraphicsPipeline() {
 }
 
 void VuRenderer::CreateCommandPool() {
-    QueueFamilyIndices queueFamilyIndices = Vu::FindQueueFamilies(VuContext::PhysicalDevice, surface);
+    QueueFamilyIndices queueFamilyIndices = Vu::FindQueueFamilies(Vu::PhysicalDevice, surface);
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-    VK_CHECK(vkCreateCommandPool(VuContext::Device, &poolInfo, nullptr, &commandPool));
+    VK_CHECK(vkCreateCommandPool(Vu::Device, &poolInfo, nullptr, &Vu::commandPool));
 }
 
 void VuRenderer::CreateCommandBuffers() {
     commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
+    allocInfo.commandPool = Vu::commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = static_cast<uint32>(commandBuffers.size());
-    VK_CHECK(vkAllocateCommandBuffers(VuContext::Device, &allocInfo, commandBuffers.data()));
+    VK_CHECK(vkAllocateCommandBuffers(Vu::Device, &allocInfo, commandBuffers.data()));
 }
 
 void VuRenderer::CreateSyncObjects() {
@@ -165,9 +150,9 @@ void VuRenderer::CreateSyncObjects() {
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VK_CHECK(vkCreateSemaphore(VuContext::Device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]));
-        VK_CHECK(vkCreateSemaphore(VuContext::Device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]));
-        VK_CHECK(vkCreateFence(VuContext::Device, &fenceInfo, nullptr, &inFlightFences[i]));
+        VK_CHECK(vkCreateSemaphore(Vu::Device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]));
+        VK_CHECK(vkCreateSemaphore(Vu::Device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]));
+        VK_CHECK(vkCreateFence(Vu::Device, &fenceInfo, nullptr, &inFlightFences[i]));
     }
 }
 
@@ -178,14 +163,14 @@ void VuRenderer::CreateUniformBuffers() {
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDeviceSize bufferSize = sizeof(FrameUBO);
-        VuBuffer::createBuffer(
+        VuBuffer::CreateBuffer(
             bufferSize,
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             uniformBuffers[i],
             uniformBuffersMemory[i]);
 
-        vkMapMemory(VuContext::Device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
+        vkMapMemory(Vu::Device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
     }
 }
 
@@ -197,12 +182,13 @@ void VuRenderer::CreateDescriptorSetLayout() {
     uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     uboLayoutBinding.pImmutableSamplers = nullptr;
 
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &uboLayoutBinding;
+    VkDescriptorSetLayoutCreateInfo layoutInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .bindingCount = 1,
+        .pBindings = &uboLayoutBinding,
+    };
 
-    VK_CHECK(vkCreateDescriptorSetLayout(VuContext::Device, &layoutInfo, nullptr, &descriptorSetLayout));
+    VK_CHECK(vkCreateDescriptorSetLayout(Vu::Device, &layoutInfo, nullptr, &descriptorSetLayout));
 }
 
 void VuRenderer::CreateDescriptorPool() {
@@ -216,7 +202,7 @@ void VuRenderer::CreateDescriptorPool() {
     poolInfo.pPoolSizes = &poolSize;
     poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-    VK_CHECK(vkCreateDescriptorPool(VuContext::Device, &poolInfo, nullptr, &descriptorPool));
+    VK_CHECK(vkCreateDescriptorPool(Vu::Device, &poolInfo, nullptr, &descriptorPool));
 }
 
 void VuRenderer::CreateDescriptorSets() {
@@ -228,7 +214,7 @@ void VuRenderer::CreateDescriptorSets() {
     allocInfo.pSetLayouts = layouts.data();
 
     descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-    VK_CHECK(vkAllocateDescriptorSets(VuContext::Device, &allocInfo, descriptorSets.data()));
+    VK_CHECK(vkAllocateDescriptorSets(Vu::Device, &allocInfo, descriptorSets.data()));
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo bufferInfo{};
@@ -245,44 +231,44 @@ void VuRenderer::CreateDescriptorSets() {
         descriptorWrite.descriptorCount = 1;
         descriptorWrite.pBufferInfo = &bufferInfo;
 
-        vkUpdateDescriptorSets(VuContext::Device, 1, &descriptorWrite, 0, nullptr);
+        vkUpdateDescriptorSets(Vu::Device, 1, &descriptorWrite, 0, nullptr);
     }
 }
 
 void VuRenderer::Dispose() {
-    vkDeviceWaitIdle(VuContext::Device);
+    vkDeviceWaitIdle(Vu::Device);
 
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
     SwapChain.CleanupSwapchain();
-    vkDestroyDescriptorSetLayout(VuContext::Device, descriptorSetLayout, nullptr);
-    vkDestroyDescriptorPool(VuContext::Device, descriptorPool, nullptr);
-    vkDestroyDescriptorPool(VuContext::Device, uiDescriptorPool, nullptr);
+    vkDestroyDescriptorSetLayout(Vu::Device, descriptorSetLayout, nullptr);
+    vkDestroyDescriptorPool(Vu::Device, descriptorPool, nullptr);
+    vkDestroyDescriptorPool(Vu::Device, uiDescriptorPool, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroySemaphore(VuContext::Device, renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(VuContext::Device, imageAvailableSemaphores[i], nullptr);
-        vkDestroyFence(VuContext::Device, inFlightFences[i], nullptr);
+        vkDestroySemaphore(Vu::Device, renderFinishedSemaphores[i], nullptr);
+        vkDestroySemaphore(Vu::Device, imageAvailableSemaphores[i], nullptr);
+        vkDestroyFence(Vu::Device, inFlightFences[i], nullptr);
     }
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyBuffer(VuContext::Device, uniformBuffers[i], nullptr);
-        vkFreeMemory(VuContext::Device, uniformBuffersMemory[i], nullptr);
+        vkDestroyBuffer(Vu::Device, uniformBuffers[i], nullptr);
+        vkFreeMemory(Vu::Device, uniformBuffersMemory[i], nullptr);
     }
 
     DepthStencil.Dispose(); //renderPass.Dispose();
     DebugPipeline.Dispose();
 
-    vkDestroyCommandPool(VuContext::Device, commandPool, nullptr);
-    vmaDestroyAllocator(VuContext::VmaAllocator);
-    vkDestroyDevice(VuContext::Device, nullptr);
+    vkDestroyCommandPool(Vu::Device, Vu::commandPool, nullptr);
+    vmaDestroyAllocator(Vu::VmaAllocator);
+    vkDestroyDevice(Vu::Device, nullptr);
     if (enableValidationLayers) {
-        Vu::DestroyDebugUtilsMessengerEXT(VuContext::Instance, debugMessenger, nullptr);
+        Vu::DestroyDebugUtilsMessengerEXT(Vu::Instance, debugMessenger, nullptr);
     }
-    vkDestroySurfaceKHR(VuContext::Instance, surface, nullptr);
-    vkDestroyInstance(VuContext::Instance, nullptr);
+    vkDestroySurfaceKHR(Vu::Instance, surface, nullptr);
+    vkDestroyInstance(Vu::Instance, nullptr);
     glfwDestroyWindow(window);
     glfwTerminate();
 }
@@ -304,7 +290,7 @@ void VuRenderer::SetupImGui() {
     poolInfo.maxSets = 1000;
     poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-    VK_CHECK(vkCreateDescriptorPool(VuContext::Device, &poolInfo, nullptr, &uiDescriptorPool));
+    VK_CHECK(vkCreateDescriptorPool(Vu::Device, &poolInfo, nullptr, &uiDescriptorPool));
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -321,12 +307,12 @@ void VuRenderer::SetupImGui() {
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForVulkan(window, true);
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = VuContext::Instance;
-    init_info.PhysicalDevice = VuContext::PhysicalDevice;
-    init_info.Device = VuContext::Device;
-    init_info.QueueFamily = Vu::VuSwapChain::FindQueueFamilies(VuContext::PhysicalDevice, surface).graphicsFamily.
+    init_info.Instance = Vu::Instance;
+    init_info.PhysicalDevice = Vu::PhysicalDevice;
+    init_info.Device = Vu::Device;
+    init_info.QueueFamily = Vu::VuSwapChain::FindQueueFamilies(Vu::PhysicalDevice, surface).graphicsFamily.
             value();
-    init_info.Queue = graphicsQueue;
+    init_info.Queue = Vu::graphicsQueue;
     init_info.DescriptorPool = uiDescriptorPool;
     init_info.MinImageCount = 2;
     init_info.ImageCount = 2;
@@ -352,6 +338,6 @@ void VuRenderer::SetupImGui() {
 }
 
 void VuRenderer::MouseCallback(GLFWwindow* window, double xpos, double ypos) {
-    VuContext::MouseX = xpos;
-    VuContext::MouseY = ypos;
+    Vu::MouseX = xpos;
+    Vu::MouseY = ypos;
 }

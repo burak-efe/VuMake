@@ -1,7 +1,7 @@
 #pragma once
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
-#include "VuContext.h"
+#include "Vu.h"
 #include "VuSwapChain.h"
 #include "VuUtils.h"
 
@@ -35,18 +35,18 @@ public:
         dimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         //allocate and create the image
-        vmaCreateImage(VuContext::VmaAllocator, &dimg_info, &dimg_allocinfo, &Image, &VmaAllocation, nullptr);
+        vmaCreateImage(Vu::VmaAllocator, &dimg_info, &dimg_allocinfo, &Image, &VmaAllocation, nullptr);
 
         //build an image-view for the depth image to use for rendering
         VkImageViewCreateInfo dview_info = Vu::CreateImageViewCreateInfo(DepthFormat, Image,
                                                                          VK_IMAGE_ASPECT_DEPTH_BIT);
 
-        VK_CHECK(vkCreateImageView(VuContext::Device, &dview_info, nullptr, &View));
+        VK_CHECK(vkCreateImageView(Vu::Device, &dview_info, nullptr, &View));
     }
 
     void Dispose() {
-        vkDestroyImageView(VuContext::Device, View, nullptr);
-        vmaDestroyImage(VuContext::VmaAllocator, Image, VmaAllocation);
+        vkDestroyImageView(Vu::Device, View, nullptr);
+        vmaDestroyImage(Vu::VmaAllocator, Image, VmaAllocation);
     }
 
     static VkPipelineDepthStencilStateCreateInfo CreateDepthStencilCreateInfo(bool bDepthTest, bool bDepthWrite,

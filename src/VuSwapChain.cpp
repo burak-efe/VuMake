@@ -4,13 +4,13 @@
 
 #include "Common.h"
 #include "VuUtils.h"
-#include "VuContext.h"
+#include "Vu.h"
 //#include "GLFW/glfw3.h"
 
 namespace Vu {
 
     void VuSwapChain::CreateSwapChain(GLFWwindow *window, VkSurfaceKHR surface) {
-        SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(VuContext::PhysicalDevice, surface);
+        SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(Vu::PhysicalDevice, surface);
 
         VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
@@ -34,7 +34,7 @@ namespace Vu {
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        QueueFamilyIndices indices = FindQueueFamilies(VuContext::PhysicalDevice, surface);
+        QueueFamilyIndices indices = FindQueueFamilies(Vu::PhysicalDevice, surface);
         uint32 queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
         if (indices.graphicsFamily != indices.presentFamily) {
@@ -52,24 +52,24 @@ namespace Vu {
 
         createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-        VK_CHECK(vkCreateSwapchainKHR(VuContext::Device, &createInfo, nullptr, &swapChain));
+        VK_CHECK(vkCreateSwapchainKHR(Vu::Device, &createInfo, nullptr, &swapChain));
 
-        vkGetSwapchainImagesKHR(VuContext::Device, swapChain, &imageCount, nullptr);
+        vkGetSwapchainImagesKHR(Vu::Device, swapChain, &imageCount, nullptr);
         swapChainImages.resize(imageCount);
-        vkGetSwapchainImagesKHR(VuContext::Device, swapChain, &imageCount, swapChainImages.data());
+        vkGetSwapchainImagesKHR(Vu::Device, swapChain, &imageCount, swapChainImages.data());
 
         swapChainImageFormat = surfaceFormat.format;
         swapChainExtent = extent;
-        CreateImageViews(VuContext::Device);
+        CreateImageViews(Vu::Device);
     }
 
 
     void VuSwapChain::CleanupSwapchain() {
         for (auto imageView: swapChainImageViews) {
-            vkDestroyImageView(VuContext::Device, imageView, nullptr);
+            vkDestroyImageView(Vu::Device, imageView, nullptr);
         }
 
-        vkDestroySwapchainKHR(VuContext::Device, swapChain, nullptr);
+        vkDestroySwapchainKHR(Vu::Device, swapChain, nullptr);
     }
 
     SwapChainSupportDetails VuSwapChain::QuerySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {

@@ -5,7 +5,7 @@
 #include <stb_image.h>
 
 #include "VuBuffer.h"
-#include "VuContext.h"
+#include "Vu.h"
 #include "VuRenderer.h"
 #include "VuUtils.h"
 #include <filesystem>
@@ -28,7 +28,7 @@ VuTexture::VuTexture(std::filesystem::path path) {
     }
 
     VuBuffer staging{};
-    staging.Init(VuContext::VmaAllocator, texWidth * texHeight, 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    staging.Init(Vu::VmaAllocator, texWidth * texHeight, 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     staging.SetData(pixels, imageSize);
 
     stbi_image_free(pixels);
@@ -71,27 +71,27 @@ VuTexture::VuTexture(std::filesystem::path path) {
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateImage(VuContext::Device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+    if (vkCreateImage(Vu::Device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
         throw std::runtime_error("failed to create image!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(VuContext::Device, image, &memRequirements);
+    vkGetImageMemoryRequirements(Vu::Device, image, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = Vu::findMemoryType(memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(VuContext::Device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(Vu::Device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");
     }
 
-    vkBindImageMemory(VuContext::Device, image, imageMemory, 0);
+    vkBindImageMemory(Vu::Device, image, imageMemory, 0);
 }
 
  void VuTexture::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
-    VkCommandBuffer commandBuffer = VuContext::Renderer->beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = Vu::BeginSingleTimeCommands();
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -134,11 +134,11 @@ VuTexture::VuTexture(std::filesystem::path path) {
         1, &barrier
     );
 
-    VuContext::Renderer->endSingleTimeCommands(commandBuffer);
+    Vu::EndSingleTimeCommands(commandBuffer);
 }
 
  void VuTexture::copyBufferToImage(VkBuffer buffer, VkImage image, uint32 width, uint32 height) {
-    VkCommandBuffer commandBuffer = VuContext::Renderer->beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = Vu::BeginSingleTimeCommands();
 
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
@@ -157,10 +157,10 @@ VuTexture::VuTexture(std::filesystem::path path) {
 
     vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-    VuContext::Renderer->endSingleTimeCommands(commandBuffer);
+    Vu::EndSingleTimeCommands(commandBuffer);
 }
 
 void VuTexture::Dispose() {
-    vkDestroyImage(VuContext::Device, textureImage, nullptr);
-    vkFreeMemory(VuContext::Device, textureImageMemory, nullptr);
+    vkDestroyImage(Vu::Device, textureImage, nullptr);
+    vkFreeMemory(Vu::Device, textureImageMemory, nullptr);
 }

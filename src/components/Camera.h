@@ -3,28 +3,47 @@
 
 struct Camera {
     float fov = 90.0f;
+
     float near = 0.01f;
     float far = 100.0f;
+
     float cameraSpeed = 5.0f;
-    float sensitivity = 0.2f;
-    float yaw = 90.0f; // Yaw is initialized to point along the negative Z axis
+    float sensitivity = 0.01f;
+
+    float yaw = 0.0f;
     float pitch = 0.0f;
-    float lastX = 0, lastY = 0;
+    float roll = 0.0f;
+
+    float lastX = 0;
+    float lastY = 0;
+
     bool firstClick = true;
 
-    // Camera attributes
-    //float3 cameraPos = float3(0.0f, 0.0f, 3.0f);
-    float3 cameraFront = float3(0.0f, 0.0f, 1.0f);
-    float3 cameraUp = float3(0.0f, 1.0f, 0.0f);
+    // void UpdateTransform(Transform t)
+    // {
+    //     t.eulerAngles = new Vector3(pitch, yaw, roll);
+    //     t.position = new Vector3(x, y, z);
+    // }
 
-    void SetYawAndPitchFromQuaternion(const glm::quat& quaternion) {
-        // Convert quaternion to Euler angles (GLM uses radians)
-        glm::vec3 eulerAngles = glm::eulerAngles(quaternion);
 
-        // Extract yaw and pitch from the Euler angles
-        yaw = glm::degrees(eulerAngles.y); // Yaw is the rotation around the Y-axis
-        pitch = glm::degrees(eulerAngles.x); // Pitch is the rotation around the X-axis
-    }
+    // svoid Translate(float3 translation) {
+    //     glm::quat asEuler = glm::quat(float3(yaw,pitch,roll));
+    //     float3 rotatedTranslation = quat_mul(asEuler, translation);
+    //
+    //     x += rotatedTranslation.x;
+    //     y += rotatedTranslation.y;
+    //     z += rotatedTranslation.z;
+    // }
+
+
+
+
+    // void SetYawAndPitchFromQuaternion(const glm::quat& quaternion) {
+    //
+    //     glm::vec3 eulerAngles = glm::eulerAngles(quaternion);
+    //     yaw = glm::degrees(eulerAngles.y);
+    //     pitch = glm::degrees(eulerAngles.x);
+    // }
 
 
 };

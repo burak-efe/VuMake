@@ -1,10 +1,8 @@
 #include "VuRenderer.h"
 
-//#include "glm/glm.hpp"
-//#include "glm/ext/matrix_clip_space.hpp"
-//#include "imgui/imgui_impl_glfw.h"
-//#include "imgui/imgui.h"
 #include "GLFW/glfw3.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
 
 #include "VuSync.h"
 
@@ -13,17 +11,18 @@ bool VuRenderer::ShouldWindowClose() {
 }
 
 void VuRenderer::WaitIdle() {
-    vkDeviceWaitIdle(VuContext::Device);
+    vkDeviceWaitIdle(Vu::Device);
 }
 
 void VuRenderer::BeginFrame() {
     glfwPollEvents();
 
-    vkWaitForFences(VuContext::Device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    vkWaitForFences(Vu::Device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
 
-    VkResult result = vkAcquireNextImageKHR(VuContext::Device, SwapChain.swapChain, UINT64_MAX,
-                                            imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &currentFrameImageIndex);
+    VkResult result = vkAcquireNextImageKHR(
+        Vu::Device, SwapChain.swapChain, UINT64_MAX,
+        imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &currentFrameImageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         RecreateSwapChain();
@@ -32,7 +31,7 @@ void VuRenderer::BeginFrame() {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-    vkResetFences(VuContext::Device, 1, &inFlightFences[currentFrame]);
+    vkResetFences(Vu::Device, 1, &inFlightFences[currentFrame]);
     vkResetCommandBuffer(commandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
     BeginRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
 }
@@ -43,7 +42,8 @@ void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 
 
     VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo));
 
-    // With dynamic rendering there are no subpass dependencies, so we need to take care of proper layout transitions by using barriers
+    // With dynamic rendering there are no subpass dependencies,
+    // so we need to take care of proper layout transitions by using barriers
     // This set of barriers prepares the color and depth images for output
     VuSync::InsertImageMemoryBarrier2(
         commandBuffer,
@@ -65,7 +65,10 @@ void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
         VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-        VkImageSubresourceRange{VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1});
+        VkImageSubresourceRange{
+            VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+            0, 1, 0, 1
+        });
 
 
     // New structures are used to define the attachments used in dynamic rendering
@@ -106,9 +109,9 @@ void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 
 
     VkViewport viewport{};
     viewport.x = 0.0f;
-    viewport.y = 0.0f;
+    viewport.y = (float) SwapChain.swapChainExtent.height;
     viewport.width = (float) SwapChain.swapChainExtent.width;
-    viewport.height = (float) SwapChain.swapChainExtent.height;
+    viewport.height = -(float) SwapChain.swapChainExtent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
@@ -187,7 +190,7 @@ void VuRenderer::EndFrame() {
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    VK_CHECK(vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]));
+    VK_CHECK(vkQueueSubmit(Vu::graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]));
 
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -201,7 +204,7 @@ void VuRenderer::EndFrame() {
 
     presentInfo.pImageIndices = &currentFrameImageIndex;
 
-    auto result = vkQueuePresentKHR(presentQueue, &presentInfo);
+    auto result = vkQueuePresentKHR(Vu::presentQueue, &presentInfo);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         RecreateSwapChain();
@@ -213,25 +216,6 @@ void VuRenderer::EndFrame() {
 }
 
 void VuRenderer::UpdateUniformBuffer(FrameUBO ubo) {
-    // static auto startTime = std::chrono::high_resolution_clock::now();
-    //
-    // auto currentTime = std::chrono::high_resolution_clock::now();
-    // float time = std::chrono::duration<float, std::chrono::seconds::period>
-    //         (currentTime - startTime).count();
-
-    // FrameUBO ubo{};
-    //
-    // ubo.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),
-    //                        glm::vec3(0.0f, 0.0f, 0.0f),
-    //                        glm::vec3(0.0f, 1.0f, 0.0f));
-    //
-    // ubo.proj = glm::perspective(
-    //     glm::radians(90.0f),
-    //     static_cast<float>(SwapChain.swapChainExtent.width) / static_cast<float>(SwapChain.swapChainExtent.height),
-    //     0.1f,
-    //     10.0f);
-    // ubo.proj[1][1] *= -1;
-
     memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
 }
 
@@ -248,45 +232,7 @@ void VuRenderer::RecreateSwapChain() {
         glfwGetFramebufferSize(window, &width, &height);
         glfwWaitEvents();
     }
-    vkDeviceWaitIdle(VuContext::Device);
+    vkDeviceWaitIdle(Vu::Device);
     SwapChain.CleanupSwapchain();
     CreateSwapChain();
-
-    //ImGui_ImplVulkan_SetMinImageCount(SwapChain.imageCount);
-    // ImGui_ImplVulkanH_CreateWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData,
-    //         g_QueueFamily, g_Allocator, g_SwapChainResizeWidth, g_SwapChainResizeHeight, g_MinImageCount);
-    // g_MainWindowData.FrameIndex = 0;
-}
-
-VkCommandBuffer VuRenderer::beginSingleTimeCommands() {
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = commandPool;
-    allocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(VuContext::Device, &allocInfo, &commandBuffer);
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-    return commandBuffer;
-}
-
-void VuRenderer::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
-    vkEndCommandBuffer(commandBuffer);
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
-
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(graphicsQueue);
-
-    vkFreeCommandBuffers(VuContext::Device, commandPool, 1, &commandBuffer);
 }

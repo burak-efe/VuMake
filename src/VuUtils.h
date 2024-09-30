@@ -9,7 +9,7 @@
 #include <vulkan/vulkan.h>
 
 
-#include "VuContext.h"
+#include "Vu.h"
 #include <vk_mem_alloc.h>
 #include "vulkan/vk_enum_string_helper.h"
 
@@ -160,7 +160,7 @@ namespace Vu {
 
     inline uint32 findMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties) {
         VkPhysicalDeviceMemoryProperties memProperties{};
-        vkGetPhysicalDeviceMemoryProperties(VuContext::PhysicalDevice, &memProperties);
+        vkGetPhysicalDeviceMemoryProperties(Vu::PhysicalDevice, &memProperties);
         for (uint32 i = 0; i < memProperties.memoryTypeCount; i++) {
             if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
                 return i;
