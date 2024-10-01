@@ -1,6 +1,7 @@
 #pragma once
 #include <vk_mem_alloc.h>
 
+class GLFWwindow;
 class VuRenderer;
 
 namespace Vu {
@@ -14,6 +15,7 @@ namespace Vu {
     inline VkQueue presentQueue;
 
     inline VuRenderer* Renderer;
+    inline GLFWwindow* window;
 
     inline float DeltaTime = 0;
     inline double MouseX = 0;

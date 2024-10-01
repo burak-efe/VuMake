@@ -1,13 +1,12 @@
 #include "VuRenderer.h"
 
-#include "GLFW/glfw3.h"
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
+
+
 
 #include "VuSync.h"
 
 bool VuRenderer::ShouldWindowClose() {
-    return glfwWindowShouldClose(window);
+    return glfwWindowShouldClose(Vu::window);
 }
 
 void VuRenderer::WaitIdle() {
@@ -227,9 +226,9 @@ void VuRenderer::PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32
 void VuRenderer::RecreateSwapChain() {
     int width = 0;
     int height = 0;
-    glfwGetFramebufferSize(window, &width, &height);
+    glfwGetFramebufferSize(Vu::window, &width, &height);
     while (width == 0 || height == 0) {
-        glfwGetFramebufferSize(window, &width, &height);
+        glfwGetFramebufferSize(Vu::window, &width, &height);
         glfwWaitEvents();
     }
     vkDeviceWaitIdle(Vu::Device);

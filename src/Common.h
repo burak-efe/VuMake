@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "glm/fwd.hpp"
 #include "glm/mat4x4.hpp"
+#include "glm/detail/type_quat.hpp"
 
 using uint8 = uint8_t;
 using uint16 = uint16_t;

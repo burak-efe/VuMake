@@ -20,6 +20,20 @@ add_compile_options(/Bt)
 
 project("VuMake")
 
+set(IMGUI_HEADERS
+
+        #Imgui
+        src/imgui/imgui.h
+        src/imgui/imconfig.h
+        src/imgui/imgui_internal.h
+        src/imgui/imgui_impl_glfw.h
+        src/imgui/imgui_impl_vulkan.h
+        src/imgui/imstb_rectpack.h
+        src/imgui/imstb_textedit.h
+        src/imgui/imstb_truetype.h
+
+)
+
 set(HEADER_FILES
         src/Common.h
         src/VuRenderer.h
@@ -35,18 +49,16 @@ set(HEADER_FILES
         src/VuTexture.h
         src/components/Camera.h
         src/components/Transform.h
-        #Imgui
-        src/imgui/imgui.h
-        src/imgui/imconfig.h
-        src/imgui/imgui_internal.h
-        src/imgui/imgui_impl_glfw.h
-        src/imgui/imgui_impl_vulkan.h
-        src/imgui/imstb_rectpack.h
-        src/imgui/imstb_textedit.h
-        src/imgui/imstb_truetype.h
+        src/systems/FlyCamera.h
+        src/VuMath.h
+        src/systems/RenderSystem.h
+
 )
 
 set(SOURCE_FILES
+        ${HEADER_FILES}
+        ${IMGUI_HEADERS}
+
         src/main.cpp
         src/VuRenderer.cpp
         src/Mesh.cpp
@@ -56,15 +68,16 @@ set(SOURCE_FILES
         src/VuTexture.cpp
         src/VuUtils.cpp
 
+
         src/imgui/imgui.cpp
         src/imgui/imgui_demo.cpp
         src/imgui/imgui_draw.cpp
         src/imgui/imgui_tables.cpp
         src/imgui/imgui_widgets.cpp
+        src/imgui/imgui_impl_glfw.cpp
         src/imgui/imgui_impl_vulkan.cpp
-        src/imgui/imgui_impl_glfw.cpp
-        src/imgui/imgui_impl_glfw.cpp
-        ${HEADER_FILES}
+
+
 )
 
 set(PCH
@@ -73,7 +86,9 @@ set(PCH
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
-target_precompile_headers(${PROJECT_NAME} PRIVATE ${PCH})
+#target_precompile_headers(${PROJECT_NAME} PRIVATE ${PCH})
+target_include_directories(${PROJECT_NAME} PUBLIC components)
+target_include_directories(${PROJECT_NAME} PUBLIC systems)
 
 find_package(Vulkan REQUIRED)
 target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})

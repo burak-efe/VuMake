@@ -1,12 +1,20 @@
 #pragma once
 #define IMGUI_DEFINE_MATH_OPERATORS
 
+
+#include "imgui/imgui.h"
 #include "imgui/imgui_impl_vulkan.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "GLFW/glfw3.h"
+
+
+
 
 #include "Mesh.h"
 #include "VuGraphicsPipeline.h"
 #include "VuSwapChain.h"
 #include "VuDepthStencil.h"
+#include "Vu.h"
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 constexpr uint32 WIDTH = 1280;
@@ -20,7 +28,7 @@ constexpr bool enableValidationLayers = true;
 
 class VuRenderer {
 public:
-    GLFWwindow* window;
+    //GLFWwindow* window;
     //inline static VkCommandPool commandPool;
     //inline static VkQueue graphicsQueue;
     //VkQueue presentQueue;

@@ -2,9 +2,9 @@
 
 #include <algorithm>
 
-#include "Common.h"
-#include "VuUtils.h"
-#include "Vu.h"
+
+
+
 //#include "GLFW/glfw3.h"
 
 namespace Vu {

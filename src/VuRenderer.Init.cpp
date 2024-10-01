@@ -1,9 +1,6 @@
-#include "VkBootstrap.h"
 #include "VuRenderer.h"
 
-#include "GLFW/glfw3.h"
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
+#include "VkBootstrap.h"
 
 void VuRenderer::Init() {
     InitWindow();
@@ -14,9 +11,9 @@ void VuRenderer::InitWindow() {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-    glfwSetCursorPosCallback(window, MouseCallback);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    Vu::window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+    glfwSetCursorPosCallback(Vu::window, MouseCallback);
+    glfwSetInputMode(Vu::window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 void VuRenderer::CreateVulkanMemoryAllocator() {
@@ -28,7 +25,7 @@ void VuRenderer::CreateVulkanMemoryAllocator() {
 }
 
 void VuRenderer::CreateSurface() {
-    VK_CHECK(glfwCreateWindowSurface(Vu::Instance, window, nullptr, &surface));
+    VK_CHECK(glfwCreateWindowSurface(Vu::Instance, Vu::window, nullptr, &surface));
 }
 
 void VuRenderer::InitVulkan() {
@@ -108,7 +105,7 @@ void VuRenderer::InitVulkan() {
 
 void VuRenderer::CreateSwapChain() {
     SwapChain = Vu::VuSwapChain{};
-    SwapChain.CreateSwapChain(window, surface);
+    SwapChain.CreateSwapChain(Vu::window, surface);
 }
 
 void VuRenderer::CreateGraphicsPipeline() {
@@ -269,7 +266,7 @@ void VuRenderer::Dispose() {
     }
     vkDestroySurfaceKHR(Vu::Instance, surface, nullptr);
     vkDestroyInstance(Vu::Instance, nullptr);
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(Vu::window);
     glfwTerminate();
 }
 
@@ -305,7 +302,7 @@ void VuRenderer::SetupImGui() {
     //ImGui::StyleColorsClassic();
 
     // Setup Platform/Renderer bindings
-    ImGui_ImplGlfw_InitForVulkan(window, true);
+    ImGui_ImplGlfw_InitForVulkan(Vu::window, true);
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = Vu::Instance;
     init_info.PhysicalDevice = Vu::PhysicalDevice;

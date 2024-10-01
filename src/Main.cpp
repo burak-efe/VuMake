@@ -9,27 +9,21 @@
 #include <format>
 #include <filesystem>
 #include "flecs.h"
+
 #include "imgui/imgui.h"
-#include <glm/gtc/matrix_transform.hpp>
+//#include "glm/gtc/type_ptr.hpp"
+#include "glm/gtx/string_cast.hpp"
+//#include <glm/gtc/matrix_transform.hpp>
 #include "stb_image.h"
 #include "GLFW/glfw3.h"
+
+#include "Vu.h"
 #include "VuRenderer.h"
+#include "VuMath.h"
 #include "Mesh.h"
 #include "components/Transform.h"
 #include "components/Camera.h"
-#include "glm/gtc/type_ptr.hpp"
-#include "glm/gtx/string_cast.hpp"
-
-static glm::vec3 quat_mul(const glm::quat& q, const glm::vec3& v) {
-    // Extract the vector part of the quaternion
-    glm::vec3 q_xyz = glm::vec3(q.x, q.y, q.z);
-
-    // Compute the cross product of q.xyz and v
-    glm::vec3 t = 2.0f * glm::cross(q_xyz, v);
-
-    // Return the transformed vector
-    return v + q.w * t + glm::cross(q_xyz, t);
-}
+#include "systems/FlyCamera.h"
 
 
 struct MeshRenderer {
@@ -69,74 +63,7 @@ void RunEngine() {
         Transform(float3(0, 0, 4.0f), float3(0, 0, 0), float3(1, 1, 1))
     ).set(Camera{});
 
-    auto cameraMovementSystem = world.system<Transform, Camera>("CameraMovement")
-            .each([](Transform& trs, Camera& cam) {
-
-                float velocity = cam.cameraSpeed;
-                if (glfwGetKey(Vu::Renderer->window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-                    velocity *= 2.0f;
-
-                float3 input{};
-                if (glfwGetKey(Vu::Renderer->window, GLFW_KEY_W) == GLFW_PRESS)
-                    input.z -= 1;
-                if (glfwGetKey(Vu::Renderer->window, GLFW_KEY_S) == GLFW_PRESS)
-                    input.z += 1;
-                if (glfwGetKey(Vu::Renderer->window, GLFW_KEY_A) == GLFW_PRESS)
-                    input.x -= 1;
-                if (glfwGetKey(Vu::Renderer->window, GLFW_KEY_D) == GLFW_PRESS)
-                    input.x += 1;
-                if (glfwGetKey(Vu::Renderer->window, GLFW_KEY_E) == GLFW_PRESS)
-                    input.y += 1;
-                if (glfwGetKey(Vu::Renderer->window, GLFW_KEY_Q) == GLFW_PRESS)
-                    input.y -= 1;
-
-
-                float3 movement = input * velocity * Vu::DeltaTime;
-                if (glfwGetMouseButton(Vu::Renderer->window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
-                    if (cam.firstClick) {
-                        cam.firstClick = false;
-                        return;
-                    }
-                    float xOffset = cam.lastX - Vu::MouseX;
-                    float yOffset = cam.lastY - Vu::MouseY; // Reversed since y-coordinates range from bottom to top
-
-
-                    xOffset *= cam.sensitivity;
-                    yOffset *= cam.sensitivity;
-
-                    cam.yaw += yOffset;
-                    cam.pitch += xOffset;
-
-                    cam.pitch = std::clamp(cam.pitch, -89.0f, 89.0f);
-
-                } else {
-                    cam.firstClick = true;
-                }
-
-                cam.lastX = Vu::MouseX;
-                cam.lastY = Vu::MouseY;
-
-                trs.SetEulerAngles(float3(cam.yaw, cam.pitch, cam.roll));
-
-                glm::quat asEuler = glm::quat(float3(cam.yaw, cam.pitch, cam.roll));
-                float3 rotatedTranslation = quat_mul(asEuler, movement);
-
-                trs.Position.x += rotatedTranslation.x;
-                trs.Position.y += rotatedTranslation.y;
-                trs.Position.z += rotatedTranslation.z;
-
-
-                FrameUBO ubo{};
-                ubo.view = glm::inverse(trs.ToTRS());
-                ubo.proj = glm::perspective(
-                    glm::radians(cam.fov),
-                    static_cast<float>(Vu::Renderer->SwapChain.swapChainExtent.width)
-                    / static_cast<float>(Vu::Renderer->SwapChain.swapChainExtent.height),
-                    cam.near,
-                    cam.far);
-                Vu::Renderer->UpdateUniformBuffer(ubo);
-            });
-
+    auto camSys = AddFlyCameraSystem(world);
 
     auto renderingSystem = world.system<Transform, const MeshRenderer>("Rendering")
             .each([](Transform& trs, const MeshRenderer& meshRenderer) {
@@ -195,7 +122,7 @@ void RunEngine() {
 
         //System Begins
         spinningSystem.run();
-        cameraMovementSystem.run();
+        camSys.run();
 
         //Rendering Begins
         vuRenderer.BeginFrame();
