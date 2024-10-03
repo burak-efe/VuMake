@@ -47,7 +47,7 @@ Mesh::Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator) {
 
     //Position
     auto* positionIt = primitive.findAttribute("POSITION");
-    auto& positionAccessor = asset->accessors[positionIt->second];
+    auto& positionAccessor = asset->accessors[positionIt->accessorIndex];
     auto bufferIndex = positionAccessor.bufferViewIndex.value();
     auto& bufferView = asset->bufferViews.at(bufferIndex);
     auto posBuffer = asset->buffers.at(bufferView.bufferIndex);
@@ -64,7 +64,8 @@ Mesh::Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator) {
 
     //normal
     auto* normalIt = primitive.findAttribute("NORMAL");
-    auto& normalAccessor = asset->accessors[normalIt->second];
+
+    auto& normalAccessor = asset->accessors[normalIt->accessorIndex];
     auto normalbufferIndex = normalAccessor.bufferViewIndex.value();
     auto& normalbufferView = asset->bufferViews.at(normalbufferIndex);
     auto normalDataBuffer = asset->buffers.at(normalbufferView.bufferIndex);
@@ -81,8 +82,8 @@ Mesh::Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator) {
 
 
     //normal
-    fastgltf::Attribute* uvIter = primitive.findAttribute("TEXCOORD_0");
-    auto& uvAccessor = asset->accessors[uvIter->second];
+    auto* uvIter = primitive.findAttribute("TEXCOORD_0");
+    auto& uvAccessor = asset->accessors[uvIter->accessorIndex];
     auto uvbufferIndex = uvAccessor.bufferViewIndex.value();
     auto& uvbufferView = asset->bufferViews.at(uvbufferIndex);
     auto uvDataBuffer = asset->buffers.at(uvbufferView.bufferIndex);

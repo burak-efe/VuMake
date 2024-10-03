@@ -5,6 +5,7 @@ if (POLICY CMP0141)
     cmake_policy(SET CMP0141 NEW)
     set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif ()
+include(FetchContent)
 
 
 function(add_sources_recursively target_name source_dir)
@@ -56,6 +57,15 @@ target_include_directories(${PROJECT_NAME} PUBLIC src/render)
 target_include_directories(${PROJECT_NAME} PUBLIC external/imgui)
 
 
+FetchContent_Declare(
+        fetch_vk_bootstrap
+        GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
+        GIT_TAG        "v1.3.290"
+)
+FetchContent_MakeAvailable(fetch_vk_bootstrap)
+target_link_libraries(${PROJECT_NAME}  PUBLIC vk-bootstrap::vk-bootstrap)
+
+
 add_sources_recursively(${PROJECT_NAME} external/imgui)
 
 
@@ -87,8 +97,8 @@ add_subdirectory(external/flecs)
 target_link_libraries(${PROJECT_NAME} PUBLIC flecs::flecs_static)
 
 
-add_subdirectory(external/vk-bootstrap)
-target_link_libraries(${PROJECT_NAME} PUBLIC vk-bootstrap::vk-bootstrap)
+#add_subdirectory(external/vk-bootstrap)
+#target_link_libraries(${PROJECT_NAME} PUBLIC vk-bootstrap::vk-bootstrap)
 
 
 target_include_directories(${PROJECT_NAME} PUBLIC external/stb)
