@@ -81,7 +81,7 @@ Mesh::Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator) {
 
 
     //normal
-    auto* uvIter = primitive.findAttribute("TEXCOORD_0");
+    fastgltf::Attribute* uvIter = primitive.findAttribute("TEXCOORD_0");
     auto& uvAccessor = asset->accessors[uvIter->second];
     auto uvbufferIndex = uvAccessor.bufferViewIndex.value();
     auto& uvbufferView = asset->bufferViews.at(uvbufferIndex);
