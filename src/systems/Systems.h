@@ -8,8 +8,76 @@
 #include "Vu.h"
 #include "VuMath.h"
 #include "VuRenderer.h"
-#include "components/Camera.h"
-#include "components/Transform.h"
+#include "Camera.h"
+#include "Transform.h"
+#include "Components.h"
+
+
+inline flecs::system RenderingSystem(flecs::world& world) {
+    return world.system<Transform, const MeshRenderer>("Rendering")
+            .each([](Transform& trs, const MeshRenderer& meshRenderer) {
+                Vu::Renderer->RenderMesh(*meshRenderer.Mesh, trs.ToTRS());
+            });
+}
+
+inline flecs::system SpinningSystem(flecs::world& world) {
+
+    return world.system<Transform, Spinn>("SpinningSystem")
+            .each([](Transform& trs, Spinn& spinn) {
+                trs.Rotate(spinn.Axis, spinn.Angle * Vu::DeltaTime);
+            });
+}
+
+inline flecs::system SpinUISystem(flecs::world& world) {
+
+    return world.system<Spinn>("spinUI")
+            .each([](flecs::entity e, Spinn& spinn) {
+
+                if (ImGui::CollapsingHeader("Spin Components")) {
+                    ImGui::SliderFloat(std::format("Radians/perSecond##{0}", e.id()).c_str(), &spinn.Angle, 0.0f, 32.0f);
+                }
+            });
+}
+
+inline flecs::system TransformUISystem(flecs::world& world) {
+    return world.system<Transform>("trsUI")
+            .each([](flecs::iter& it, size_t index, Transform& trs) {
+
+
+                auto e = it.entity(index);
+                bool open = false;
+                if (index == 0) {
+                    open = ImGui::CollapsingHeader("Transform Components");
+                }
+                if (open) {
+
+                    ImGui::Separator();
+                    ImGui::Text(e.name());
+                    ImGui::SliderFloat3(std::format("Position ##{0}", e.id()).c_str(),
+                                        &trs.Position.x, -8.0f, 8.0f);
+                    ImGui::Text(std::format("Rotation {0:}", glm::to_string(trs.Rotation)).c_str());
+                    ImGui::Text(std::format("Scale {0:}", glm::to_string(trs.Scale)).c_str());
+                }
+            });
+}
+
+inline flecs::system CameraUISystem(flecs::world& world) {
+
+    return  world.system<Camera>("camUI")
+        .each([](flecs::entity e, Camera& cam) {
+
+            if (ImGui::CollapsingHeader("Camera Components")) {
+                ImGui::Separator();
+                ImGui::Text(e.name());
+                ImGui::SliderFloat(std::format("FOV##{0}", e.id()).c_str(), &cam.fov, 20.0f, 140.0f);
+
+            }
+        });
+
+}
+
+// inline flecs::system System(flecs::world& world) {
+// }
 
 
 inline flecs::system AddFlyCameraSystem(flecs::world& world) {
@@ -17,6 +85,7 @@ inline flecs::system AddFlyCameraSystem(flecs::world& world) {
     return world.system<Transform, Camera>("CameraMovement")
             .each([](Transform& trs, Camera& cam) {
 
+                assert(Vu::window != nullptr);
                 float velocity = cam.cameraSpeed;
                 if (glfwGetKey(Vu::window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
                     velocity *= 2.0f;

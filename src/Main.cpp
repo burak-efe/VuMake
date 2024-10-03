@@ -6,42 +6,28 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #define GLFW_INCLUDE_VULKAN
 
-#include <format>
 #include <filesystem>
-#include "flecs.h"
+#include <format>
 
-#include "imgui/imgui.h"
-//#include "glm/gtc/type_ptr.hpp"
-#include "glm/gtx/string_cast.hpp"
-//#include <glm/gtc/matrix_transform.hpp>
-#include "stb_image.h"
+#include "flecs.h"
+#include "imgui.h"
 #include "GLFW/glfw3.h"
+#include "stb_image.h"
+#include "glm/gtx/string_cast.hpp"
+
 
 #include "Vu.h"
+
 #include "VuRenderer.h"
-#include "VuMath.h"
+#include "Camera.h"
+#include "Transform.h"
 #include "Mesh.h"
-#include "components/Transform.h"
-#include "components/Camera.h"
-#include "systems/FlyCamera.h"
-
-
-struct MeshRenderer {
-    Mesh* Mesh;
-};
-
-
-struct Spinn {
-    float3 Axis = float3(0, 1, 0);
-    float Angle = glm::radians(360.f);
-};
-
+#include "Systems.h"
+#include "Components.h"
 
 
 void RunEngine() {
-
-    //Vu::Check(VK_TIMEOUT);
-    double prevTime = 0;
+    // double prevTime = 0;
 
     VuRenderer vuRenderer;
     vuRenderer.Init();
@@ -54,7 +40,16 @@ void RunEngine() {
     flecs::world world;
     world.set<VuRenderer>(vuRenderer);
 
+    //Add Systems
+    auto spinningSystem = SpinningSystem(world);
+    auto flyCameraSystem = AddFlyCameraSystem(world);
+    auto renderingSystem = RenderingSystem(world);
+    auto spinUI = SpinUISystem(world);
+    auto trsUI = TransformUISystem(world);
+    auto camUI = CameraUISystem(world);
 
+
+    //Add Entites
     world.entity("Monke2").set(Transform{
         .Position = float3(0, 0, 0)
     }).set(MeshRenderer{&monke}).set(Spinn{});
@@ -63,66 +58,14 @@ void RunEngine() {
         Transform(float3(0, 0, 4.0f), float3(0, 0, 0), float3(1, 1, 1))
     ).set(Camera{});
 
-    auto camSys = AddFlyCameraSystem(world);
 
-    auto renderingSystem = world.system<Transform, const MeshRenderer>("Rendering")
-            .each([](Transform& trs, const MeshRenderer& meshRenderer) {
-                Vu::Renderer->RenderMesh(*meshRenderer.Mesh, trs.ToTRS());
-            });
-
-    auto spinningSystem = world.system<Transform, Spinn>("SpinningSystem")
-            .each([](Transform& trs, Spinn& spinn) {
-                trs.Rotate(spinn.Axis, spinn.Angle * Vu::DeltaTime);
-            });
-
-    auto spinUI = world.system<Spinn>("spinUI")
-            .each([](flecs::entity e, Spinn& spinn) {
-
-                if (ImGui::CollapsingHeader("Spin Components")) {
-                    ImGui::SliderFloat(std::format("Radians/perSecond##{0}", e.id()).c_str(), &spinn.Angle, 0.0f, 32.0f);
-                }
-            });
-
-    auto trsUI = world.system<Transform>("trsUI")
-            .each([](flecs::iter& it, size_t index, Transform& trs) {
-
-
-                auto e = it.entity(index);
-                bool open = false;
-                if (index == 0) {
-                    open = ImGui::CollapsingHeader("Transform Components");
-                }
-                if (open) {
-
-                    ImGui::Separator();
-                    ImGui::Text(e.name());
-                    ImGui::SliderFloat3(std::format("Position ##{0}", e.id()).c_str(),
-                                        &trs.Position.x, -8.0f, 8.0f);
-                    ImGui::Text(std::format("Rotation {0:}", glm::to_string(trs.Rotation)).c_str());
-                    ImGui::Text(std::format("Scale {0:}", glm::to_string(trs.Scale)).c_str());
-                }
-            });
-
-    auto camUI = world.system<Camera>("camUI")
-            .each([](flecs::entity e, Camera& cam) {
-
-                if (ImGui::CollapsingHeader("Camera Components")) {
-                    ImGui::Separator();
-                    ImGui::Text(e.name());
-                    ImGui::SliderFloat(std::format("FOV##{0}", e.id()).c_str(), &cam.fov, 20.0f, 140.0f);
-
-                }
-            });
-
-
+    //Update Loop
     while (!vuRenderer.ShouldWindowClose()) {
-        //deltaTime
-        Vu::DeltaTime = (glfwGetTime() - prevTime);
-        prevTime = glfwGetTime();
+        Vu::UpdateDeltaTime();
 
-        //System Begins
+        //Pre-Render Begins
         spinningSystem.run();
-        camSys.run();
+        flyCameraSystem.run();
 
         //Rendering Begins
         vuRenderer.BeginFrame();

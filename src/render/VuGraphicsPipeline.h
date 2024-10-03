@@ -10,7 +10,10 @@ public:
     VkPipeline Pipeline;
     VkPipelineLayout PipelineLayout;
 
-    void CreateGraphicsPipeline(const VkDescriptorSetLayout descriptorSetLayout, const VuDepthStencil& depthStencil) {
+    void CreateGraphicsPipeline(
+        const VkDescriptorSetLayout descriptorSetLayout,
+        const VuDepthStencil& depthStencil) {
+
         auto vertShaderCode = Vu::ReadFile("shaders/vert.spv");
         auto fragShaderCode = Vu::ReadFile("shaders/frag.spv");
 
@@ -29,7 +32,7 @@ public:
         fragShaderStageInfo.module = fragShaderModule;
         fragShaderStageInfo.pName = "main";
 
-        VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+        auto shaderStages = array{vertShaderStageInfo, fragShaderStageInfo};
 
         auto bindingDescriptions = Mesh::getBindingDescription();
         auto attributeDescriptions = Mesh::getAttributeDescriptions();
@@ -127,7 +130,7 @@ public:
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.pNext = &rfInfo;
         pipelineInfo.stageCount = 2;
-        pipelineInfo.pStages = shaderStages;
+        pipelineInfo.pStages = shaderStages.data();
         pipelineInfo.pVertexInputState = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &inputAssembly;
         pipelineInfo.pViewportState = &viewportState;
@@ -141,7 +144,7 @@ public:
         pipelineInfo.pDepthStencilState = &depth;
 
         VK_CHECK(vkCreateGraphicsPipelines(Vu::Device,VK_NULL_HANDLE,
-            1, &pipelineInfo, nullptr, &Pipeline));
+                                           1, &pipelineInfo, nullptr, &Pipeline));
 
         vkDestroyShaderModule(Vu::Device, fragShaderModule, nullptr);
         vkDestroyShaderModule(Vu::Device, vertShaderModule, nullptr);

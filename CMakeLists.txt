@@ -7,6 +7,25 @@ if (POLICY CMP0141)
 endif ()
 
 
+function(add_sources_recursively target_name source_dir)
+    # Check if the target already exists
+    if(NOT TARGET ${target_name})
+        message(FATAL_ERROR "Target ${target_name} does not exist. Please create the target before calling this function.")
+    endif()
+
+    # Recursively find all source files in the specified directory
+    file(GLOB_RECURSE sources "${source_dir}/*.cpp" "${source_dir}/*.c" "${source_dir}/*.h" "${source_dir}/*.hpp")
+
+    # Check if any source files were found
+    if(sources)
+        # Add the found sources to the specified target
+        target_sources(${target_name} PRIVATE ${sources})
+    else()
+        message(WARNING "No source files found in directory: ${source_dir}")
+    endif()
+endfunction()
+
+
 add_compile_options(/Bt)
 #add_compile_options(/Yc)
 ##add_compile_options(/Yu)
@@ -20,75 +39,25 @@ add_compile_options(/Bt)
 
 project("VuMake")
 
-set(IMGUI_HEADERS
+#set(PCH
+#        src/Common.h
+#)
 
-        #Imgui
-        src/imgui/imgui.h
-        src/imgui/imconfig.h
-        src/imgui/imgui_internal.h
-        src/imgui/imgui_impl_glfw.h
-        src/imgui/imgui_impl_vulkan.h
-        src/imgui/imstb_rectpack.h
-        src/imgui/imstb_textedit.h
-        src/imgui/imstb_truetype.h
-
-)
-
-set(HEADER_FILES
-        src/Common.h
-        src/VuRenderer.h
-        src/Mesh.h
-        src/VuBuffer.h
-        src/VuUtils.h
-        src/VuSwapChain.h
-        src/VuSync.h
-        src/VuShader.h
-        src/Vu.h
-        src/VuDepthStencil.h
-        src/VuGraphicsPipeline.h
-        src/VuTexture.h
-        src/components/Camera.h
-        src/components/Transform.h
-        src/systems/FlyCamera.h
-        src/VuMath.h
-        src/systems/RenderSystem.h
-
-)
-
-set(SOURCE_FILES
-        ${HEADER_FILES}
-        ${IMGUI_HEADERS}
-
-        src/main.cpp
-        src/VuRenderer.cpp
-        src/Mesh.cpp
-        src/VuBuffer.cpp
-        src/VuSwapChain.cpp
-        src/VuRenderer.Init.cpp
-        src/VuTexture.cpp
-        src/VuUtils.cpp
-
-
-        src/imgui/imgui.cpp
-        src/imgui/imgui_demo.cpp
-        src/imgui/imgui_draw.cpp
-        src/imgui/imgui_tables.cpp
-        src/imgui/imgui_widgets.cpp
-        src/imgui/imgui_impl_glfw.cpp
-        src/imgui/imgui_impl_vulkan.cpp
-
-
-)
-
-set(PCH
-        src/Common.h
-)
-
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+add_executable(${PROJECT_NAME})
+add_sources_recursively(${PROJECT_NAME} src)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
+
 #target_precompile_headers(${PROJECT_NAME} PRIVATE ${PCH})
-target_include_directories(${PROJECT_NAME} PUBLIC components)
-target_include_directories(${PROJECT_NAME} PUBLIC systems)
+
+target_include_directories(${PROJECT_NAME} PUBLIC src/common)
+target_include_directories(${PROJECT_NAME} PUBLIC src/components)
+target_include_directories(${PROJECT_NAME} PUBLIC src/systems)
+target_include_directories(${PROJECT_NAME} PUBLIC src/render)
+target_include_directories(${PROJECT_NAME} PUBLIC external/imgui)
+
+
+add_sources_recursively(${PROJECT_NAME} external/imgui)
+
 
 find_package(Vulkan REQUIRED)
 target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})

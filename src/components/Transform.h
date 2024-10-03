@@ -15,12 +15,11 @@ struct Transform {
 
     float4x4 ToTRS() {
         // Initialize transform to the identity matrix
-        float4x4 transform = glm::identity<float4x4>();
+        auto transform = glm::identity<float4x4>();
 
-        // Apply translation
         transform = glm::translate(transform, Position);
 
-        //glm::mat4(Position);
+
 
         // Apply rotation from quaternion
         transform *= glm::toMat4(Rotation);

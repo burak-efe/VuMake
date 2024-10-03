@@ -11,8 +11,6 @@ namespace std::filesystem {
     class path;
 }
 
-//#include <filesystem>
-
 class Mesh {
 public:
     uint32 VertexCount;
@@ -26,7 +24,7 @@ public:
     VuBuffer uvBuffer;
     VuBuffer indexBuffer;
 
-    Mesh(std::filesystem::path gltfPath, VmaAllocator& allocator);
+    Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator);
 
     static std::array<VkVertexInputBindingDescription, 3> getBindingDescription();
 

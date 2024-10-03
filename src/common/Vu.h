@@ -1,7 +1,7 @@
 #pragma once
 #include <vk_mem_alloc.h>
+#include "GLFW/glfw3.h"
 
-class GLFWwindow;
 class VuRenderer;
 
 namespace Vu {
@@ -18,6 +18,7 @@ namespace Vu {
     inline GLFWwindow* window;
 
     inline float DeltaTime = 0;
+    inline float PrevTime = 0;
     inline double MouseX = 0;
     inline double MouseY = 0;
 
@@ -54,5 +55,12 @@ namespace Vu {
 
         vkFreeCommandBuffers(Vu::Device, Vu::commandPool, 1, &commandBuffer);
     }
+
+    inline void UpdateDeltaTime() {
+        //deltaTime
+        DeltaTime = (glfwGetTime() - PrevTime);
+        PrevTime = glfwGetTime();
+    }
+
 
 }

@@ -19,3 +19,6 @@ using float3 = glm::vec3;
 using float4 = glm::vec4;
 using quat = glm::quat;
 using float4x4 = glm::mat4;
+
+
+using array = std::array;

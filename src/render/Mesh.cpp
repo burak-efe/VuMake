@@ -1,4 +1,5 @@
 #include "Mesh.h"
+#include "Common.h"
 #include <iostream>
 #include <fastgltf/core.hpp>
 #include <fastgltf/tools.hpp>
@@ -9,7 +10,7 @@
 #include "vk_mem_alloc.h"
 #include <filesystem>
 
-Mesh::Mesh(std::filesystem::path gltfPath, VmaAllocator& allocator) {
+Mesh::Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator) {
 
     fastgltf::Parser parser;
 
