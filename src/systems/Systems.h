@@ -13,14 +13,14 @@
 #include "Components.h"
 
 
-inline flecs::system RenderingSystem(flecs::world& world) {
+inline flecs::system AddRenderingSystem(flecs::world& world) {
     return world.system<Transform, const MeshRenderer>("Rendering")
             .each([](Transform& trs, const MeshRenderer& meshRenderer) {
                 Vu::Renderer->RenderMesh(*meshRenderer.Mesh, trs.ToTRS());
             });
 }
 
-inline flecs::system SpinningSystem(flecs::world& world) {
+inline flecs::system AddSpinningSystem(flecs::world& world) {
 
     return world.system<Transform, Spinn>("SpinningSystem")
             .each([](Transform& trs, Spinn& spinn) {
@@ -28,7 +28,7 @@ inline flecs::system SpinningSystem(flecs::world& world) {
             });
 }
 
-inline flecs::system SpinUISystem(flecs::world& world) {
+inline flecs::system AddSpinUISystem(flecs::world& world) {
 
     return world.system<Spinn>("spinUI")
             .each([](flecs::entity e, Spinn& spinn) {
@@ -39,7 +39,7 @@ inline flecs::system SpinUISystem(flecs::world& world) {
             });
 }
 
-inline flecs::system TransformUISystem(flecs::world& world) {
+inline flecs::system AddTransformUISystem(flecs::world& world) {
     return world.system<Transform>("trsUI")
             .each([](flecs::iter& it, size_t index, Transform& trs) {
 
@@ -61,7 +61,7 @@ inline flecs::system TransformUISystem(flecs::world& world) {
             });
 }
 
-inline flecs::system CameraUISystem(flecs::world& world) {
+inline flecs::system AddCameraUISystem(flecs::world& world) {
 
     return  world.system<Camera>("camUI")
         .each([](flecs::entity e, Camera& cam) {

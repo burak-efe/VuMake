@@ -1,33 +1,31 @@
 #define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 #define VMA_IMPLEMENTATION
+#include "vk_mem_alloc.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
 #define GLFW_INCLUDE_VULKAN
 
+#include "Vu.h"
+
 #include <filesystem>
 #include <format>
 
 #include "flecs.h"
 #include "imgui.h"
-#include "GLFW/glfw3.h"
-#include "stb_image.h"
 #include "glm/gtx/string_cast.hpp"
 
-
-#include "Vu.h"
-
-#include "VuRenderer.h"
 #include "Camera.h"
-#include "Transform.h"
+#include "Components.h"
 #include "Mesh.h"
 #include "Systems.h"
-#include "Components.h"
+#include "Transform.h"
+#include "VuRenderer.h"
 
 
 void RunEngine() {
-    // double prevTime = 0;
 
     VuRenderer vuRenderer;
     vuRenderer.Init();
@@ -41,15 +39,15 @@ void RunEngine() {
     world.set<VuRenderer>(vuRenderer);
 
     //Add Systems
-    auto spinningSystem = SpinningSystem(world);
+    auto spinningSystem = AddSpinningSystem(world);
     auto flyCameraSystem = AddFlyCameraSystem(world);
-    auto renderingSystem = RenderingSystem(world);
-    auto spinUI = SpinUISystem(world);
-    auto trsUI = TransformUISystem(world);
-    auto camUI = CameraUISystem(world);
+    auto renderingSystem = AddRenderingSystem(world);
+    auto spinUI = AddSpinUISystem(world);
+    auto trsUI = AddTransformUISystem(world);
+    auto camUI = AddCameraUISystem(world);
 
 
-    //Add Entites
+    //Add Entities
     world.entity("Monke2").set(Transform{
         .Position = float3(0, 0, 0)
     }).set(MeshRenderer{&monke}).set(Spinn{});
@@ -67,24 +65,30 @@ void RunEngine() {
         spinningSystem.run();
         flyCameraSystem.run();
 
-        //Rendering Begins
-        vuRenderer.BeginFrame();
-        renderingSystem.run();
+        //Rendering
+        {
 
-        vuRenderer.BeginImgui();
+            vuRenderer.BeginFrame();
+            renderingSystem.run();
 
-        ImGui::Text(
-            std::format("Frame Per Second: {0:.0f}", (1.0f / Vu::DeltaTime))
-            .c_str());
-        ImGui::Text(std::format("Frame Time as miliSec: {0:.4}", Vu::DeltaTime * 1000).c_str());
-        spinUI.run();
-        trsUI.run();
-        camUI.run();
-        vuRenderer.EndImgui();
+            //UI
+            {
+                vuRenderer.BeginImgui();
+                ImGui::Text(
+                    std::format("Frame Per Second: {0:.0f}", (1.0f / Vu::DeltaTime))
+                    .c_str());
+                ImGui::Text(std::format("Frame Time as miliSec: {0:.4}", Vu::DeltaTime * 1000).c_str());
+                spinUI.run();
+                trsUI.run();
+                camUI.run();
+                vuRenderer.EndImgui();
+            }
 
-        vuRenderer.EndFrame();
+            vuRenderer.EndFrame();
+        }
     }
 
+    //Mission complete
     vuRenderer.WaitIdle();
     monke.Dispose();
     vuRenderer.Dispose();
