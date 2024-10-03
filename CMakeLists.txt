@@ -19,7 +19,7 @@ function(add_sources_recursively target_name source_dir)
     # Check if any source files were found
     if(sources)
         # Add the found sources to the specified target
-        target_sources(${target_name} PRIVATE ${sources})
+        target_sources(${target_name} PUBLIC ${sources})
     else()
         message(WARNING "No source files found in directory: ${source_dir}")
     endif()

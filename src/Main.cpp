@@ -1,7 +1,6 @@
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 #define VMA_IMPLEMENTATION
-#include "vk_mem_alloc.h"
+//#include "vk_mem_alloc.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -9,6 +8,7 @@
 #define GLFW_INCLUDE_VULKAN
 
 #include "Vu.h"
+#include <stb_image.h>
 
 #include <filesystem>
 #include <format>
@@ -23,6 +23,7 @@
 #include "Systems.h"
 #include "Transform.h"
 #include "VuRenderer.h"
+//#include "VuTexture.h"
 
 
 void RunEngine() {
