@@ -111,13 +111,12 @@ It's a CMAKE project with C++ 23 required.
 - clone the repo
 - open the project as a CMAKE project
 - hit the build button
-- compile shaders with vulkan sdk (sorry about that)
 - done
 
 ### Hardest parts of this project in most to least  order
 - Adding Some Dependencies to CMAKE
 - Understanding Vulkan Descriptors
-- Initilazing vulkan
+- Initializing Vulkan
 - Loading GLTF
 - Adding Imgui
 - Using Vulkan Mem Allocator
