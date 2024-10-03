@@ -65,6 +65,20 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(fetch_vk_bootstrap)
 target_link_libraries(${PROJECT_NAME}  PUBLIC vk-bootstrap::vk-bootstrap)
 
+FetchContent_Declare(
+        fetch_glfw
+        GIT_REPOSITORY https://github.com/glfw/glfw.git
+        GIT_TAG        3.4
+)
+
+set(GLFW_BUILD_DOCS OFF CACHE BOOL  "")
+set(GLFW_INSTALL OFF CACHE BOOL  "")
+
+FetchContent_MakeAvailable(fetch_glfw)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
+target_link_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 add_sources_recursively(${PROJECT_NAME} external/imgui)
 
@@ -78,10 +92,10 @@ add_subdirectory(external/fastgltf)
 target_link_libraries(${PROJECT_NAME} PRIVATE fastgltf)
 
 
-add_subdirectory(external/glfw)
-target_link_directories(${PROJECT_NAME} PRIVATE external/glfw/src)
-target_include_directories(${PROJECT_NAME} PUBLIC external/glfw/include)
-target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
+#add_subdirectory(external/glfw)
+#target_link_directories(${PROJECT_NAME} PRIVATE external/glfw/src)
+#target_include_directories(${PROJECT_NAME} PUBLIC external/glfw/include)
+#target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
 
 
 add_subdirectory(external/glm)
