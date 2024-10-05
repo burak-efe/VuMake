@@ -2,13 +2,11 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 
 
+#include "Common.h"
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_glfw.h"
 #include "GLFW/glfw3.h"
-
-
-
 
 #include "Mesh.h"
 #include "VuGraphicsPipeline.h"
@@ -38,12 +36,16 @@ public:
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
+
+
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
     std::vector<void *> uniformBuffersMapped;
-    VkDescriptorPool descriptorPool;
+
+    //VkDescriptorPool descriptorPool;
     VkDescriptorSetLayout descriptorSetLayout;
-    std::vector<VkDescriptorSet> descriptorSets;
+    //std::vector<VkDescriptorSet> descriptorSets;
+
     VkSurfaceKHR surface;
     Vu::VuSwapChain SwapChain;
     VuDepthStencil DepthStencil;
@@ -52,6 +54,8 @@ public:
     uint32 currentFrame = 0;
     uint32 currentFrameImageIndex = 0;
     VkDescriptorPool uiDescriptorPool;
+
+    VkBuffer descriptorBuffer;
 
     void Init();
 
@@ -108,9 +112,30 @@ public:
     void CreateUniformBuffers();
 
     void SetupImGui();
+
     static void MouseCallback(GLFWwindow* window, double xpos, double ypos);
 
+    VkDeviceSize aligned_size(VkDeviceSize value, VkDeviceSize alignment) {
+        return (value + alignment - 1) & ~(alignment - 1);
+    }
 
+    VkDeviceAddress get_device_address(VkDevice device, VkBuffer buffer) {
+        VkBufferDeviceAddressInfo deviceAdressInfo{};
+        deviceAdressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        deviceAdressInfo.buffer = buffer;
+        uint64_t address = vkGetBufferDeviceAddress(device, &deviceAdressInfo);
+        return address;
+    }
+
+    struct DescriptorInfo {
+        VkDeviceSize layoutOffset;
+        VkDeviceSize layoutSize;
+        VkDescriptorSetLayout setLayout;
+        VkDeviceAddress bufferDeviceAddress;
+        VuBuffer buffer;
+    };
+
+    DescriptorInfo uniformDescriptor{};
 
 
 };

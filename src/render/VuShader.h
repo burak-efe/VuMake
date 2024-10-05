@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <vulkan/vulkan_core.h>
+#include "Common.h"
 
 #include "VuUtils.h"
 

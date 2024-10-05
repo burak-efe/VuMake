@@ -1,12 +1,34 @@
-#define STB_IMAGE_IMPLEMENTATION
+#define VK_NO_PROTOTYPES
+#define VOLK_IMPLEMENTATION
+
+#include "volk.h"
+
+
 #define VMA_IMPLEMENTATION
-//#include "vk_mem_alloc.h"
+#define VMA_STATIC_VULKAN_FUNCTIONS 0
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
+#include "vk_mem_alloc.h"
+
+
+#define IMGUI_IMPL_VULKAN_USE_VOLK
+#define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
+#include "imgui.h"
+#include "imgui_impl_vulkan.h"
+#include "imgui_impl_glfw.h"
+
+
+#include "Common.h"
+
+#define STB_IMAGE_IMPLEMENTATION
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
 #define GLFW_INCLUDE_VULKAN
 
+
+#include <cassert>
+#include <cstdlib>
 #include "Vu.h"
 #include <stb_image.h>
 
@@ -14,7 +36,6 @@
 #include <format>
 
 #include "flecs.h"
-#include "imgui.h"
 #include "glm/gtx/string_cast.hpp"
 
 #include "Camera.h"
@@ -99,5 +120,6 @@ void RunEngine() {
 
 int main() {
     RunEngine();
+
     return EXIT_SUCCESS;
 }

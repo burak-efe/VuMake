@@ -6,11 +6,9 @@
 #include <fstream>
 #include <stacktrace>
 #include <iostream>
-#include <vulkan/vulkan.h>
 
 
 #include "Vu.h"
-#include <vk_mem_alloc.h>
 #include "vulkan/vk_enum_string_helper.h"
 
 __declspec(noinline) static void VK_CHECK(VkResult res) {

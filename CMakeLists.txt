@@ -10,20 +10,20 @@ include(FetchContent)
 
 function(add_sources_recursively target_name source_dir)
     # Check if the target already exists
-    if(NOT TARGET ${target_name})
+    if (NOT TARGET ${target_name})
         message(FATAL_ERROR "Target ${target_name} does not exist. Please create the target before calling this function.")
-    endif()
+    endif ()
 
     # Recursively find all source files in the specified directory
     file(GLOB_RECURSE sources "${source_dir}/*.cpp" "${source_dir}/*.c" "${source_dir}/*.h" "${source_dir}/*.hpp")
 
     # Check if any source files were found
-    if(sources)
+    if (sources)
         # Add the found sources to the specified target
         target_sources(${target_name} PUBLIC ${sources})
-    else()
+    else ()
         message(WARNING "No source files found in directory: ${source_dir}")
-    endif()
+    endif ()
 endfunction()
 
 
@@ -37,86 +37,80 @@ add_compile_options(/Bt)
 #add_compile_options(/MD)
 #add_compile_options(/d2cgsummary)
 
-
-project("VuMake")
-
 #set(PCH
 #        src/Common.h
 #)
-
-add_executable(${PROJECT_NAME})
-add_sources_recursively(${PROJECT_NAME} src)
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
-
 #target_precompile_headers(${PROJECT_NAME} PRIVATE ${PCH})
-
+####################################################################################################
+project("VuMake")
+####################################################################################################
+add_executable(${PROJECT_NAME})
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
+add_sources_recursively(${PROJECT_NAME} src)
+#target_sources(${PROJECT_NAME} PUBLIC src/main.cpp)
+####################################################################################################
 target_include_directories(${PROJECT_NAME} PUBLIC src/common)
 target_include_directories(${PROJECT_NAME} PUBLIC src/components)
 target_include_directories(${PROJECT_NAME} PUBLIC src/systems)
 target_include_directories(${PROJECT_NAME} PUBLIC src/render)
 target_include_directories(${PROJECT_NAME} PUBLIC external/imgui)
-
-
+####################################################################################################
 FetchContent_Declare(
         fetch_vk_bootstrap
         GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
-        GIT_TAG        "v1.3.290"
+        GIT_TAG v1.3.290
 )
 FetchContent_MakeAvailable(fetch_vk_bootstrap)
-target_link_libraries(${PROJECT_NAME}  PUBLIC vk-bootstrap::vk-bootstrap)
+target_link_libraries(${PROJECT_NAME} PUBLIC vk-bootstrap::vk-bootstrap)
+####################################################################################################
+FetchContent_Declare(
+        fetch_volk
+        GIT_REPOSITORY https://github.com/zeux/volk
+        GIT_TAG vulkan-sdk-1.3.290.0
+)
+FetchContent_MakeAvailable(fetch_volk)
 
+if (WIN32)
+    set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR)
+endif ()
+
+#target_link_library(${PROJECT_NAME} PUBLIC volk_headers)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC volk)
+####################################################################################################
 FetchContent_Declare(
         fetch_glfw
         GIT_REPOSITORY https://github.com/glfw/glfw.git
-        GIT_TAG        3.4
+        GIT_TAG 3.4
 )
-
-set(GLFW_BUILD_DOCS OFF CACHE BOOL  "")
-set(GLFW_INSTALL OFF CACHE BOOL  "")
-
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "")
+set(GLFW_INSTALL OFF CACHE BOOL "")
 FetchContent_MakeAvailable(fetch_glfw)
-
 target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
 target_link_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include)
-
+####################################################################################################
 add_sources_recursively(${PROJECT_NAME} external/imgui)
-
-
-find_package(Vulkan REQUIRED)
-target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${Vulkan_LIBRARIES})
-
-
+####################################################################################################
+#find_package(Vulkan REQUIRED)
+#target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
+#target_link_libraries(${PROJECT_NAME} PUBLIC ${Vulkan_LIBRARIES})
+####################################################################################################
 add_subdirectory(external/fastgltf)
 target_link_libraries(${PROJECT_NAME} PRIVATE fastgltf)
-
-
-#add_subdirectory(external/glfw)
-#target_link_directories(${PROJECT_NAME} PRIVATE external/glfw/src)
-#target_include_directories(${PROJECT_NAME} PUBLIC external/glfw/include)
-#target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
-
-
+####################################################################################################
 add_subdirectory(external/glm)
 target_link_libraries(${PROJECT_NAME} PUBLIC glm::glm)
-
-
+####################################################################################################
 add_subdirectory(external/VulkanMemoryAllocator)
 target_include_directories(${PROJECT_NAME} SYSTEM INTERFACE external/VulkanMemoryAllocator/include)
 target_link_libraries(${PROJECT_NAME} PUBLIC VulkanMemoryAllocator)
-
-
+####################################################################################################
 add_subdirectory(external/flecs)
 target_link_libraries(${PROJECT_NAME} PUBLIC flecs::flecs_static)
-
-
-#add_subdirectory(external/vk-bootstrap)
-#target_link_libraries(${PROJECT_NAME} PUBLIC vk-bootstrap::vk-bootstrap)
-
-
+####################################################################################################
 target_include_directories(${PROJECT_NAME} PUBLIC external/stb)
-
+####################################################################################################
 #Copy asset files to build directory
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory

@@ -13,8 +13,6 @@
 VuTexture::VuTexture(std::filesystem::path path) {
 
 
-
-
     //Image
     int texWidth;
     int texHeight;
@@ -27,8 +25,8 @@ VuTexture::VuTexture(std::filesystem::path path) {
         throw std::runtime_error("failed to load texture image!");
     }
 
-    VuBuffer staging{};
-    staging.Init(Vu::VmaAllocator, texWidth * texHeight, 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VuBuffer staging(Vu::VmaAllocator, texWidth * texHeight, 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     staging.SetData(pixels, imageSize);
 
     stbi_image_free(pixels);
@@ -54,8 +52,8 @@ VuTexture::VuTexture(std::filesystem::path path) {
 
 }
 
- void VuTexture::createImage(uint32 width, uint32 height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-                                   VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+void VuTexture::createImage(uint32 width, uint32 height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+                            VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -90,7 +88,7 @@ VuTexture::VuTexture(std::filesystem::path path) {
     vkBindImageMemory(Vu::Device, image, imageMemory, 0);
 }
 
- void VuTexture::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+void VuTexture::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
     VkCommandBuffer commandBuffer = Vu::BeginSingleTimeCommands();
 
     VkImageMemoryBarrier barrier{};
@@ -137,7 +135,7 @@ VuTexture::VuTexture(std::filesystem::path path) {
     Vu::EndSingleTimeCommands(commandBuffer);
 }
 
- void VuTexture::copyBufferToImage(VkBuffer buffer, VkImage image, uint32 width, uint32 height) {
+void VuTexture::copyBufferToImage(VkBuffer buffer, VkImage image, uint32 width, uint32 height) {
     VkCommandBuffer commandBuffer = Vu::BeginSingleTimeCommands();
 
     VkBufferImageCopy region{};

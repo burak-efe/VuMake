@@ -1,7 +1,5 @@
 #include "VuRenderer.h"
 
-#include "VkBootstrap.h"
-
 void VuRenderer::Init() {
     InitWindow();
     InitVulkan();
@@ -17,10 +15,39 @@ void VuRenderer::InitWindow() {
 }
 
 void VuRenderer::CreateVulkanMemoryAllocator() {
-    VmaAllocatorCreateInfo createInfo{};
-    createInfo.device = Vu::Device;
-    createInfo.physicalDevice = Vu::PhysicalDevice;
-    createInfo.instance = Vu::Instance;
+
+
+    VmaVulkanFunctions vma_vulkan_func{
+        .vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties,
+        .vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties,
+        .vkAllocateMemory = vkAllocateMemory,
+        .vkFreeMemory = vkFreeMemory,
+        .vkMapMemory = vkMapMemory,
+        .vkUnmapMemory = vkUnmapMemory,
+        .vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges,
+        .vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges,
+        .vkBindBufferMemory = vkBindBufferMemory,
+        .vkBindImageMemory = vkBindImageMemory,
+        .vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements,
+        .vkGetImageMemoryRequirements = vkGetImageMemoryRequirements,
+        .vkCreateBuffer = vkCreateBuffer,
+        .vkDestroyBuffer = vkDestroyBuffer,
+        .vkCreateImage = vkCreateImage,
+        .vkDestroyImage = vkDestroyImage,
+        .vkCmdCopyBuffer = vkCmdCopyBuffer,
+
+    };
+
+
+
+    VmaAllocatorCreateInfo createInfo{
+        .flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
+        .physicalDevice = Vu::PhysicalDevice,
+        .device = Vu::Device,
+        .pVulkanFunctions = &vma_vulkan_func,
+        .instance = Vu::Instance,
+    };
+
     VK_CHECK(vmaCreateAllocator(&createInfo, &Vu::VmaAllocator));
 }
 
@@ -29,6 +56,9 @@ void VuRenderer::CreateSurface() {
 }
 
 void VuRenderer::InitVulkan() {
+    //volk
+    VK_CHECK(volkInitialize());
+
     // Vulkan Instance
     vkb::InstanceBuilder builder;
     auto inst_ret = builder.set_app_name("VuMake")
@@ -43,6 +73,8 @@ void VuRenderer::InitVulkan() {
     Vu::Instance = vkb_inst.instance;
     debugMessenger = vkb_inst.debug_messenger;
 
+    volkLoadInstance(vkb_inst);
+
     //Surface
     CreateSurface();
 
@@ -51,27 +83,46 @@ void VuRenderer::InitVulkan() {
     auto phys_ret = selector.set_surface(surface)
             .set_minimum_version(1, 3) // require a vulkan 1.3 capable device
             .require_dedicated_transfer_queue()
+            .add_required_extension(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)
             .select();
     if (!phys_ret) {
         std::cerr << "Failed to select Vulkan Physical Device. Error: " << phys_ret.error().message() << "\n";
     }
 
     Vu::PhysicalDevice = phys_ret.value().physical_device;
-    // Enable Dynamic Rendering
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_feature{
+
+    //Device Extensions
+    VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
         .dynamicRendering = VK_TRUE,
     };
     //Enbale Sync2
-    VkPhysicalDeviceSynchronization2Features sync2{
+    VkPhysicalDeviceSynchronization2Features sync2Features{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
         .synchronization2 = VK_TRUE,
+    };
+
+    VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES,
+        .bufferDeviceAddress = VK_TRUE
+    };
+
+
+    VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptorBufferFeatures{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT,
+        .descriptorBuffer = VK_TRUE,
     };
 
 
     // Device
     vkb::DeviceBuilder device_builder{phys_ret.value()};
-    auto dev_ret = device_builder.add_pNext(&dynamic_rendering_feature).add_pNext(&sync2).build();
+    auto dev_ret = device_builder
+            .add_pNext(&dynamicRenderingFeatures)
+            .add_pNext(&sync2Features)
+            .add_pNext(&bufferDeviceAddressFeatures)
+            .add_pNext(&descriptorBufferFeatures)
+
+            .build();
     if (!dev_ret) {
         std::cerr << "Failed to create Vulkan device. Error: " << dev_ret.error().message() << "\n";
     }
@@ -181,55 +232,117 @@ void VuRenderer::CreateDescriptorSetLayout() {
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT,
         .bindingCount = 1,
         .pBindings = &uboLayoutBinding,
     };
 
     VK_CHECK(vkCreateDescriptorSetLayout(Vu::Device, &layoutInfo, nullptr, &descriptorSetLayout));
+
+
+    ////////////
+
+    VkDeviceSize maxObjectCount = 256;
+
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT,
+    };
+
+    VkPhysicalDeviceProperties2KHR device_properties{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR,
+        .pNext = &descriptor_buffer_properties,
+
+    };
+    vkGetPhysicalDeviceProperties2(Vu::PhysicalDevice, &device_properties);
+
+
+    vkGetDescriptorSetLayoutSizeEXT(Vu::Device, descriptorSetLayout, &uniformDescriptor.layoutSize);
+
+    VkDeviceSize descriptor_buffer_offset = 0;
+    vkGetDescriptorSetLayoutBindingOffsetEXT(Vu::Device, descriptorSetLayout, 0U, &descriptor_buffer_offset);
+
+    uniformDescriptor.layoutSize = aligned_size(uniformDescriptor.layoutSize, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
+
+
+    VuBuffer descriptorBuffer(Vu::VmaAllocator, maxObjectCount, uniformDescriptor.layoutSize,
+                              VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                              VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+
+    uniformDescriptor.buffer = descriptorBuffer;
+
+    VkBufferDeviceAddressInfo deviceAdressInfo{};
+    deviceAdressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    deviceAdressInfo.buffer = descriptorBuffer.VulkanBuffer;
+    uniformDescriptor.bufferDeviceAddress = vkGetBufferDeviceAddress(Vu::Device, &deviceAdressInfo);
+
+
+    VkDescriptorGetInfoEXT descriptorInfo{};
+    descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
+
+
+    // For uniform buffers we only need buffer device addresses
+    // Global uniform buffer
+    //char* uniformDescriptorBufPtr = (char*)uniformDescriptor.buffer.mapped;
+
+    VkDescriptorAddressInfoEXT descriptorAddressInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
+        .address = uniformDescriptor.bufferDeviceAddress,
+        .range = uniformDescriptor.layoutSize,
+        .format = VK_FORMAT_UNDEFINED,
+    };
+
+    void* mapped = nullptr;
+    vmaMapMemory(Vu::VmaAllocator, descriptorBuffer.Allocation, &mapped);
+    // auto ptr = vkMapMemory(Vu::Device,descriptorBuffer.Allocation 0, descriptorBuffer.Stride * descriptorBuffer.Lenght,)
+
+    descriptorInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorInfo.data.pCombinedImageSampler = nullptr;
+    descriptorInfo.data.pUniformBuffer = &descriptorAddressInfo;
+    vkGetDescriptorEXT(Vu::Device, &descriptorInfo, descriptor_buffer_properties.uniformBufferDescriptorSize, mapped);
 }
 
 void VuRenderer::CreateDescriptorPool() {
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
-    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-    VK_CHECK(vkCreateDescriptorPool(Vu::Device, &poolInfo, nullptr, &descriptorPool));
+    // VkDescriptorPoolSize poolSize{};
+    // poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    // poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    //
+    // VkDescriptorPoolCreateInfo poolInfo{};
+    // poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    // poolInfo.poolSizeCount = 1;
+    // poolInfo.pPoolSizes = &poolSize;
+    // poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    //
+    // VK_CHECK(vkCreateDescriptorPool(Vu::Device, &poolInfo, nullptr, &descriptorPool));
 }
 
 void VuRenderer::CreateDescriptorSets() {
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    allocInfo.pSetLayouts = layouts.data();
-
-    descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-    VK_CHECK(vkAllocateDescriptorSets(Vu::Device, &allocInfo, descriptorSets.data()));
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = uniformBuffers[i];
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(FrameUBO);
-
-        VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = descriptorSets[i];
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pBufferInfo = &bufferInfo;
-
-        vkUpdateDescriptorSets(Vu::Device, 1, &descriptorWrite, 0, nullptr);
-    }
+    // std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+    // VkDescriptorSetAllocateInfo allocInfo{};
+    // allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    // allocInfo.descriptorPool = descriptorPool;
+    // allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    // allocInfo.pSetLayouts = layouts.data();
+    //
+    // descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+    // VK_CHECK(vkAllocateDescriptorSets(Vu::Device, &allocInfo, descriptorSets.data()));
+    //
+    // for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    //     VkDescriptorBufferInfo bufferInfo{};
+    //     bufferInfo.buffer = uniformBuffers[i];
+    //     bufferInfo.offset = 0;
+    //     bufferInfo.range = sizeof(FrameUBO);
+    //
+    //     VkWriteDescriptorSet descriptorWrite{};
+    //     descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    //     descriptorWrite.dstSet = descriptorSets[i];
+    //     descriptorWrite.dstBinding = 0;
+    //     descriptorWrite.dstArrayElement = 0;
+    //     descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    //     descriptorWrite.descriptorCount = 1;
+    //     descriptorWrite.pBufferInfo = &bufferInfo;
+    //
+    //     vkUpdateDescriptorSets(Vu::Device, 1, &descriptorWrite, 0, nullptr);
+    // }
 }
 
 void VuRenderer::Dispose() {
@@ -241,7 +354,7 @@ void VuRenderer::Dispose() {
 
     SwapChain.CleanupSwapchain();
     vkDestroyDescriptorSetLayout(Vu::Device, descriptorSetLayout, nullptr);
-    vkDestroyDescriptorPool(Vu::Device, descriptorPool, nullptr);
+    //vkDestroyDescriptorPool(Vu::Device, descriptorPool, nullptr);
     vkDestroyDescriptorPool(Vu::Device, uiDescriptorPool, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -301,7 +414,7 @@ void VuRenderer::SetupImGui() {
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
 
-    // Setup Platform/Renderer bindings
+    //ImGui_ImplVulkan_LoadFunctions()
     ImGui_ImplGlfw_InitForVulkan(Vu::window, true);
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = Vu::Instance;

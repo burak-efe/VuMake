@@ -3,7 +3,9 @@
 #include "VuUtils.h"
 
 
-VkResult VuBuffer::Init(VmaAllocator allocator, uint32 lenght, uint32 stride, VkBufferUsageFlags usage) {
+VuBuffer::VuBuffer(VmaAllocator allocator, uint32 lenght, uint32 stride, const VkBufferUsageFlags usage,
+    VmaAllocationCreateFlags flags) {
+
     Allocator = allocator;
     Stride = stride;
     Lenght = lenght;
@@ -19,10 +21,12 @@ VkResult VuBuffer::Init(VmaAllocator allocator, uint32 lenght, uint32 stride, Vk
 
     VmaAllocationCreateInfo allocCreateInfo = {};
     allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-    allocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    allocCreateInfo.flags = flags;
 
-    VmaAllocationInfo allocInfo;
-    return vmaCreateBuffer(allocator, &bufCreateInfo, &allocCreateInfo, &VulkanBuffer, &Allocation, &allocInfo);
+    //VmaAllocationInfo allocInfo;
+    VK_CHECK(vmaCreateBuffer(allocator, &bufCreateInfo, &allocCreateInfo, &VulkanBuffer, &Allocation, &AllocationInfo));
+
+    //return vmaCreateBuffer(allocator, &bufCreateInfo, &allocCreateInfo, &VulkanBuffer, &Allocation, &allocInfo);
 }
 
 void VuBuffer::Dispose() {

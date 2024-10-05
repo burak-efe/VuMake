@@ -1,14 +1,11 @@
 #pragma once
 
 #include <vector>
-#include <vulkan/vulkan.h>
-
-#include "GLFW/glfw3.h"
-
 #include "Common.h"
 #include "VuUtils.h"
+#include "GLFW/glfw3.h"
 
-#include "Vu.h"
+
 //class GLFWwindow;
 
 namespace Vu {
