@@ -9,8 +9,9 @@ public:
     VmaAllocator Allocator;
     VmaAllocation Allocation;
     VmaAllocationInfo AllocationInfo;
-    uint32 Lenght;
-    uint32 Stride;
+    VkDeviceSize Lenght;
+    VkDeviceSize Stride;
+    //void* mapPtr;
 
     VuBuffer() = default;
 
@@ -22,10 +23,13 @@ public:
     void Dispose();
 
     VkResult SetData(void* data, VkDeviceSize byteSize);
+    VkResult SetDataWithOffset(void* data, VkDeviceSize offset, VkDeviceSize byteSize);
 
     static void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-    static void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer,
-                             VkDeviceMemory& bufferMemory);
+    VkDeviceSize GetDeviceSize();
+
+    // static void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer,
+    //                          VkDeviceMemory& bufferMemory);
 
 };

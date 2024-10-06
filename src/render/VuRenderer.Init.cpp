@@ -39,7 +39,6 @@ void VuRenderer::CreateVulkanMemoryAllocator() {
     };
 
 
-
     VmaAllocatorCreateInfo createInfo{
         .flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
         .physicalDevice = Vu::PhysicalDevice,
@@ -143,10 +142,10 @@ void VuRenderer::InitVulkan() {
     CreateSwapChain();
     DepthStencil = VuDepthStencil{};
     DepthStencil.Create(SwapChain);
+    CreateUniformBuffers();
     CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
     CreateCommandPool();
-    CreateUniformBuffers();
     CreateDescriptorPool();
     CreateDescriptorSets();
     CreateCommandBuffers();
@@ -205,20 +204,13 @@ void VuRenderer::CreateSyncObjects() {
 }
 
 void VuRenderer::CreateUniformBuffers() {
-    uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-    uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-    uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDeviceSize bufferSize = sizeof(FrameUBO);
-        VuBuffer::CreateBuffer(
-            bufferSize,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            uniformBuffers[i],
-            uniformBuffersMemory[i]);
 
-        vkMapMemory(Vu::Device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
+        uniformBuffers[i] = VuBuffer(Vu::VmaAllocator, 1, bufferSize,
+                                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                                     VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
     }
 }
 
@@ -257,48 +249,47 @@ void VuRenderer::CreateDescriptorSetLayout() {
 
 
     vkGetDescriptorSetLayoutSizeEXT(Vu::Device, descriptorSetLayout, &uniformDescriptor.layoutSize);
+    uniformDescriptor.layoutSize = aligned_size(uniformDescriptor.layoutSize, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
 
     VkDeviceSize descriptor_buffer_offset = 0;
     vkGetDescriptorSetLayoutBindingOffsetEXT(Vu::Device, descriptorSetLayout, 0U, &descriptor_buffer_offset);
 
-    uniformDescriptor.layoutSize = aligned_size(uniformDescriptor.layoutSize, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
+    uniformDescriptor.layoutOffset = descriptor_buffer_offset;
 
 
     VuBuffer descriptorBuffer(Vu::VmaAllocator, maxObjectCount, uniformDescriptor.layoutSize,
-                              VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                              VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+                              VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT
+                              | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
 
-    uniformDescriptor.buffer = descriptorBuffer;
+                              VMA_ALLOCATION_CREATE_MAPPED_BIT
+                              | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
-    VkBufferDeviceAddressInfo deviceAdressInfo{};
-    deviceAdressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-    deviceAdressInfo.buffer = descriptorBuffer.VulkanBuffer;
-    uniformDescriptor.bufferDeviceAddress = vkGetBufferDeviceAddress(Vu::Device, &deviceAdressInfo);
+    uniformDescriptor.descriptorBuffer = descriptorBuffer;
+
+    uniformDescriptor.bufferDeviceAddress = get_device_address(Vu::Device, uniformDescriptor.descriptorBuffer.VulkanBuffer);
+
+    void* descriptorBufferMapped = nullptr;
+    vmaMapMemory(Vu::VmaAllocator, uniformDescriptor.descriptorBuffer.Allocation, &descriptorBufferMapped);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+
+        VkDescriptorAddressInfoEXT descriptorAddressInfo{};
+        descriptorAddressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
+        descriptorAddressInfo.format = VK_FORMAT_UNDEFINED;
+        descriptorAddressInfo.address = get_device_address(Vu::Device, uniformBuffers[i].VulkanBuffer);
+        descriptorAddressInfo.range = uniformBuffers[i].GetDeviceSize();
+
+        VkDescriptorGetInfoEXT descriptorInfo{};
+        descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
+        descriptorInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorInfo.data.pCombinedImageSampler = nullptr;
+        descriptorInfo.data.pUniformBuffer = &descriptorAddressInfo;
+
+        vkGetDescriptorEXT(Vu::Device, &descriptorInfo, descriptor_buffer_properties.uniformBufferDescriptorSize,
+                          (char *) descriptorBufferMapped + (uniformDescriptor.layoutSize * i) + uniformDescriptor.layoutOffset);
+    }
 
 
-    VkDescriptorGetInfoEXT descriptorInfo{};
-    descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
-
-
-    // For uniform buffers we only need buffer device addresses
-    // Global uniform buffer
-    //char* uniformDescriptorBufPtr = (char*)uniformDescriptor.buffer.mapped;
-
-    VkDescriptorAddressInfoEXT descriptorAddressInfo{
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
-        .address = uniformDescriptor.bufferDeviceAddress,
-        .range = uniformDescriptor.layoutSize,
-        .format = VK_FORMAT_UNDEFINED,
-    };
-
-    void* mapped = nullptr;
-    vmaMapMemory(Vu::VmaAllocator, descriptorBuffer.Allocation, &mapped);
-    // auto ptr = vkMapMemory(Vu::Device,descriptorBuffer.Allocation 0, descriptorBuffer.Stride * descriptorBuffer.Lenght,)
-
-    descriptorInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorInfo.data.pCombinedImageSampler = nullptr;
-    descriptorInfo.data.pUniformBuffer = &descriptorAddressInfo;
-    vkGetDescriptorEXT(Vu::Device, &descriptorInfo, descriptor_buffer_properties.uniformBufferDescriptorSize, mapped);
 }
 
 void VuRenderer::CreateDescriptorPool() {
@@ -364,9 +355,12 @@ void VuRenderer::Dispose() {
     }
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyBuffer(Vu::Device, uniformBuffers[i], nullptr);
-        vkFreeMemory(Vu::Device, uniformBuffersMemory[i], nullptr);
+        uniformBuffers[i].Dispose();
+        // vkDestroyBuffer(Vu::Device, uniformBuffers[i], nullptr);
+        // vkFreeMemory(Vu::Device, uniformBuffersMemory[i], nullptr);
     }
+    vmaUnmapMemory(Vu::VmaAllocator,uniformDescriptor.descriptorBuffer.Allocation);
+    uniformDescriptor.descriptorBuffer.Dispose();
 
     DepthStencil.Dispose(); //renderPass.Dispose();
     DebugPipeline.Dispose();

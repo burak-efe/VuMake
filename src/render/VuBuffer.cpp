@@ -4,7 +4,7 @@
 
 
 VuBuffer::VuBuffer(VmaAllocator allocator, uint32 lenght, uint32 stride, const VkBufferUsageFlags usage,
-    VmaAllocationCreateFlags flags) {
+                   VmaAllocationCreateFlags flags) {
 
     Allocator = allocator;
     Stride = stride;
@@ -38,30 +38,34 @@ VkResult VuBuffer::SetData(void* data, VkDeviceSize byteSize) {
     return vmaCopyMemoryToAllocation(Allocator, data, Allocation, 0, byteSize);
 }
 
-
-void VuBuffer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                            VkMemoryPropertyFlags properties, VkBuffer& buffer,
-                            VkDeviceMemory& bufferMemory) {
-    VkBufferCreateInfo bufferInfo{};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = size;
-    bufferInfo.usage = usage;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    VK_CHECK(vkCreateBuffer(Vu::Device, &bufferInfo, nullptr, &buffer));
-
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(Vu::Device, buffer, &memRequirements);
-
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = Vu::findMemoryType(memRequirements.memoryTypeBits, properties);
-
-    VK_CHECK(vkAllocateMemory(Vu::Device, &allocInfo, nullptr, &bufferMemory));
-
-    vkBindBufferMemory(Vu::Device, buffer, bufferMemory, 0);
+VkResult VuBuffer::SetDataWithOffset(void* data, VkDeviceSize offset, VkDeviceSize byteSize) {
+    return vmaCopyMemoryToAllocation(Allocator, data, Allocation, offset, byteSize);
 }
+
+
+// void VuBuffer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+//                             VkMemoryPropertyFlags properties, VkBuffer& buffer,
+//                             VkDeviceMemory& bufferMemory) {
+//     VkBufferCreateInfo bufferInfo{};
+//     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+//     bufferInfo.size = size;
+//     bufferInfo.usage = usage;
+//     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+//
+//     VK_CHECK(vkCreateBuffer(Vu::Device, &bufferInfo, nullptr, &buffer));
+//
+//     VkMemoryRequirements memRequirements;
+//     vkGetBufferMemoryRequirements(Vu::Device, buffer, &memRequirements);
+//
+//     VkMemoryAllocateInfo allocInfo{};
+//     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+//     allocInfo.allocationSize = memRequirements.size;
+//     allocInfo.memoryTypeIndex = Vu::findMemoryType(memRequirements.memoryTypeBits, properties);
+//
+//     VK_CHECK(vkAllocateMemory(Vu::Device, &allocInfo, nullptr, &bufferMemory));
+//
+//     vkBindBufferMemory(Vu::Device, buffer, bufferMemory, 0);
+// }
 
 
 void VuBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
@@ -97,4 +101,8 @@ void VuBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize s
     //     vkQueueSubmit(Vu::graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     //     vkQueueWaitIdle(Vu::graphicsQueue);
     //     vkFreeCommandBuffers(Vu::Device, Vu::commandPool, 1, &commandBuffer);
+}
+
+VkDeviceSize VuBuffer::GetDeviceSize() {
+    return Lenght * Stride;
 }

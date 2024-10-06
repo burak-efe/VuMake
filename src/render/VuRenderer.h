@@ -37,10 +37,11 @@ public:
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
 
+    std::array<VuBuffer, MAX_FRAMES_IN_FLIGHT> uniformBuffers;
 
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBuffersMemory;
-    std::vector<void *> uniformBuffersMapped;
+    // std::vector<VkBuffer> uniformBuffers;
+    // std::vector<VkDeviceMemory> uniformBuffersMemory;
+    // std::vector<void *> uniformBuffersMapped;
 
     //VkDescriptorPool descriptorPool;
     VkDescriptorSetLayout descriptorSetLayout;
@@ -55,7 +56,7 @@ public:
     uint32 currentFrameImageIndex = 0;
     VkDescriptorPool uiDescriptorPool;
 
-    VkBuffer descriptorBuffer;
+    //VkBuffer descriptorBuffer;
 
     void Init();
 
@@ -132,7 +133,7 @@ public:
         VkDeviceSize layoutSize;
         VkDescriptorSetLayout setLayout;
         VkDeviceAddress bufferDeviceAddress;
-        VuBuffer buffer;
+        VuBuffer descriptorBuffer;
     };
 
     DescriptorInfo uniformDescriptor{};

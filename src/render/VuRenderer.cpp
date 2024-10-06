@@ -156,21 +156,21 @@ void VuRenderer::RenderMesh(::Mesh& mesh, glm::mat4 trs) {
 
     // Descriptor buffer bindings
     // Set 0 = uniform buffer
-    VkDescriptorBufferBindingInfoEXT bindingInfo {
+    VkDescriptorBufferBindingInfoEXT bindingInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT,
         .address = uniformDescriptor.bufferDeviceAddress,
-        .usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT|  VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT
+        .usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT
     };
 
     vkCmdBindDescriptorBuffersEXT(commandBuffer, 1, &bindingInfo);
 
     uint32_t bufferIndexUbo = 0;
-    VkDeviceSize bufferOffset = 0;
+    VkDeviceSize bufferOffset = uniformDescriptor.layoutSize * currentFrame;
 
     // Global Matrices (set 0)
     bufferOffset = 0;
-    vkCmdSetDescriptorBufferOffsetsEXT(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, DebugPipeline.PipelineLayout, 0, 1, &bufferIndexUbo,
-                                       &bufferOffset);
+    vkCmdSetDescriptorBufferOffsetsEXT(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                       DebugPipeline.PipelineLayout, 0, 1, &bufferIndexUbo, &bufferOffset);
 
 
     vkCmdDrawIndexed(commandBuffer, mesh.indexBuffer.Lenght, 1, 0, 0, 0);
@@ -232,7 +232,9 @@ void VuRenderer::EndFrame() {
 }
 
 void VuRenderer::UpdateUniformBuffer(FrameUBO ubo) {
-    memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
+    uniformBuffers[currentFrame].SetData(&ubo, sizeof(ubo));
+    //memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
+    //TODO
 }
 
 void VuRenderer::PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32_t size, const void* pValues) {

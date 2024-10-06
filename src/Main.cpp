@@ -27,13 +27,11 @@
 #define GLFW_INCLUDE_VULKAN
 
 
-#include <cassert>
-#include <cstdlib>
+
 #include "Vu.h"
 #include <stb_image.h>
 
 #include <filesystem>
-#include <format>
 
 #include "flecs.h"
 #include "glm/gtx/string_cast.hpp"

@@ -37,16 +37,17 @@ add_compile_options(/Bt)
 #add_compile_options(/MD)
 #add_compile_options(/d2cgsummary)
 
-#set(PCH
-#        src/Common.h
-#)
-#target_precompile_headers(${PROJECT_NAME} PRIVATE ${PCH})
+set(PCH
+        src/common/Common.h
+)
 ####################################################################################################
 project("VuMake")
-####################################################################################################
 add_executable(${PROJECT_NAME})
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
+####################################################################################################
 add_sources_recursively(${PROJECT_NAME} src)
+target_precompile_headers(${PROJECT_NAME} PUBLIC ${PCH})
+target_precompile_headers(${PROJECT_NAME} PUBLIC <chrono> <string> <filesystem> <array>)
 #target_sources(${PROJECT_NAME} PUBLIC src/main.cpp)
 ####################################################################################################
 target_include_directories(${PROJECT_NAME} PUBLIC src/common)
