@@ -43,6 +43,7 @@
 #include "Transform.h"
 #include "VuRenderer.h"
 //#include "VuTexture.h"
+#include "spirv_reflect.h"
 
 
 void RunEngine() {
@@ -50,7 +51,7 @@ void RunEngine() {
     VuRenderer vuRenderer;
     vuRenderer.Init();
     Vu::Renderer = &vuRenderer;
-    Mesh monke("shaders/monka500k.glb", Vu::VmaAllocator);
+    Mesh monke("shaders/monka.gltf", Vu::VmaAllocator);
 
     //auto texture = VuTexture("shaders/uvChecker.png");
     //texture.Dispose();

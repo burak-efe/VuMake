@@ -224,116 +224,116 @@ void VuRenderer::CreateDescriptorSetLayout() {
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT,
+        .flags = 0,
         .bindingCount = 1,
         .pBindings = &uboLayoutBinding,
     };
 
     VK_CHECK(vkCreateDescriptorSetLayout(Vu::Device, &layoutInfo, nullptr, &descriptorSetLayout));
-
-
-    ////////////
-
-    VkDeviceSize maxObjectCount = 256;
-
-    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT,
-    };
-
-    VkPhysicalDeviceProperties2KHR device_properties{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR,
-        .pNext = &descriptor_buffer_properties,
-
-    };
-    vkGetPhysicalDeviceProperties2(Vu::PhysicalDevice, &device_properties);
-
-
-    vkGetDescriptorSetLayoutSizeEXT(Vu::Device, descriptorSetLayout, &uniformDescriptor.layoutSize);
-    uniformDescriptor.layoutSize = aligned_size(uniformDescriptor.layoutSize, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
-
-    VkDeviceSize descriptor_buffer_offset = 0;
-    vkGetDescriptorSetLayoutBindingOffsetEXT(Vu::Device, descriptorSetLayout, 0U, &descriptor_buffer_offset);
-
-    uniformDescriptor.layoutOffset = descriptor_buffer_offset;
-
-
-    VuBuffer descriptorBuffer(Vu::VmaAllocator, maxObjectCount, uniformDescriptor.layoutSize,
-                              VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT
-                              | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-
-                              VMA_ALLOCATION_CREATE_MAPPED_BIT
-                              | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-
-    uniformDescriptor.descriptorBuffer = descriptorBuffer;
-
-    uniformDescriptor.bufferDeviceAddress = get_device_address(Vu::Device, uniformDescriptor.descriptorBuffer.VulkanBuffer);
-
-    void* descriptorBufferMapped = nullptr;
-    vmaMapMemory(Vu::VmaAllocator, uniformDescriptor.descriptorBuffer.Allocation, &descriptorBufferMapped);
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-
-        VkDescriptorAddressInfoEXT descriptorAddressInfo{};
-        descriptorAddressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
-        descriptorAddressInfo.format = VK_FORMAT_UNDEFINED;
-        descriptorAddressInfo.address = get_device_address(Vu::Device, uniformBuffers[i].VulkanBuffer);
-        descriptorAddressInfo.range = uniformBuffers[i].GetDeviceSize();
-
-        VkDescriptorGetInfoEXT descriptorInfo{};
-        descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
-        descriptorInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorInfo.data.pCombinedImageSampler = nullptr;
-        descriptorInfo.data.pUniformBuffer = &descriptorAddressInfo;
-
-        vkGetDescriptorEXT(Vu::Device, &descriptorInfo, descriptor_buffer_properties.uniformBufferDescriptorSize,
-                          (char *) descriptorBufferMapped + (uniformDescriptor.layoutSize * i) + uniformDescriptor.layoutOffset);
-    }
+    //
+    //
+    // ////////////
+    //
+    // VkDeviceSize maxObjectCount = 256;
+    //
+    // VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties{
+    //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT,
+    // };
+    //
+    // VkPhysicalDeviceProperties2KHR device_properties{
+    //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR,
+    //     .pNext = &descriptor_buffer_properties,
+    //
+    // };
+    // vkGetPhysicalDeviceProperties2(Vu::PhysicalDevice, &device_properties);
+    //
+    //
+    // vkGetDescriptorSetLayoutSizeEXT(Vu::Device, descriptorSetLayout, &uniformDescriptor.layoutSize);
+    // uniformDescriptor.layoutSize = aligned_size(uniformDescriptor.layoutSize, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
+    //
+    // VkDeviceSize descriptor_buffer_offset = 0;
+    // vkGetDescriptorSetLayoutBindingOffsetEXT(Vu::Device, descriptorSetLayout, 0U, &descriptor_buffer_offset);
+    //
+    // uniformDescriptor.layoutOffset = descriptor_buffer_offset;
+    //
+    //
+    // VuBuffer descriptorBuffer(Vu::VmaAllocator, maxObjectCount, uniformDescriptor.layoutSize,
+    //                           VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT
+    //                           | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+    //
+    //                           VMA_ALLOCATION_CREATE_MAPPED_BIT
+    //                           | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+    //
+    // uniformDescriptor.descriptorBuffer = descriptorBuffer;
+    //
+    // uniformDescriptor.bufferDeviceAddress = get_device_address(Vu::Device, uniformDescriptor.descriptorBuffer.VulkanBuffer);
+    //
+    // void* descriptorBufferMapped = nullptr;
+    // vmaMapMemory(Vu::VmaAllocator, uniformDescriptor.descriptorBuffer.Allocation, &descriptorBufferMapped);
+    //
+    // for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    //
+    //     VkDescriptorAddressInfoEXT descriptorAddressInfo{};
+    //     descriptorAddressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
+    //     descriptorAddressInfo.format = VK_FORMAT_UNDEFINED;
+    //     descriptorAddressInfo.address = get_device_address(Vu::Device, uniformBuffers[i].VulkanBuffer);
+    //     descriptorAddressInfo.range = uniformBuffers[i].GetDeviceSize();
+    //
+    //     VkDescriptorGetInfoEXT descriptorInfo{};
+    //     descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
+    //     descriptorInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    //     descriptorInfo.data.pCombinedImageSampler = nullptr;
+    //     descriptorInfo.data.pUniformBuffer = &descriptorAddressInfo;
+    //
+    //     vkGetDescriptorEXT(Vu::Device, &descriptorInfo, descriptor_buffer_properties.uniformBufferDescriptorSize,
+    //                       (char *) descriptorBufferMapped + (uniformDescriptor.layoutSize * i) + uniformDescriptor.layoutOffset);
+    // }
 
 
 }
 
 void VuRenderer::CreateDescriptorPool() {
-    // VkDescriptorPoolSize poolSize{};
-    // poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    // poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    //
-    // VkDescriptorPoolCreateInfo poolInfo{};
-    // poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    // poolInfo.poolSizeCount = 1;
-    // poolInfo.pPoolSizes = &poolSize;
-    // poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    //
-    // VK_CHECK(vkCreateDescriptorPool(Vu::Device, &poolInfo, nullptr, &descriptorPool));
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+    VK_CHECK(vkCreateDescriptorPool(Vu::Device, &poolInfo, nullptr, &descriptorPool));
 }
 
 void VuRenderer::CreateDescriptorSets() {
-    // std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
-    // VkDescriptorSetAllocateInfo allocInfo{};
-    // allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    // allocInfo.descriptorPool = descriptorPool;
-    // allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    // allocInfo.pSetLayouts = layouts.data();
-    //
-    // descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-    // VK_CHECK(vkAllocateDescriptorSets(Vu::Device, &allocInfo, descriptorSets.data()));
-    //
-    // for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    //     VkDescriptorBufferInfo bufferInfo{};
-    //     bufferInfo.buffer = uniformBuffers[i];
-    //     bufferInfo.offset = 0;
-    //     bufferInfo.range = sizeof(FrameUBO);
-    //
-    //     VkWriteDescriptorSet descriptorWrite{};
-    //     descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    //     descriptorWrite.dstSet = descriptorSets[i];
-    //     descriptorWrite.dstBinding = 0;
-    //     descriptorWrite.dstArrayElement = 0;
-    //     descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    //     descriptorWrite.descriptorCount = 1;
-    //     descriptorWrite.pBufferInfo = &bufferInfo;
-    //
-    //     vkUpdateDescriptorSets(Vu::Device, 1, &descriptorWrite, 0, nullptr);
-    // }
+    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    allocInfo.pSetLayouts = layouts.data();
+
+    descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+    VK_CHECK(vkAllocateDescriptorSets(Vu::Device, &allocInfo, descriptorSets.data()));
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = uniformBuffers[i].VulkanBuffer;
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(FrameUBO);
+
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = descriptorSets[i];
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+
+        vkUpdateDescriptorSets(Vu::Device, 1, &descriptorWrite, 0, nullptr);
+    }
 }
 
 void VuRenderer::Dispose() {
@@ -345,7 +345,7 @@ void VuRenderer::Dispose() {
 
     SwapChain.CleanupSwapchain();
     vkDestroyDescriptorSetLayout(Vu::Device, descriptorSetLayout, nullptr);
-    //vkDestroyDescriptorPool(Vu::Device, descriptorPool, nullptr);
+    vkDestroyDescriptorPool(Vu::Device, descriptorPool, nullptr);
     vkDestroyDescriptorPool(Vu::Device, uiDescriptorPool, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -359,8 +359,8 @@ void VuRenderer::Dispose() {
         // vkDestroyBuffer(Vu::Device, uniformBuffers[i], nullptr);
         // vkFreeMemory(Vu::Device, uniformBuffersMemory[i], nullptr);
     }
-    vmaUnmapMemory(Vu::VmaAllocator,uniformDescriptor.descriptorBuffer.Allocation);
-    uniformDescriptor.descriptorBuffer.Dispose();
+    //vmaUnmapMemory(Vu::VmaAllocator,uniformDescriptor.descriptorBuffer.Allocation);
+    //uniformDescriptor.descriptorBuffer.Dispose();
 
     DepthStencil.Dispose(); //renderPass.Dispose();
     DebugPipeline.Dispose();

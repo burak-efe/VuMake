@@ -39,13 +39,10 @@ public:
 
     std::array<VuBuffer, MAX_FRAMES_IN_FLIGHT> uniformBuffers;
 
-    // std::vector<VkBuffer> uniformBuffers;
-    // std::vector<VkDeviceMemory> uniformBuffersMemory;
-    // std::vector<void *> uniformBuffersMapped;
-
-    //VkDescriptorPool descriptorPool;
+    VkDescriptorPool descriptorPool;
+    VkDescriptorPool uiDescriptorPool;
     VkDescriptorSetLayout descriptorSetLayout;
-    //std::vector<VkDescriptorSet> descriptorSets;
+    std::vector<VkDescriptorSet> descriptorSets;
 
     VkSurfaceKHR surface;
     Vu::VuSwapChain SwapChain;
@@ -54,9 +51,7 @@ public:
     ImGui_ImplVulkanH_Window g_MainWindowData;
     uint32 currentFrame = 0;
     uint32 currentFrameImageIndex = 0;
-    VkDescriptorPool uiDescriptorPool;
 
-    //VkBuffer descriptorBuffer;
 
     void Init();
 
@@ -128,15 +123,15 @@ public:
         return address;
     }
 
-    struct DescriptorInfo {
-        VkDeviceSize layoutOffset;
-        VkDeviceSize layoutSize;
-        VkDescriptorSetLayout setLayout;
-        VkDeviceAddress bufferDeviceAddress;
-        VuBuffer descriptorBuffer;
-    };
-
-    DescriptorInfo uniformDescriptor{};
+    // struct DescriptorInfo {
+    //     VkDeviceSize layoutOffset;
+    //     VkDeviceSize layoutSize;
+    //     VkDescriptorSetLayout setLayout;
+    //     VkDeviceAddress bufferDeviceAddress;
+    //     VuBuffer descriptorBuffer;
+    // };
+    //
+    // DescriptorInfo uniformDescriptor{};
 
 
 };

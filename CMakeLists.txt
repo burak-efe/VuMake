@@ -65,6 +65,17 @@ FetchContent_MakeAvailable(fetch_vk_bootstrap)
 target_link_libraries(${PROJECT_NAME} PUBLIC vk-bootstrap::vk-bootstrap)
 ####################################################################################################
 FetchContent_Declare(
+        fetch_spirv_reflect
+        GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Reflect
+        GIT_TAG vulkan-sdk-1.3.296
+)
+FetchContent_MakeAvailable(fetch_spirv_reflect)
+target_sources(${PROJECT_NAME} PUBLIC ${fetch_spirv_reflect_SOURCE_DIR}/spirv_reflect.h)
+target_sources(${PROJECT_NAME} PUBLIC ${fetch_spirv_reflect_SOURCE_DIR}/spirv_reflect.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC ${fetch_spirv_reflect_SOURCE_DIR})
+#target_link_libraries(${PROJECT_NAME} PUBLIC fetch_spirv_reflect)
+####################################################################################################
+FetchContent_Declare(
         fetch_volk
         GIT_REPOSITORY https://github.com/zeux/volk
         GIT_TAG vulkan-sdk-1.3.290.0
@@ -88,8 +99,8 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "")
 set(GLFW_INSTALL OFF CACHE BOOL "")
 FetchContent_MakeAvailable(fetch_glfw)
 target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
-target_link_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include)
+#target_link_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
+#target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include)
 ####################################################################################################
 add_sources_recursively(${PROJECT_NAME} external/imgui)
 ####################################################################################################
