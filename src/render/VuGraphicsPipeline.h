@@ -11,9 +11,10 @@ public:
     VkPipeline Pipeline;
     VkPipelineLayout PipelineLayout;
 
-    void CreateGraphicsPipeline(
-        const VkDescriptorSetLayout descriptorSetLayout,
-        const VuDepthStencil& depthStencil) {
+    void CreateGraphicsPipeline(VkDescriptorSetLayout& descriptorSetLayout,VkRenderPass& renderPass) {
+
+        assert(descriptorSetLayout != VK_NULL_HANDLE);
+        assert(renderPass != VK_NULL_HANDLE);
 
         auto vertShaderCode = Vu::ReadFile("shaders/vert.spv");
         auto fragShaderCode = Vu::ReadFile("shaders/frag.spv");
@@ -113,24 +114,22 @@ public:
         VK_CHECK(vkCreatePipelineLayout(Vu::Device, &pipelineLayoutInfo, nullptr, &PipelineLayout));
 
         //For dynamic rendering
-        VkFormat colorRenderingFormats[1] = {
-            VK_FORMAT_B8G8R8A8_SRGB,
-        };
-
-        VkPipelineRenderingCreateInfo rfInfo = {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-            .pNext = nullptr,
-            .colorAttachmentCount = 1,
-            .pColorAttachmentFormats = colorRenderingFormats,
-            .depthAttachmentFormat = depthStencil.DepthFormat,
-            .stencilAttachmentFormat = depthStencil.DepthFormat
-        };
+        // VkFormat colorRenderingFormats[1] = {
+        //     VK_FORMAT_B8G8R8A8_SRGB,
+        // };
+        //
+        // VkPipelineRenderingCreateInfo rfInfo = {
+        //     .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+        //     .pNext = nullptr,
+        //     .colorAttachmentCount = 1,
+        //     .pColorAttachmentFormats = colorRenderingFormats,
+        //     .depthAttachmentFormat = depthStencil.DepthFormat,
+        //     .stencilAttachmentFormat = depthStencil.DepthFormat
+        // };
 
 
         VkGraphicsPipelineCreateInfo pipelineInfo{
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-            .pNext = &rfInfo,
-            .flags = 0,//VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT,
             .stageCount = 2,
             .pStages = shaderStages.data(),
             .pVertexInputState = &vertexInputInfo,
@@ -141,6 +140,9 @@ public:
             .pColorBlendState = &colorBlending,
             .pDynamicState = &dynamicState,
             .layout = PipelineLayout,
+            .renderPass = renderPass,
+            .subpass = 0,
+            .basePipelineHandle = VK_NULL_HANDLE
         };
 
 

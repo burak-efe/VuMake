@@ -46,7 +46,7 @@ public:
 
     VkSurfaceKHR surface;
     Vu::VuSwapChain SwapChain;
-    VuDepthStencil DepthStencil;
+    //VuDepthStencil DepthStencil;
     VuGraphicsPipeline DebugPipeline;
     ImGui_ImplVulkanH_Window g_MainWindowData;
     uint32 currentFrame = 0;
@@ -97,7 +97,7 @@ public:
 
     void CreateSyncObjects();
 
-    void RecreateSwapChain();
+    void ResetSwapChain();
 
     void CreateDescriptorPool();
 

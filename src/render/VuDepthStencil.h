@@ -2,22 +2,20 @@
 
 #include "Common.h"
 #include "Vu.h"
-#include "VuSwapChain.h"
 #include "VuUtils.h"
 
-class VuDepthStencil {
-public:
+struct VuDepthStencil {
     VkImage Image;
     VkImageView View;
     VmaAllocation VmaAllocation;
     VkFormat DepthFormat;
-    VkPipelineDepthStencilStateCreateInfo DepthStencilCreateInfo;
+    //VkPipelineDepthStencilStateCreateInfo DepthStencilCreateInfo;
 
-    void Create(const Vu::VuSwapChain &swapchain) {
+    void Init(VkExtent2D extent2D) {
         //depth image size will match the window
         VkExtent3D depthImageExtent = {
-            swapchain.swapChainExtent.width,
-            swapchain.swapChainExtent.height,
+            extent2D.width,
+            extent2D.height,
             1
         };
 

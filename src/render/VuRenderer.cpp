@@ -22,7 +22,7 @@ void VuRenderer::BeginFrame() {
         imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &currentFrameImageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        RecreateSwapChain();
+        ResetSwapChain();
         std::cerr << "[INFO]: SwapChain Recreated because of VK_ERROR_OUT_OF_DATE_KHR" << "\n";
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("failed to acquire swap chain image!");
@@ -42,67 +42,68 @@ void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 
     // With dynamic rendering there are no subpass dependencies,
     // so we need to take care of proper layout transitions by using barriers
     // This set of barriers prepares the color and depth images for output
-    VuSync::InsertImageMemoryBarrier2(
-        commandBuffer,
-        SwapChain.swapChainImages[imageIndex],
-        0,
-        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
+    // VuSync::InsertImageMemoryBarrier2(
+    //     commandBuffer,
+    //     SwapChain.swapChainImages[imageIndex],
+    //     0,
+    //     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+    //     VK_IMAGE_LAYOUT_UNDEFINED,
+    //     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    //     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    //     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    //     VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
+    //
+    // VuSync::InsertImageMemoryBarrier2(
+    //     commandBuffer,
+    //     DepthStencil.Image,
+    //     0,
+    //     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+    //     VK_IMAGE_LAYOUT_UNDEFINED,
+    //     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+    //     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+    //     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+    //     VkImageSubresourceRange{
+    //         VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+    //         0, 1, 0, 1
+    //     });
+    //
+    //
+    // // New structures are used to define the attachments used in dynamic rendering
+    // VkRenderingAttachmentInfoKHR colorAttachment{};
+    // colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    // colorAttachment.imageView = SwapChain.swapChainImageViews[imageIndex];
+    // colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    // colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    // colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    // colorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
+    //
+    //
+    // // A single depth stencil attachment info can be used, but they can also be specified separately.
+    // // When both are specified separately, the only requirement is that the image view is identical.
+    // VkRenderingAttachmentInfoKHR depthStencilAttachment{};
+    // depthStencilAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    // depthStencilAttachment.imageView = DepthStencil.View;
+    // depthStencilAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    // depthStencilAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    // depthStencilAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    // depthStencilAttachment.clearValue.depthStencil = {1.0f, 0};
 
-    VuSync::InsertImageMemoryBarrier2(
-        commandBuffer,
-        DepthStencil.Image,
-        0,
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-        VkImageSubresourceRange{
-            VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-            0, 1, 0, 1
-        });
 
+    // VkRenderingInfoKHR renderingInfo = {
+    //     .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
+    //     .flags = 0,
+    //     .renderArea = {0, 0, WIDTH, HEIGHT},
+    //     .layerCount = 1,
+    //     .colorAttachmentCount = 1,
+    //     .pColorAttachments = &colorAttachment,
+    //     .pDepthAttachment = &depthStencilAttachment,
+    //     .pStencilAttachment = &depthStencilAttachment,
+    // };
+    // renderingInfo.renderArea = VkRect2D{.offset = {0, 0}, .extent = SwapChain.swapChainExtent};
+    //
+    // vkCmdBeginRendering(commandBuffer, &renderingInfo);
 
-    // New structures are used to define the attachments used in dynamic rendering
-    VkRenderingAttachmentInfoKHR colorAttachment{};
-    colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-    colorAttachment.imageView = SwapChain.swapChainImageViews[imageIndex];
-    colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
-
-
-    // A single depth stencil attachment info can be used, but they can also be specified separately.
-    // When both are specified separately, the only requirement is that the image view is identical.
-    VkRenderingAttachmentInfoKHR depthStencilAttachment{};
-    depthStencilAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-    depthStencilAttachment.imageView = DepthStencil.View;
-    depthStencilAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depthStencilAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthStencilAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    depthStencilAttachment.clearValue.depthStencil = {1.0f, 0};
-
-
-    VkRenderingInfoKHR renderingInfo = {
-        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
-        .flags = 0,
-        .renderArea = {0, 0, WIDTH, HEIGHT},
-        .layerCount = 1,
-        .colorAttachmentCount = 1,
-        .pColorAttachments = &colorAttachment,
-        .pDepthAttachment = &depthStencilAttachment,
-        .pStencilAttachment = &depthStencilAttachment,
-    };
-    renderingInfo.renderArea = VkRect2D{.offset = {0, 0}, .extent = SwapChain.swapChainExtent};
-
-    vkCmdBeginRendering(commandBuffer, &renderingInfo);
-
+    SwapChain.BeginRenderPass(commandBuffer,imageIndex);
 
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -121,19 +122,21 @@ void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 
 
 void VuRenderer::EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex) {
 
-    vkCmdEndRendering(commandBuffer);
+    SwapChain.EndRenderPass(commandBuffer);
 
-    // This set of barriers prepares the color image for presentation, we don't need to care for the depth image
-    VuSync::InsertImageMemoryBarrier2(
-        commandBuffer,
-        SwapChain.swapChainImages[imageIndex],
-        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        0,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-        VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
+    // vkCmdEndRendering(commandBuffer);
+    //
+    // // This set of barriers prepares the color image for presentation, we don't need to care for the depth image
+    // VuSync::InsertImageMemoryBarrier2(
+    //     commandBuffer,
+    //     SwapChain.swapChainImages[imageIndex],
+    //     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+    //     0,
+    //     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    //     VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    //     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    //     VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+    //     VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
 
 
     VK_CHECK(vkEndCommandBuffer(commandBuffer));
@@ -223,7 +226,7 @@ void VuRenderer::EndFrame() {
     auto result = vkQueuePresentKHR(Vu::presentQueue, &presentInfo);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        RecreateSwapChain();
+        ResetSwapChain();
     } else if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to present swap chain image!");
     }
@@ -242,7 +245,7 @@ void VuRenderer::PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32
                        stage, offset, size, pValues);
 }
 
-void VuRenderer::RecreateSwapChain() {
+void VuRenderer::ResetSwapChain() {
     int width = 0;
     int height = 0;
     glfwGetFramebufferSize(Vu::window, &width, &height);
@@ -251,6 +254,5 @@ void VuRenderer::RecreateSwapChain() {
         glfwWaitEvents();
     }
     vkDeviceWaitIdle(Vu::Device);
-    SwapChain.CleanupSwapchain();
-    CreateSwapChain();
+    SwapChain.Reset();
 }

@@ -91,15 +91,15 @@ void VuRenderer::InitVulkan() {
     Vu::PhysicalDevice = phys_ret.value().physical_device;
 
     //Device Extensions
-    VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
-        .dynamicRendering = VK_TRUE,
-    };
+    // VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures{
+    //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+    //     .dynamicRendering = VK_TRUE,
+    // };
     //Enbale Sync2
-    VkPhysicalDeviceSynchronization2Features sync2Features{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
-        .synchronization2 = VK_TRUE,
-    };
+    // VkPhysicalDeviceSynchronization2Features sync2Features{
+    //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+    //     .synchronization2 = VK_TRUE,
+    // };
 
     VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures = {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES,
@@ -107,19 +107,19 @@ void VuRenderer::InitVulkan() {
     };
 
 
-    VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptorBufferFeatures{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT,
-        .descriptorBuffer = VK_TRUE,
-    };
+    // VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptorBufferFeatures{
+    //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT,
+    //     .descriptorBuffer = VK_TRUE,
+    // };
 
 
     // Device
     vkb::DeviceBuilder device_builder{phys_ret.value()};
     auto dev_ret = device_builder
-            .add_pNext(&dynamicRenderingFeatures)
-            .add_pNext(&sync2Features)
+            //.add_pNext(&dynamicRenderingFeatures)
+            //.add_pNext(&sync2Features)
             .add_pNext(&bufferDeviceAddressFeatures)
-            .add_pNext(&descriptorBufferFeatures)
+            //.add_pNext(&descriptorBufferFeatures)
 
             .build();
     if (!dev_ret) {
@@ -140,8 +140,6 @@ void VuRenderer::InitVulkan() {
 
     CreateVulkanMemoryAllocator();
     CreateSwapChain();
-    DepthStencil = VuDepthStencil{};
-    DepthStencil.Create(SwapChain);
     CreateUniformBuffers();
     CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
@@ -155,12 +153,11 @@ void VuRenderer::InitVulkan() {
 
 void VuRenderer::CreateSwapChain() {
     SwapChain = Vu::VuSwapChain{};
-    SwapChain.CreateSwapChain(Vu::window, surface);
+    SwapChain.InitSwapChain(Vu::window, surface);
 }
 
 void VuRenderer::CreateGraphicsPipeline() {
-    DebugPipeline = VuGraphicsPipeline{};
-    DebugPipeline.CreateGraphicsPipeline(descriptorSetLayout, DepthStencil);
+    DebugPipeline.CreateGraphicsPipeline(descriptorSetLayout, SwapChain.renderPass);
 }
 
 void VuRenderer::CreateCommandPool() {
@@ -230,8 +227,7 @@ void VuRenderer::CreateDescriptorSetLayout() {
     };
 
     VK_CHECK(vkCreateDescriptorSetLayout(Vu::Device, &layoutInfo, nullptr, &descriptorSetLayout));
-    //
-    //
+
     // ////////////
     //
     // VkDeviceSize maxObjectCount = 256;
@@ -356,13 +352,11 @@ void VuRenderer::Dispose() {
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         uniformBuffers[i].Dispose();
-        // vkDestroyBuffer(Vu::Device, uniformBuffers[i], nullptr);
-        // vkFreeMemory(Vu::Device, uniformBuffersMemory[i], nullptr);
-    }
-    //vmaUnmapMemory(Vu::VmaAllocator,uniformDescriptor.descriptorBuffer.Allocation);
-    //uniformDescriptor.descriptorBuffer.Dispose();
 
-    DepthStencil.Dispose(); //renderPass.Dispose();
+    }
+
+    //renderPass.Dispose();
+    //DepthStencil.Dispose();
     DebugPipeline.Dispose();
 
     vkDestroyCommandPool(Vu::Device, Vu::commandPool, nullptr);
@@ -378,9 +372,6 @@ void VuRenderer::Dispose() {
 }
 
 void VuRenderer::SetupImGui() {
-    // VkDescriptorPoolSize poolSize{};
-    // poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    // poolSize.descriptorCount = static_cast<uint32_t>(1000);
 
     VkDescriptorPoolSize pool_sizes[] =
     {
@@ -420,23 +411,24 @@ void VuRenderer::SetupImGui() {
     init_info.DescriptorPool = uiDescriptorPool;
     init_info.MinImageCount = 2;
     init_info.ImageCount = 2;
-    init_info.UseDynamicRendering = true;
+    init_info.UseDynamicRendering = false;
+    init_info.RenderPass = SwapChain.renderPass;
     //init_info.CheckVkResultFn = check_vk_result;
 
-    VkFormat colorRenderingFormats[1] = {
-        VK_FORMAT_B8G8R8A8_SRGB,
-    };
+    // VkFormat colorRenderingFormats[1] = {
+    //     VK_FORMAT_B8G8R8A8_SRGB,
+    // };
+    //
+    // VkPipelineRenderingCreateInfo rfInfo = {
+    //     .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+    //     .pNext = nullptr,
+    //     .colorAttachmentCount = 1,
+    //     .pColorAttachmentFormats = colorRenderingFormats,
+    //     .depthAttachmentFormat = SwapChain.depthStencil.DepthFormat,
+    //     .stencilAttachmentFormat = SwapChain.depthStencil.DepthFormat
+    // };
 
-    VkPipelineRenderingCreateInfo rfInfo = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-        .pNext = nullptr,
-        .colorAttachmentCount = 1,
-        .pColorAttachmentFormats = colorRenderingFormats,
-        .depthAttachmentFormat = DepthStencil.DepthFormat,
-        .stencilAttachmentFormat = DepthStencil.DepthFormat
-    };
-
-    init_info.PipelineRenderingCreateInfo = rfInfo;
+    //init_info.PipelineRenderingCreateInfo = rfInfo;
     ImGui_ImplVulkan_Init(&init_info);
     ImGui_ImplVulkan_CreateFontsTexture();
 }
