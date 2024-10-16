@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Common.h"
-#include "GLFW/glfw3.h"
-
+//#include "GLFW/glfw3.h"
+#include "SDL3/SDL.h"
 
 
 class VuRenderer;
@@ -18,10 +18,12 @@ namespace Vu {
     inline VkQueue presentQueue;
 
     inline VuRenderer* Renderer;
-    inline GLFWwindow* window;
+    //inline GLFWwindow* window;
+    inline SDL_Window* sdlWindow;
+    inline SDL_Event sdlEvent;
 
     inline float DeltaTime = 0;
-    inline float PrevTime = 0;
+    inline uint64 PrevTimeNS = 0;
     inline double MouseX = 0;
     inline double MouseY = 0;
 
@@ -61,8 +63,12 @@ namespace Vu {
 
     inline void UpdateDeltaTime() {
         //deltaTime
-        DeltaTime = (glfwGetTime() - PrevTime);
-        PrevTime = glfwGetTime();
+        // DeltaTime = (glfwGetTime() - PrevTime);
+        // PrevTime = glfwGetTime();
+
+        //nano to micro to mili to second
+        DeltaTime = (SDL_GetTicksNS() - PrevTimeNS) / 1000.0f / 1000.0f / 1000.0f;
+        PrevTimeNS = SDL_GetTicksNS();
     }
 
 

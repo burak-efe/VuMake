@@ -1,17 +1,22 @@
 #include "VuRenderer.h"
 
+
 void VuRenderer::Init() {
     InitWindow();
     InitVulkan();
 }
 
 void VuRenderer::InitWindow() {
-    glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    Vu::window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-    glfwSetCursorPosCallback(Vu::window, MouseCallback);
-    glfwSetInputMode(Vu::window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    // glfwInit();
+    // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    // Vu::window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+    // glfwSetCursorPosCallback(Vu::window, MouseCallback);
+    // glfwSetInputMode(Vu::window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+    assert(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) == true);
+    //SDL_Vulkan_LoadLibrary(nullptr);
+    Vu::sdlWindow = SDL_CreateWindow("VuRenderer", WIDTH, HEIGHT,SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 }
 
 void VuRenderer::CreateVulkanMemoryAllocator() {
@@ -51,7 +56,9 @@ void VuRenderer::CreateVulkanMemoryAllocator() {
 }
 
 void VuRenderer::CreateSurface() {
-    VK_CHECK(glfwCreateWindowSurface(Vu::Instance, Vu::window, nullptr, &surface));
+    //VK_CHECK(glfwCreateWindowSurface(Vu::Instance, Vu::window, nullptr, &surface));
+
+    SDL_Vulkan_CreateSurface(Vu::sdlWindow, Vu::Instance, nullptr, &surface);
 }
 
 void VuRenderer::InitVulkan() {
@@ -153,7 +160,7 @@ void VuRenderer::InitVulkan() {
 
 void VuRenderer::CreateSwapChain() {
     SwapChain = Vu::VuSwapChain{};
-    SwapChain.InitSwapChain(Vu::window, surface);
+    SwapChain.InitSwapChain(surface);
 }
 
 void VuRenderer::CreateGraphicsPipeline() {
@@ -336,7 +343,8 @@ void VuRenderer::Dispose() {
     vkDeviceWaitIdle(Vu::Device);
 
     ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
+    //ImGui_ImplGlfw_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
     SwapChain.CleanupSwapchain();
@@ -367,8 +375,11 @@ void VuRenderer::Dispose() {
     }
     vkDestroySurfaceKHR(Vu::Instance, surface, nullptr);
     vkDestroyInstance(Vu::Instance, nullptr);
-    glfwDestroyWindow(Vu::window);
-    glfwTerminate();
+    // glfwDestroyWindow(Vu::window);
+    // glfwTerminate();
+
+    SDL_DestroyWindow(Vu::sdlWindow);
+    SDL_Quit();
 }
 
 void VuRenderer::SetupImGui() {
@@ -400,7 +411,8 @@ void VuRenderer::SetupImGui() {
     //ImGui::StyleColorsClassic();
 
     //ImGui_ImplVulkan_LoadFunctions()
-    ImGui_ImplGlfw_InitForVulkan(Vu::window, true);
+    //ImGui_ImplGlfw_InitForVulkan(Vu::window, true);
+    ImGui_ImplSDL3_InitForVulkan(Vu::sdlWindow);
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = Vu::Instance;
     init_info.PhysicalDevice = Vu::PhysicalDevice;
@@ -433,7 +445,7 @@ void VuRenderer::SetupImGui() {
     ImGui_ImplVulkan_CreateFontsTexture();
 }
 
-void VuRenderer::MouseCallback(GLFWwindow* window, double xpos, double ypos) {
-    Vu::MouseX = xpos;
-    Vu::MouseY = ypos;
-}
+// void VuRenderer::MouseCallback(GLFWwindow* window, double xpos, double ypos) {
+//     Vu::MouseX = xpos;
+//     Vu::MouseY = ypos;
+// }

@@ -1,6 +1,5 @@
 #define VK_NO_PROTOTYPES
 #define VOLK_IMPLEMENTATION
-
 #include "volk.h"
 
 
@@ -10,12 +9,9 @@
 #include "vk_mem_alloc.h"
 
 
-#define IMGUI_IMPL_VULKAN_USE_VOLK
-#define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
-#include "imgui_impl_glfw.h"
-
+#include "imgui_impl_sdl3.h"
 
 #include "Common.h"
 
@@ -25,7 +21,6 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
 #define GLFW_INCLUDE_VULKAN
-
 
 
 #include "Vu.h"
@@ -42,8 +37,9 @@
 #include "Systems.h"
 #include "Transform.h"
 #include "VuRenderer.h"
-//#include "VuTexture.h"
 #include "spirv_reflect.h"
+
+#include "SDL3/SDL.h"
 
 
 void RunEngine() {
@@ -82,6 +78,16 @@ void RunEngine() {
     while (!vuRenderer.ShouldWindowClose()) {
         Vu::UpdateDeltaTime();
 
+        // auto capture = (SDL_GetWindowFlags(Vu::sdlWindow) & SDL_WINDOW_MOUSE_CAPTURE) != 0;
+        // auto grab = (SDL_GetWindowFlags(Vu::sdlWindow) & SDL_WINDOW_MOUSE_GRABBED) != 0;
+        // auto focus = (SDL_GetWindowFlags(Vu::sdlWindow) & SDL_WINDOW_INPUT_FOCUS) != 0 ;
+        // auto min = (SDL_GetWindowFlags(Vu::sdlWindow) & SDL_WINDOW_MINIMIZED) != 0;
+        //
+        // std::cout << "capture: " << capture << std::endl;
+        // std::cout << "grab:    " << grab << std::endl;
+        // std::cout << "focus:   " << focus << std::endl;
+        // std::cout << "max:   " << min << std::endl;
+
         //Pre-Render Begins
         spinningSystem.run();
         flyCameraSystem.run();
@@ -117,8 +123,7 @@ void RunEngine() {
 }
 
 
-int main() {
+int main(int argc, char* argv[]) {
     RunEngine();
-
     return EXIT_SUCCESS;
 }

@@ -1,18 +1,17 @@
 #pragma once
-#define IMGUI_DEFINE_MATH_OPERATORS
-
 
 #include "Common.h"
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
-#include "imgui_impl_glfw.h"
-#include "GLFW/glfw3.h"
+#include "imgui_impl_sdl3.h"
 
 #include "Mesh.h"
 #include "VuGraphicsPipeline.h"
 #include "VuSwapChain.h"
 #include "VuDepthStencil.h"
 #include "Vu.h"
+#include "SDL3/SDL.h"
+#include "SDL3/SDL_vulkan.h"
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 constexpr uint32 WIDTH = 1280;
@@ -109,7 +108,7 @@ public:
 
     void SetupImGui();
 
-    static void MouseCallback(GLFWwindow* window, double xpos, double ypos);
+    //static void MouseCallback(GLFWwindow* window, double xpos, double ypos);
 
     VkDeviceSize aligned_size(VkDeviceSize value, VkDeviceSize alignment) {
         return (value + alignment - 1) & ~(alignment - 1);

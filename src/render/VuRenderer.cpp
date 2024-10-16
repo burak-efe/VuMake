@@ -4,7 +4,9 @@
 #include "VuSync.h"
 
 bool VuRenderer::ShouldWindowClose() {
-    return glfwWindowShouldClose(Vu::window);
+    //return glfwWindowShouldClose(Vu::window);
+    //return Vu::sdlEvent.type == SDL_EVENT_QUIT;
+    return false;
 }
 
 void VuRenderer::WaitIdle() {
@@ -12,7 +14,9 @@ void VuRenderer::WaitIdle() {
 }
 
 void VuRenderer::BeginFrame() {
-    glfwPollEvents();
+    //glfwPollEvents();
+    SDL_PollEvent(&Vu::sdlEvent);
+
 
     vkWaitForFences(Vu::Device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -38,72 +42,7 @@ void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
     VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo));
-
-    // With dynamic rendering there are no subpass dependencies,
-    // so we need to take care of proper layout transitions by using barriers
-    // This set of barriers prepares the color and depth images for output
-    // VuSync::InsertImageMemoryBarrier2(
-    //     commandBuffer,
-    //     SwapChain.swapChainImages[imageIndex],
-    //     0,
-    //     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-    //     VK_IMAGE_LAYOUT_UNDEFINED,
-    //     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    //     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-    //     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-    //     VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
-    //
-    // VuSync::InsertImageMemoryBarrier2(
-    //     commandBuffer,
-    //     DepthStencil.Image,
-    //     0,
-    //     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-    //     VK_IMAGE_LAYOUT_UNDEFINED,
-    //     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-    //     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-    //     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-    //     VkImageSubresourceRange{
-    //         VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-    //         0, 1, 0, 1
-    //     });
-    //
-    //
-    // // New structures are used to define the attachments used in dynamic rendering
-    // VkRenderingAttachmentInfoKHR colorAttachment{};
-    // colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-    // colorAttachment.imageView = SwapChain.swapChainImageViews[imageIndex];
-    // colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    // colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    // colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    // colorAttachment.clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
-    //
-    //
-    // // A single depth stencil attachment info can be used, but they can also be specified separately.
-    // // When both are specified separately, the only requirement is that the image view is identical.
-    // VkRenderingAttachmentInfoKHR depthStencilAttachment{};
-    // depthStencilAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-    // depthStencilAttachment.imageView = DepthStencil.View;
-    // depthStencilAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    // depthStencilAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    // depthStencilAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    // depthStencilAttachment.clearValue.depthStencil = {1.0f, 0};
-
-
-    // VkRenderingInfoKHR renderingInfo = {
-    //     .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
-    //     .flags = 0,
-    //     .renderArea = {0, 0, WIDTH, HEIGHT},
-    //     .layerCount = 1,
-    //     .colorAttachmentCount = 1,
-    //     .pColorAttachments = &colorAttachment,
-    //     .pDepthAttachment = &depthStencilAttachment,
-    //     .pStencilAttachment = &depthStencilAttachment,
-    // };
-    // renderingInfo.renderArea = VkRect2D{.offset = {0, 0}, .extent = SwapChain.swapChainExtent};
-    //
-    // vkCmdBeginRendering(commandBuffer, &renderingInfo);
-
-    SwapChain.BeginRenderPass(commandBuffer,imageIndex);
+    SwapChain.BeginRenderPass(commandBuffer, imageIndex);
 
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -123,22 +62,6 @@ void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 
 void VuRenderer::EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex) {
 
     SwapChain.EndRenderPass(commandBuffer);
-
-    // vkCmdEndRendering(commandBuffer);
-    //
-    // // This set of barriers prepares the color image for presentation, we don't need to care for the depth image
-    // VuSync::InsertImageMemoryBarrier2(
-    //     commandBuffer,
-    //     SwapChain.swapChainImages[imageIndex],
-    //     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-    //     0,
-    //     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    //     VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-    //     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-    //     VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-    //     VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
-
-
     VK_CHECK(vkEndCommandBuffer(commandBuffer));
 }
 
@@ -156,32 +79,13 @@ void VuRenderer::RenderMesh(::Mesh& mesh, glm::mat4 trs) {
 
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, DebugPipeline.PipelineLayout,
                             0, 1, &descriptorSets[currentFrame], 0, nullptr);
-
-    // // Descriptor buffer bindings
-    // // Set 0 = uniform buffer
-    // VkDescriptorBufferBindingInfoEXT bindingInfo{
-    //     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT,
-    //     .address = uniformDescriptor.bufferDeviceAddress,
-    //     .usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT
-    // };
-    //
-    // vkCmdBindDescriptorBuffersEXT(commandBuffer, 1, &bindingInfo);
-    //
-    // uint32_t bufferIndexUbo = 0;
-    // VkDeviceSize bufferOffset = uniformDescriptor.layoutSize * currentFrame;
-    //
-    // // Global Matrices (set 0)
-    // bufferOffset = 0;
-    // vkCmdSetDescriptorBufferOffsetsEXT(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-    //                                    DebugPipeline.PipelineLayout, 0, 1, &bufferIndexUbo, &bufferOffset);
-
-
     vkCmdDrawIndexed(commandBuffer, mesh.indexBuffer.Lenght, 1, 0, 0, 0);
 }
 
 void VuRenderer::BeginImgui() {
     ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    //ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 }
 
@@ -236,22 +140,24 @@ void VuRenderer::EndFrame() {
 
 void VuRenderer::UpdateUniformBuffer(FrameUBO ubo) {
     uniformBuffers[currentFrame].SetData(&ubo, sizeof(ubo));
-    //memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
-    //TODO
 }
 
 void VuRenderer::PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32_t size, const void* pValues) {
-    vkCmdPushConstants(commandBuffers[currentFrame], DebugPipeline.PipelineLayout,
-                       stage, offset, size, pValues);
+    vkCmdPushConstants(commandBuffers[currentFrame], DebugPipeline.PipelineLayout, stage, offset, size, pValues);
 }
 
 void VuRenderer::ResetSwapChain() {
+    SDL_Event event;
+
     int width = 0;
     int height = 0;
-    glfwGetFramebufferSize(Vu::window, &width, &height);
-    while (width == 0 || height == 0) {
-        glfwGetFramebufferSize(Vu::window, &width, &height);
-        glfwWaitEvents();
+    SDL_GetWindowSize(Vu::sdlWindow, &width, &height);
+    auto minimized = (SDL_GetWindowFlags(Vu::sdlWindow) & SDL_WINDOW_MINIMIZED) == SDL_WINDOW_MINIMIZED;
+
+    while (width <= 0 || height <= 0 || minimized) {
+        SDL_GetWindowSize(Vu::sdlWindow, &width, &height);
+        minimized = (SDL_GetWindowFlags(Vu::sdlWindow) & SDL_WINDOW_MINIMIZED) == SDL_WINDOW_MINIMIZED;
+        SDL_WaitEvent(&event);
     }
     vkDeviceWaitIdle(Vu::Device);
     SwapChain.Reset();
