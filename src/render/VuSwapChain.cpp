@@ -56,7 +56,7 @@ namespace Vu {
         }
 
         int width, height;
-        SDL_GetWindowSize(Vu::sdlWindow, &width, &height);
+        SDL_GetWindowSize(Vu::Window, &width, &height);
         std::cout << "width: " << width << std::endl;
         //glfwGetFramebufferSize(window, &width, &height);
         VkExtent2D actualExtent = {

@@ -2,14 +2,12 @@
 
 #include "Common.h"
 #include <optional>
-#include <vector>
 #include <fstream>
 #include <stacktrace>
-#include <iostream>
 
 
-#include "Vu.h"
 #include "vulkan/vk_enum_string_helper.h"
+#include "Vu.h"
 
 __declspec(noinline) static void VK_CHECK(VkResult res) {
     if (res != VK_SUCCESS) {
@@ -48,10 +46,9 @@ struct SwapChainSupportDetails {
 };
 
 
-
 namespace Vu {
 
-     inline void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
+    inline void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
                                               const VkAllocationCallbacks* pAllocator) {
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)
                 vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
@@ -164,5 +161,39 @@ namespace Vu {
         }
 
         throw std::runtime_error("failed to find suitable memory type!");
+    }
+
+
+    inline VkCommandBuffer BeginSingleTimeCommands() {
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = Vu::commandPool;
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer commandBuffer;
+        VK_CHECK(vkAllocateCommandBuffers(Vu::Device, &allocInfo, &commandBuffer));
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+        return commandBuffer;
+    }
+
+    inline void EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
+        vkEndCommandBuffer(commandBuffer);
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        vkQueueSubmit(Vu::graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(Vu::graphicsQueue);
+
+        vkFreeCommandBuffers(Vu::Device, Vu::commandPool, 1, &commandBuffer);
     }
 }

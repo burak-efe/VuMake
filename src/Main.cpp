@@ -15,7 +15,7 @@
 #include "MonkeScene.h"
 
 int main(int argc, char* argv[]) {
-    MonkeScne scen;
-    scen.RunEngine();
+    MonkeScene scen;
+    scen.Run();
     return EXIT_SUCCESS;
 }

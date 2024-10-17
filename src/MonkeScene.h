@@ -12,13 +12,14 @@
 #include "Transform.h"
 #include "VuRenderer.h"
 
-struct MonkeScne {
-    void RunEngine() {
+struct MonkeScene {
+
+    void Run() {
 
         VuRenderer vuRenderer;
         vuRenderer.Init();
         Vu::Renderer = &vuRenderer;
-        Mesh monke("shaders/monka.gltf", Vu::VmaAllocator);
+        Mesh monke("shaders/monka.gltf");
 
         flecs::world world;
         world.set<VuRenderer>(vuRenderer);
@@ -28,7 +29,7 @@ struct MonkeScne {
         auto flyCameraSystem = AddFlyCameraSystem(world);
         auto drawMeshSystem = AddRenderingSystem(world);
         auto spinUI = AddSpinUISystem(world);
-       // auto trsUI = AddTransformUISystem(world);
+       auto trsUI = AddTransformUISystem(world);
         auto camUI = AddCameraUISystem(world);
 
 
@@ -58,13 +59,13 @@ struct MonkeScne {
 
                 //UI
                 {
-                    //vuRenderer.BeginImgui();
-                    //ImGui::Text(std::format("Frame Per Second: {0:.0f}", (1.0f / Vu::DeltaAsSecond)).c_str());
-                    //ImGui::Text(std::format("Frame Time as miliSec: {0:.4}", Vu::DeltaAsSecond * 1000).c_str());
-                    //spinUI.run();
-                    //trsUI.run();
-                    //camUI.run();
-                    //vuRenderer.EndImgui();
+                    vuRenderer.BeginImgui();
+                    ImGui::Text(std::format("Frame Per Second: {0:.0f}", (1.0f / Vu::DeltaAsSecond)).c_str());
+                    ImGui::Text(std::format("Frame Time as miliSec: {0:.4}", Vu::DeltaAsSecond * 1000).c_str());
+                    spinUI.run();
+                    camUI.run();
+                    trsUI.run();
+                    vuRenderer.EndImgui();
                 }
 
                 vuRenderer.EndFrame();

@@ -45,19 +45,19 @@ inline flecs::system AddTransformUISystem(flecs::world& world) {
 
 
                 auto e = it.entity(index);
-                bool open = false;
-                if (index == 0) {
-                    open = ImGui::CollapsingHeader("Transform Components");
-                }
-                if (open) {
+                // bool open = false;
+                // if (index == 0) {
+                // }
+                // open = ImGui::CollapsingHeader("Transform Components");
+                //if (open) {
 
-                    ImGui::Separator();
-                    ImGui::Text(e.name());
-                    ImGui::SliderFloat3(std::format("Position ##{0}", e.id()).c_str(),
-                                        &trs.Position.x, -8.0f, 8.0f);
-                    ImGui::Text(std::format("Rotation {0:}", glm::to_string(trs.Rotation)).c_str());
-                    ImGui::Text(std::format("Scale {0:}", glm::to_string(trs.Scale)).c_str());
-                }
+                 ImGui::Separator();
+                 ImGui::Text(e.name());
+                 ImGui::SliderFloat3(std::format("Position ##{0}", e.id()).c_str(),
+                                     &trs.Position.x, -8.0f, 8.0f);
+                 ImGui::Text(std::format("Rotation {0:}", glm::to_string(trs.Rotation)).c_str());
+                 ImGui::Text(std::format("Scale {0:}", glm::to_string(trs.Scale)).c_str());
+                //}
             });
 }
 

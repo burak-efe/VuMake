@@ -10,7 +10,9 @@
 #include "VuUtils.h"
 #include <filesystem>
 
-VuTexture::VuTexture(std::filesystem::path path) {
+#include "fastgltf/types.hpp"
+
+void VuTexture::Alloc(std::filesystem::path path) {
 
 
     //Image
@@ -26,7 +28,8 @@ VuTexture::VuTexture(std::filesystem::path path) {
     }
 
 
-    VuBuffer staging(Vu::VmaAllocator, texWidth * texHeight, 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    VuBuffer staging{};
+    staging.Alloc(texWidth * texHeight, 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     staging.SetData(pixels, imageSize);
 
     stbi_image_free(pixels);
@@ -47,6 +50,9 @@ VuTexture::VuTexture(std::filesystem::path path) {
     transitionImageLayout(TextureImage, VK_FORMAT_R8G8B8A8_SRGB,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    createImageSampler();
+    createImageView();
 
     staging.Dispose();
 
@@ -161,4 +167,6 @@ void VuTexture::copyBufferToImage(VkBuffer buffer, VkImage image, uint32 width, 
 void VuTexture::Dispose() {
     vkDestroyImage(Vu::Device, TextureImage, nullptr);
     vkFreeMemory(Vu::Device, TextureImageMemory, nullptr);
+    vkDestroyImageView(Vu::Device, TextureImageView, nullptr);
+    vkDestroySampler(Vu::Device, TextureImageSampler, nullptr);
 }

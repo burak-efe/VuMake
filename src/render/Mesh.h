@@ -23,7 +23,7 @@ public:
     std::vector<float2> Uvs;
 
 
-    Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator);
+    Mesh(const std::filesystem::path& gltfPath);
 
     void Dispose();
 

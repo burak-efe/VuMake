@@ -11,9 +11,9 @@ public:
     VkPipeline Pipeline;
     VkPipelineLayout PipelineLayout;
 
-    void CreateGraphicsPipeline(VkDescriptorSetLayout& descriptorSetLayout,VkRenderPass& renderPass) {
+    void CreateGraphicsPipeline(std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,VkRenderPass& renderPass) {
 
-        assert(descriptorSetLayout != VK_NULL_HANDLE);
+        //assert(descriptorSetLayout != VK_NULL_HANDLE);
         assert(renderPass != VK_NULL_HANDLE);
 
         auto vertShaderCode = Vu::ReadFile("shaders/vert.spv");
@@ -106,27 +106,12 @@ public:
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+        pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
+        pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
         pipelineLayoutInfo.pushConstantRangeCount = 1;
         pipelineLayoutInfo.pPushConstantRanges = &push_constant;
 
         VK_CHECK(vkCreatePipelineLayout(Vu::Device, &pipelineLayoutInfo, nullptr, &PipelineLayout));
-
-        //For dynamic rendering
-        // VkFormat colorRenderingFormats[1] = {
-        //     VK_FORMAT_B8G8R8A8_SRGB,
-        // };
-        //
-        // VkPipelineRenderingCreateInfo rfInfo = {
-        //     .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-        //     .pNext = nullptr,
-        //     .colorAttachmentCount = 1,
-        //     .pColorAttachmentFormats = colorRenderingFormats,
-        //     .depthAttachmentFormat = depthStencil.DepthFormat,
-        //     .stencilAttachmentFormat = depthStencil.DepthFormat
-        // };
-
 
         VkGraphicsPipelineCreateInfo pipelineInfo{
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,

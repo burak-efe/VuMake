@@ -3,38 +3,39 @@
 #include "VuUtils.h"
 
 
-VuBuffer::VuBuffer(VmaAllocator allocator, uint32 lenght, uint32 stride, const VkBufferUsageFlags usage,
-                   VmaAllocationCreateFlags flags) {
+void VuBuffer::Alloc(uint32 lenght, uint32 stride,
+                     VkBufferUsageFlags vkUsageFlags,
+                     VmaMemoryUsage vmaMemoryUsage,
+                     VmaAllocationCreateFlags vmaCreateFlags) {
 
-    Allocator = allocator;
     Stride = stride;
     Lenght = lenght;
 
-    VkBufferCreateInfo bufCreateInfo{
+    VkBufferCreateInfo createInfo{
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
         .size = static_cast<VkDeviceSize>(lenght * stride),
-        .usage = usage
+        .usage = vkUsageFlags
     };
 
     VmaAllocationCreateInfo allocCreateInfo = {};
-    allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-    allocCreateInfo.flags = flags;
+    allocCreateInfo.usage = vmaMemoryUsage;
+    allocCreateInfo.flags = vmaCreateFlags;
 
-    VK_CHECK(vmaCreateBuffer(allocator, &bufCreateInfo, &allocCreateInfo, &Buffer, &Allocation, &AllocationInfo));
+    VK_CHECK(vmaCreateBuffer(Vu::VmaAllocator, &createInfo, &allocCreateInfo, &Buffer, &Allocation, &AllocationInfo));
 }
 
 void VuBuffer::Dispose() {
-    vmaDestroyBuffer(Allocator, Buffer, Allocation);
+    vmaDestroyBuffer(Vu::VmaAllocator, Buffer, Allocation);
 }
 
 VkResult VuBuffer::SetData(void* data, VkDeviceSize byteSize) {
-    return vmaCopyMemoryToAllocation(Allocator, data, Allocation, 0, byteSize);
+    return vmaCopyMemoryToAllocation(Vu::VmaAllocator, data, Allocation, 0, byteSize);
 }
 
 VkResult VuBuffer::SetDataWithOffset(void* data, VkDeviceSize offset, VkDeviceSize byteSize) {
-    return vmaCopyMemoryToAllocation(Allocator, data, Allocation, offset, byteSize);
+    return vmaCopyMemoryToAllocation(Vu::VmaAllocator, data, Allocation, offset, byteSize);
 }
 
 void VuBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {

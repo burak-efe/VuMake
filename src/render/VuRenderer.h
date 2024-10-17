@@ -9,6 +9,7 @@
 #include "VuGraphicsPipeline.h"
 #include "VuSwapChain.h"
 #include "Vu.h"
+#include "VuTexture.h"
 #include "SDL3/SDL_vulkan.h"
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
@@ -32,10 +33,14 @@ public:
 
     std::vector<VuBuffer> uniformBuffers;
 
-    VkDescriptorPool descriptorPool;
-    VkDescriptorPool uiDescriptorPool;
-    VkDescriptorSetLayout descriptorSetLayout;
-    std::vector<VkDescriptorSet> descriptorSets;
+    VkDescriptorPool DescriptorPool;
+    VkDescriptorPool UI_DescriptorPool;
+
+    VkDescriptorSetLayout FrameConstantsDescriptorSetLayout;
+    std::vector<VkDescriptorSet> FrameConstantDescriptorSets;
+
+    VkDescriptorSetLayout ImageDescriptorSetLayout;
+    std::vector<VkDescriptorSet> ImageDescriptorSets;
 
     VkSurfaceKHR Surface;
     Vu::VuSwapChain SwapChain;
@@ -44,6 +49,8 @@ public:
 
     uint32 currentFrame = 0;
     uint32 currentFrameImageIndex = 0;
+
+    VuTexture DebugTexture;
 
 
     void Init();

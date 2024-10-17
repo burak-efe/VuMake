@@ -49,10 +49,10 @@ void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 
     scissor.offset = {0, 0};
     scissor.extent = SwapChain.SwapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
 }
 
 void VuRenderer::EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex) {
-
     SwapChain.EndRenderPass(commandBuffer);
     VK_CHECK(vkEndCommandBuffer(commandBuffer));
 }
@@ -70,13 +70,17 @@ void VuRenderer::RenderMesh(::Mesh& mesh, glm::mat4 trs) {
     vkCmdBindIndexBuffer(commandBuffer, mesh.IndexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
 
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, DebugPipeline.PipelineLayout,
-                            0, 1, &descriptorSets[currentFrame], 0, nullptr);
+                            0, 1, &FrameConstantDescriptorSets[currentFrame], 0, nullptr);
+
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, DebugPipeline.PipelineLayout,
+                            1, 1, &ImageDescriptorSets[currentFrame], 0, nullptr);
     vkCmdDrawIndexed(commandBuffer, mesh.IndexBuffer.Lenght, 1, 0, 0, 0);
 }
 
 void VuRenderer::BeginImgui() {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplSDL3_NewFrame();
+    ImGui_ImplSDL3_ProcessEvent(&Vu::sdlEvent);
     ImGui::NewFrame();
 }
 
@@ -142,12 +146,12 @@ void VuRenderer::ResetSwapChain() {
 
     int width = 0;
     int height = 0;
-    SDL_GetWindowSize(Vu::sdlWindow, &width, &height);
-    auto minimized = (SDL_GetWindowFlags(Vu::sdlWindow) & SDL_WINDOW_MINIMIZED) == SDL_WINDOW_MINIMIZED;
+    SDL_GetWindowSize(Vu::Window, &width, &height);
+    auto minimized = (SDL_GetWindowFlags(Vu::Window) & SDL_WINDOW_MINIMIZED) == SDL_WINDOW_MINIMIZED;
 
     while (width <= 0 || height <= 0 || minimized) {
-        SDL_GetWindowSize(Vu::sdlWindow, &width, &height);
-        minimized = (SDL_GetWindowFlags(Vu::sdlWindow) & SDL_WINDOW_MINIMIZED) == SDL_WINDOW_MINIMIZED;
+        SDL_GetWindowSize(Vu::Window, &width, &height);
+        minimized = (SDL_GetWindowFlags(Vu::Window) & SDL_WINDOW_MINIMIZED) == SDL_WINDOW_MINIMIZED;
         SDL_WaitEvent(&event);
     }
     vkDeviceWaitIdle(Vu::Device);

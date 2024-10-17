@@ -7,7 +7,7 @@
 #include "VuUtils.h"
 #include <filesystem>
 
-Mesh::Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator) {
+Mesh::Mesh(const std::filesystem::path& gltfPath) {
 
     //vertexBuffer = 0;
     fastgltf::Parser parser;
@@ -40,7 +40,8 @@ Mesh::Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator) {
             Indices[idx++] = index;
         });
     }
-    IndexBuffer = VuBuffer(allocator, static_cast<uint32>(Indices.size()), sizeof(Indices[0]), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    IndexBuffer = VuBuffer();
+    IndexBuffer.Alloc(static_cast<uint32>(Indices.size()), sizeof(Indices[0]), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     VK_CHECK(IndexBuffer.SetData(Indices.data(), Indices.size() * sizeof(Indices[0])));
 
     //Position
@@ -56,8 +57,8 @@ Mesh::Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator) {
         [&](glm::vec3 pos, std::size_t idx) { Vertices[idx] = pos; }
     );
 
-    VertexBuffer = VuBuffer(allocator, static_cast<uint32>(Vertices.size()),
-                            sizeof(Vertices[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VertexBuffer = VuBuffer();
+    VertexBuffer.Alloc(static_cast<uint32>(Vertices.size()), sizeof(Vertices[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VK_CHECK(VertexBuffer.SetData(Vertices.data(), Vertices.size() * sizeof(Vertices[0])));
 
     //normal
@@ -74,8 +75,8 @@ Mesh::Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator) {
         [&](glm::vec3 normal, std::size_t idx) { Normals[idx] = normal; }
     );
 
-    NormalBuffer = VuBuffer(allocator, static_cast<uint32>(Normals.size()),
-                            sizeof(Normals[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    NormalBuffer = VuBuffer();
+    NormalBuffer.Alloc(static_cast<uint32>(Normals.size()), sizeof(Normals[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VK_CHECK(NormalBuffer.SetData(Normals.data(), Normals.size() * sizeof(Normals[0])));
 
 
@@ -92,7 +93,8 @@ Mesh::Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator) {
         [&](glm::vec2 uv, std::size_t idx) { Uvs[idx] = uv; }
     );
 
-    UvBuffer = VuBuffer(allocator, static_cast<uint32>(Uvs.size()), sizeof(Uvs[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    UvBuffer = VuBuffer();
+    UvBuffer.Alloc(static_cast<uint32>(Uvs.size()), sizeof(Uvs[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VK_CHECK(UvBuffer.SetData(Uvs.data(), Uvs.size() * sizeof(Uvs[0])));
 
 }
