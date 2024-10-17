@@ -6,7 +6,6 @@
 namespace VuSync {
 
 
-
     inline VkImageMemoryBarrier ImageMemoryBarrier() {
         VkImageMemoryBarrier imageMemoryBarrier{};
         imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -48,47 +47,47 @@ namespace VuSync {
         );
     }
 
-
-    inline void InsertImageMemoryBarrier2(
-        VkCommandBuffer cmdbuffer,
-        VkImage image,
-        VkAccessFlags2 srcAccessMask,
-        VkAccessFlags2 dstAccessMask,
-        VkImageLayout oldImageLayout,
-        VkImageLayout newImageLayout,
-        VkPipelineStageFlags2 srcStageMask,
-        VkPipelineStageFlags2 dstStageMask,
-        VkImageSubresourceRange subresourceRange
-
-    ) {
-
-        VkImageMemoryBarrier2 imageMemoryBarrier2{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask = srcStageMask,
-            .srcAccessMask = srcAccessMask,
-            .dstStageMask = dstStageMask,
-            .dstAccessMask = dstAccessMask,
-            .oldLayout = oldImageLayout,
-            .newLayout = newImageLayout,
-            .srcQueueFamilyIndex = 0,
-            .dstQueueFamilyIndex = 0,
-            .image = image,
-            .subresourceRange = subresourceRange
-        };
-
-        VkDependencyFlags dependencyFlags = 0;
-
-        VkDependencyInfo dependInfo{
-            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-            .pNext = nullptr,
-            .dependencyFlags = dependencyFlags,
-            .memoryBarrierCount = 0,
-            .pMemoryBarriers = nullptr,
-            .bufferMemoryBarrierCount = 0,
-            .pBufferMemoryBarriers = nullptr,
-            .imageMemoryBarrierCount = 1,
-            .pImageMemoryBarriers = &imageMemoryBarrier2,
-        };
-        vkCmdPipelineBarrier2(cmdbuffer, &dependInfo);
-    }
+    //
+    // inline void InsertImageMemoryBarrier2(
+    //     VkCommandBuffer cmdbuffer,
+    //     VkImage image,
+    //     VkAccessFlags2 srcAccessMask,
+    //     VkAccessFlags2 dstAccessMask,
+    //     VkImageLayout oldImageLayout,
+    //     VkImageLayout newImageLayout,
+    //     VkPipelineStageFlags2 srcStageMask,
+    //     VkPipelineStageFlags2 dstStageMask,
+    //     VkImageSubresourceRange subresourceRange
+    //
+    // ) {
+    //
+    //     VkImageMemoryBarrier2 imageMemoryBarrier2{
+    //         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+    //         .srcStageMask = srcStageMask,
+    //         .srcAccessMask = srcAccessMask,
+    //         .dstStageMask = dstStageMask,
+    //         .dstAccessMask = dstAccessMask,
+    //         .oldLayout = oldImageLayout,
+    //         .newLayout = newImageLayout,
+    //         .srcQueueFamilyIndex = 0,
+    //         .dstQueueFamilyIndex = 0,
+    //         .image = image,
+    //         .subresourceRange = subresourceRange
+    //     };
+    //
+    //     VkDependencyFlags dependencyFlags = 0;
+    //
+    //     VkDependencyInfo dependInfo{
+    //         .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+    //         .pNext = nullptr,
+    //         .dependencyFlags = dependencyFlags,
+    //         .memoryBarrierCount = 0,
+    //         .pMemoryBarriers = nullptr,
+    //         .bufferMemoryBarrierCount = 0,
+    //         .pBufferMemoryBarriers = nullptr,
+    //         .imageMemoryBarrierCount = 1,
+    //         .pImageMemoryBarriers = &imageMemoryBarrier2,
+    //     };
+    //     vkCmdPipelineBarrier2(cmdbuffer, &dependInfo);
+    // }
 }

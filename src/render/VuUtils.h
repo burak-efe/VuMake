@@ -27,7 +27,6 @@ struct AllocatedImage {
 };
 
 struct FrameUBO {
-    //glm::mat4 model;
     float4x4 view;
     float4x4 proj;
 };
@@ -51,7 +50,6 @@ struct SwapChainSupportDetails {
 
 
 namespace Vu {
-
 
      inline void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
                                               const VkAllocationCallbacks* pAllocator) {

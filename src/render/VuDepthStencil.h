@@ -6,8 +6,8 @@
 
 struct VuDepthStencil {
     VkImage Image;
-    VkImageView View;
-    VmaAllocation VmaAllocation;
+    VkImageView ImageView;
+    VmaAllocation Allocation;
     VkFormat DepthFormat;
     //VkPipelineDepthStencilStateCreateInfo DepthStencilCreateInfo;
 
@@ -33,18 +33,18 @@ struct VuDepthStencil {
         dimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         //allocate and create the image
-        vmaCreateImage(Vu::VmaAllocator, &dimg_info, &dimg_allocinfo, &Image, &VmaAllocation, nullptr);
+        vmaCreateImage(Vu::VmaAllocator, &dimg_info, &dimg_allocinfo, &Image, &Allocation, nullptr);
 
         //build an image-view for the depth image to use for rendering
         VkImageViewCreateInfo dview_info = Vu::CreateImageViewCreateInfo(DepthFormat, Image,
                                                                          VK_IMAGE_ASPECT_DEPTH_BIT);
 
-        VK_CHECK(vkCreateImageView(Vu::Device, &dview_info, nullptr, &View));
+        VK_CHECK(vkCreateImageView(Vu::Device, &dview_info, nullptr, &ImageView));
     }
 
     void Dispose() {
-        vkDestroyImageView(Vu::Device, View, nullptr);
-        vmaDestroyImage(Vu::VmaAllocator, Image, VmaAllocation);
+        vkDestroyImageView(Vu::Device, ImageView, nullptr);
+        vmaDestroyImage(Vu::VmaAllocator, Image, Allocation);
     }
 
     static VkPipelineDepthStencilStateCreateInfo CreateDepthStencilCreateInfo(bool bDepthTest, bool bDepthWrite,

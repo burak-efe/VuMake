@@ -84,24 +84,19 @@ namespace Vu {
 
         int i = 0;
 
-
         for (const auto& queuefamily: queueFamilies) {
             if (queuefamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 indices.graphicsFamily = i;
             }
 
             VkBool32 presentSupport = false;
-
             vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-
             if (presentSupport) {
                 indices.presentFamily = i;
             }
-
             if (indices.IsComplete()) {
                 break;
             }
-
             i++;
         }
 
@@ -109,9 +104,9 @@ namespace Vu {
     }
 
     void VuSwapChain::createSwapChain(VkSurfaceKHR surfaceKHR) {
-        surface = surfaceKHR;
+        //Surface = surfaceKHR;
         SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(Vu::PhysicalDevice, surfaceKHR);
-        extend2d = ChooseSwapExtent(swapChainSupport.capabilities);
+        VkExtent2D extend = ChooseSwapExtent(swapChainSupport.capabilities);
 
         VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
@@ -129,7 +124,7 @@ namespace Vu {
         createInfo.minImageCount = imageCount;
         createInfo.imageFormat = surfaceFormat.format;
         createInfo.imageColorSpace = surfaceFormat.colorSpace;
-        createInfo.imageExtent = extend2d;
+        createInfo.imageExtent = extend;
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -150,26 +145,26 @@ namespace Vu {
         createInfo.clipped = VK_TRUE;
         createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-        VK_CHECK(vkCreateSwapchainKHR(Vu::Device, &createInfo, nullptr, &swapChain));
+        VK_CHECK(vkCreateSwapchainKHR(Vu::Device, &createInfo, nullptr, &SwapChain));
 
-        vkGetSwapchainImagesKHR(Vu::Device, swapChain, &imageCount, nullptr);
-        swapChainImages.resize(imageCount);
-        vkGetSwapchainImagesKHR(Vu::Device, swapChain, &imageCount, swapChainImages.data());
+        vkGetSwapchainImagesKHR(Vu::Device, SwapChain, &imageCount, nullptr);
+        SwapChainImages.resize(imageCount);
+        vkGetSwapchainImagesKHR(Vu::Device, SwapChain, &imageCount, SwapChainImages.data());
 
-        swapChainImageFormat = surfaceFormat.format;
-        swapChainExtent = extend2d;
+        SwapChainImageFormat = surfaceFormat.format;
+        SwapChainExtent = extend;
     }
 
     void VuSwapChain::createImageViews(VkDevice device) {
-        swapChainImageViews.resize(swapChainImages.size());
+        SwapChainImageViews.resize(SwapChainImages.size());
 
-        for (size_t i = 0; i < swapChainImages.size(); i++) {
+        for (size_t i = 0; i < SwapChainImages.size(); i++) {
             VkImageViewCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            createInfo.image = swapChainImages[i];
+            createInfo.image = SwapChainImages[i];
 
             createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            createInfo.format = swapChainImageFormat;
+            createInfo.format = SwapChainImageFormat;
 
 
             createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -183,87 +178,31 @@ namespace Vu {
             createInfo.subresourceRange.baseArrayLayer = 0;
             createInfo.subresourceRange.layerCount = 1;
 
-            VK_CHECK(vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]));
+            VK_CHECK(vkCreateImageView(device, &createInfo, nullptr, &SwapChainImageViews[i]));
         }
     }
 
-    void VuSwapChain::createRenderPass(VkFormat depthFormat) {
-        VkAttachmentDescription colorAttachment{};
-        colorAttachment.format = swapChainImageFormat;
-        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-        VkAttachmentDescription depthAttachment{};
-        depthAttachment.format = depthFormat;
-        depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference colorAttachmentRef{};
-        colorAttachmentRef.attachment = 0;
-        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference depthAttachmentRef{};
-        depthAttachmentRef.attachment = 1;
-        depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &colorAttachmentRef;
-        subpass.pDepthStencilAttachment = &depthAttachmentRef;
-
-        VkSubpassDependency dependency{};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-
-        std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
-
-        VkRenderPassCreateInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        renderPassInfo.pAttachments = attachments.data();
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;
-        renderPassInfo.dependencyCount = 1;
-        renderPassInfo.pDependencies = &dependency;
-
-        VK_CHECK(vkCreateRenderPass(Vu::Device, &renderPassInfo, nullptr, &renderPass));
-    }
 
     void VuSwapChain::createFramebuffers() {
-        framebuffers.resize(swapChainImageViews.size());
+        Framebuffers.resize(SwapChainImageViews.size());
 
-        for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+        for (size_t i = 0; i < SwapChainImageViews.size(); i++) {
             std::array attachments = {
-                swapChainImageViews[i],
-                depthStencil.View
+                SwapChainImageViews[i],
+                DepthStencil.ImageView
 
             };
 
             VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = renderPass;
+            framebufferInfo.renderPass = RenderPass.RenderPass;
             framebufferInfo.attachmentCount = attachments.size();
             framebufferInfo.pAttachments = attachments.data();
-            framebufferInfo.width = swapChainExtent.width;
-            framebufferInfo.height = swapChainExtent.height;
+            framebufferInfo.width = SwapChainExtent.width;
+            framebufferInfo.height = SwapChainExtent.height;
             framebufferInfo.layers = 1;
 
-            VK_CHECK(vkCreateFramebuffer(Vu::Device, &framebufferInfo, nullptr, &framebuffers[i]));
+            VK_CHECK(vkCreateFramebuffer(Vu::Device, &framebufferInfo, nullptr, &Framebuffers[i]));
         }
     }
 }

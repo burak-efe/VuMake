@@ -1,11 +1,9 @@
 #include "Mesh.h"
 #include "Common.h"
-#include <iostream>
 #include <fastgltf/core.hpp>
 #include <fastgltf/tools.hpp>
 #include <fastgltf/util.hpp>
 #include <fastgltf/glm_element_traits.hpp>
-#include "VuBuffer.h"
 #include "VuUtils.h"
 #include <filesystem>
 
@@ -34,16 +32,16 @@ Mesh::Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator) {
     //Indices
     if (primitive.indicesAccessor.has_value()) {
         auto& accessor = asset->accessors[primitive.indicesAccessor.value()];
-        indices.resize(accessor.count);
+        Indices.resize(accessor.count);
 
 
         std::size_t idx = 0;
         fastgltf::iterateAccessor<std::uint32_t>(asset.get(), accessor, [&](std::uint32_t index) {
-            indices[idx++] = index;
+            Indices[idx++] = index;
         });
     }
-    indexBuffer = VuBuffer(allocator, static_cast<uint32>(indices.size()), sizeof(indices[0]), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    VK_CHECK(indexBuffer.SetData(indices.data(), indices.size() * sizeof(indices[0])));
+    IndexBuffer = VuBuffer(allocator, static_cast<uint32>(Indices.size()), sizeof(Indices[0]), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VK_CHECK(IndexBuffer.SetData(Indices.data(), Indices.size() * sizeof(Indices[0])));
 
     //Position
     auto* positionIt = primitive.findAttribute("POSITION");
@@ -52,15 +50,15 @@ Mesh::Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator) {
     auto& bufferView = asset->bufferViews.at(bufferIndex);
     auto posBuffer = asset->buffers.at(bufferView.bufferIndex);
 
-    vertices.resize(positionAccessor.count);
+    Vertices.resize(positionAccessor.count);
     fastgltf::iterateAccessorWithIndex<glm::vec3>(
         asset.get(), positionAccessor,
-        [&](glm::vec3 pos, std::size_t idx) { vertices[idx] = pos; }
+        [&](glm::vec3 pos, std::size_t idx) { Vertices[idx] = pos; }
     );
 
-    vertexBuffer = VuBuffer(allocator, static_cast<uint32>(vertices.size()),
-                            sizeof(vertices[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    VK_CHECK(vertexBuffer.SetData(vertices.data(), vertices.size() * sizeof(vertices[0])));
+    VertexBuffer = VuBuffer(allocator, static_cast<uint32>(Vertices.size()),
+                            sizeof(Vertices[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VK_CHECK(VertexBuffer.SetData(Vertices.data(), Vertices.size() * sizeof(Vertices[0])));
 
     //normal
     auto* normalIt = primitive.findAttribute("NORMAL");
@@ -70,15 +68,15 @@ Mesh::Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator) {
     auto& normalbufferView = asset->bufferViews.at(normalbufferIndex);
     auto normalDataBuffer = asset->buffers.at(normalbufferView.bufferIndex);
 
-    normals.resize(positionAccessor.count);
+    Normals.resize(positionAccessor.count);
     fastgltf::iterateAccessorWithIndex<glm::vec3>(
         asset.get(), normalAccessor,
-        [&](glm::vec3 normal, std::size_t idx) { normals[idx] = normal; }
+        [&](glm::vec3 normal, std::size_t idx) { Normals[idx] = normal; }
     );
 
-    normalBuffer = VuBuffer(allocator, static_cast<uint32>(normals.size()),
-                            sizeof(normals[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    VK_CHECK(normalBuffer.SetData(normals.data(), normals.size() * sizeof(normals[0])));
+    NormalBuffer = VuBuffer(allocator, static_cast<uint32>(Normals.size()),
+                            sizeof(Normals[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VK_CHECK(NormalBuffer.SetData(Normals.data(), Normals.size() * sizeof(Normals[0])));
 
 
     //normal
@@ -88,14 +86,14 @@ Mesh::Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator) {
     auto& uvbufferView = asset->bufferViews.at(uvbufferIndex);
     auto uvDataBuffer = asset->buffers.at(uvbufferView.bufferIndex);
 
-    uvs.resize(positionAccessor.count);
+    Uvs.resize(positionAccessor.count);
     fastgltf::iterateAccessorWithIndex<glm::vec2>(
         asset.get(), uvAccessor,
-        [&](glm::vec2 uv, std::size_t idx) { uvs[idx] = uv; }
+        [&](glm::vec2 uv, std::size_t idx) { Uvs[idx] = uv; }
     );
 
-    uvBuffer = VuBuffer(allocator, static_cast<uint32>(uvs.size()), sizeof(uvs[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    VK_CHECK(uvBuffer.SetData(uvs.data(), uvs.size() * sizeof(uvs[0])));
+    UvBuffer = VuBuffer(allocator, static_cast<uint32>(Uvs.size()), sizeof(Uvs[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VK_CHECK(UvBuffer.SetData(Uvs.data(), Uvs.size() * sizeof(Uvs[0])));
 
 }
 
@@ -137,8 +135,8 @@ std::array<VkVertexInputAttributeDescription, 3> Mesh::getAttributeDescriptions(
 }
 
 void Mesh::Dispose() {
-    vertexBuffer.Dispose();
-    indexBuffer.Dispose();
-    normalBuffer.Dispose();
-    uvBuffer.Dispose();
+    VertexBuffer.Dispose();
+    IndexBuffer.Dispose();
+    NormalBuffer.Dispose();
+    UvBuffer.Dispose();
 }

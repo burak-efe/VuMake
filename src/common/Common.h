@@ -1,6 +1,15 @@
 #pragma once
 
+#include <iostream>
+#include <print>
+#include <string>
+#include <format>
 #include <cstdint>
+#include <cassert>
+#include <cstdlib>
+#include <array>
+#include <vector>
+
 #include "glm/fwd.hpp"
 #include "glm/mat4x4.hpp"
 #include "glm/detail/type_quat.hpp"
@@ -8,14 +17,6 @@
 #include "volk.h"
 #include "VkBootstrap.h"
 #include "vk_mem_alloc.h"
-
-
-#include <cassert>
-#include <cstdlib>
-#include <format>
-#include <print>
-
-
 
 
 using uint8 = uint8_t;
@@ -36,3 +37,4 @@ using float4x4 = glm::mat4;
 
 
 using array = std::array;
+using vector = std::vector;

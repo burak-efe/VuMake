@@ -1,12 +1,7 @@
 #include "VuRenderer.h"
 
-
-#include "VuSync.h"
-
 bool VuRenderer::ShouldWindowClose() {
-    //return glfwWindowShouldClose(Vu::window);
-    //return Vu::sdlEvent.type == SDL_EVENT_QUIT;
-    return false;
+    return Vu::sdlEvent.type == SDL_EVENT_QUIT;
 }
 
 void VuRenderer::WaitIdle() {
@@ -14,15 +9,12 @@ void VuRenderer::WaitIdle() {
 }
 
 void VuRenderer::BeginFrame() {
-    //glfwPollEvents();
     SDL_PollEvent(&Vu::sdlEvent);
-
 
     vkWaitForFences(Vu::Device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
-
     VkResult result = vkAcquireNextImageKHR(
-        Vu::Device, SwapChain.swapChain, UINT64_MAX,
+        Vu::Device, SwapChain.SwapChain, UINT64_MAX,
         imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &currentFrameImageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -46,16 +38,16 @@ void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 
 
     VkViewport viewport{};
     viewport.x = 0.0f;
-    viewport.y = (float) SwapChain.swapChainExtent.height;
-    viewport.width = (float) SwapChain.swapChainExtent.width;
-    viewport.height = -(float) SwapChain.swapChainExtent.height;
+    viewport.y = (float) SwapChain.SwapChainExtent.height;
+    viewport.width = (float) SwapChain.SwapChainExtent.width;
+    viewport.height = -(float) SwapChain.SwapChainExtent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = SwapChain.swapChainExtent;
+    scissor.extent = SwapChain.SwapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
@@ -71,21 +63,20 @@ void VuRenderer::RenderMesh(::Mesh& mesh, glm::mat4 trs) {
 
     PushConstants(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(trs), &trs);
 
-    std::array vertexBuffers = {mesh.vertexBuffer.VulkanBuffer, mesh.normalBuffer.VulkanBuffer, mesh.uvBuffer.VulkanBuffer};
+    std::array vertexBuffers = {mesh.VertexBuffer.Buffer, mesh.NormalBuffer.Buffer, mesh.UvBuffer.Buffer};
     VkDeviceSize offsets[] = {0, 0, 0};
     vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), offsets);
 
-    vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.VulkanBuffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(commandBuffer, mesh.IndexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
 
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, DebugPipeline.PipelineLayout,
                             0, 1, &descriptorSets[currentFrame], 0, nullptr);
-    vkCmdDrawIndexed(commandBuffer, mesh.indexBuffer.Lenght, 1, 0, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, mesh.IndexBuffer.Lenght, 1, 0, 0, 0);
 }
 
 void VuRenderer::BeginImgui() {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplSDL3_NewFrame();
-    //ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 }
 
@@ -121,7 +112,7 @@ void VuRenderer::EndFrame() {
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
 
-    VkSwapchainKHR swapChains[] = {SwapChain.swapChain};
+    VkSwapchainKHR swapChains[] = {SwapChain.SwapChain};
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapChains;
 
@@ -160,5 +151,5 @@ void VuRenderer::ResetSwapChain() {
         SDL_WaitEvent(&event);
     }
     vkDeviceWaitIdle(Vu::Device);
-    SwapChain.Reset();
+    SwapChain.ResetSwapChain(Surface);
 }

@@ -11,6 +11,6 @@ struct MeshRenderer {
 
 struct Spinn {
     float3 Axis = float3(0, 1, 0);
-    float Angle = glm::radians(360.f);
+    float Angle = glm::radians(0.f);
 };
 

@@ -8,7 +8,7 @@ struct Camera {
     float far = 100.0f;
 
     float cameraSpeed = 5.0f;
-    float sensitivity = 0.01f;
+    float sensitivity = 0.005f;
 
     float yaw = 0.0f;
     float pitch = 0.0f;

@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Common.h"
-#include <array>
-#include <vector>
+
 #include "VuBuffer.h"
 
 namespace std::filesystem {
@@ -11,26 +10,24 @@ namespace std::filesystem {
 
 class Mesh {
 public:
-    VuBuffer indexBuffer;
-    VuBuffer vertexBuffer;
-    VuBuffer normalBuffer;
-    VuBuffer uvBuffer;
+    VuBuffer IndexBuffer;
+    VuBuffer VertexBuffer;
+    VuBuffer NormalBuffer;
+    VuBuffer UvBuffer;
 
     uint32 VertexCount;
 
-    std::vector<uint32> indices;
-    std::vector<float3> vertices;
-    std::vector<float3> normals;
-    std::vector<float2> uvs;
+    std::vector<uint32> Indices;
+    std::vector<float3> Vertices;
+    std::vector<float3> Normals;
+    std::vector<float2> Uvs;
 
 
     Mesh(const std::filesystem::path& gltfPath, VmaAllocator& allocator);
 
+    void Dispose();
+
     static std::array<VkVertexInputBindingDescription, 3> getBindingDescription();
 
     static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
-
-    void Dispose();
-
-
 };

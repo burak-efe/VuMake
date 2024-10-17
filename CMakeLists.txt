@@ -2,8 +2,8 @@
 
 include(FetchContent)
 
-set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
@@ -32,15 +32,27 @@ endfunction()
 ####################################################################################################
 #Project
 project("VuMake")
-add_executable(${PROJECT_NAME})
+add_executable(${PROJECT_NAME}
+        src/render/VuRenderPass.h
+        src/MonkeScene.h)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 ####################################################################################################
 # Precompiled Headers
 set(PCH
         src/common/Common.h
 )
-target_precompile_headers(${PROJECT_NAME} PUBLIC ${PCH})
-target_precompile_headers(${PROJECT_NAME} PUBLIC <chrono> <string> <filesystem> <array>)
+#target_precompile_headers(${PROJECT_NAME} PUBLIC ${PCH})
+target_precompile_headers(${PROJECT_NAME} PUBLIC
+        <chrono>
+        <iostream>
+        <print>
+        <string>
+        <format>
+        <cstdint>
+        <cassert>
+        <cstdlib>
+        <array>
+        <vector>)
 ####################################################################################################
 #Add Sources
 add_sources_recursively(${PROJECT_NAME} src)

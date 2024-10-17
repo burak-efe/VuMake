@@ -9,9 +9,8 @@ namespace std::filesystem {
 
 class VuTexture {
 public:
-    VkImage textureImage{};
-    VkDeviceMemory textureImageMemory{};
-    //VuBuffer buffer;
+    VkImage TextureImage{};
+    VkDeviceMemory TextureImageMemory{};
 
     explicit VuTexture(std::filesystem::path path);
 

@@ -8,9 +8,7 @@
 #include "Mesh.h"
 #include "VuGraphicsPipeline.h"
 #include "VuSwapChain.h"
-#include "VuDepthStencil.h"
 #include "Vu.h"
-#include "SDL3/SDL.h"
 #include "SDL3/SDL_vulkan.h"
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
@@ -25,29 +23,25 @@ constexpr bool enableValidationLayers = true;
 
 class VuRenderer {
 public:
-    //GLFWwindow* window;
-    //inline static VkCommandPool commandPool;
-    //inline static VkQueue graphicsQueue;
-    //VkQueue presentQueue;
-    float PrevTime = 0;
+
     VkDebugUtilsMessengerEXT debugMessenger;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
 
-    std::array<VuBuffer, MAX_FRAMES_IN_FLIGHT> uniformBuffers;
+    std::vector<VuBuffer> uniformBuffers;
 
     VkDescriptorPool descriptorPool;
     VkDescriptorPool uiDescriptorPool;
     VkDescriptorSetLayout descriptorSetLayout;
     std::vector<VkDescriptorSet> descriptorSets;
 
-    VkSurfaceKHR surface;
+    VkSurfaceKHR Surface;
     Vu::VuSwapChain SwapChain;
-    //VuDepthStencil DepthStencil;
     VuGraphicsPipeline DebugPipeline;
     ImGui_ImplVulkanH_Window g_MainWindowData;
+
     uint32 currentFrame = 0;
     uint32 currentFrameImageIndex = 0;
 
@@ -121,16 +115,4 @@ public:
         uint64_t address = vkGetBufferDeviceAddress(device, &deviceAdressInfo);
         return address;
     }
-
-    // struct DescriptorInfo {
-    //     VkDeviceSize layoutOffset;
-    //     VkDeviceSize layoutSize;
-    //     VkDescriptorSetLayout setLayout;
-    //     VkDeviceAddress bufferDeviceAddress;
-    //     VuBuffer descriptorBuffer;
-    // };
-    //
-    // DescriptorInfo uniformDescriptor{};
-
-
 };

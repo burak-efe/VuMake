@@ -7,20 +7,11 @@ void VuRenderer::Init() {
 }
 
 void VuRenderer::InitWindow() {
-    // glfwInit();
-    // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    // Vu::window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-    // glfwSetCursorPosCallback(Vu::window, MouseCallback);
-    // glfwSetInputMode(Vu::window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-
     assert(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) == true);
-    //SDL_Vulkan_LoadLibrary(nullptr);
     Vu::sdlWindow = SDL_CreateWindow("VuRenderer", WIDTH, HEIGHT,SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 }
 
 void VuRenderer::CreateVulkanMemoryAllocator() {
-
 
     VmaVulkanFunctions vma_vulkan_func{
         .vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties,
@@ -40,9 +31,7 @@ void VuRenderer::CreateVulkanMemoryAllocator() {
         .vkCreateImage = vkCreateImage,
         .vkDestroyImage = vkDestroyImage,
         .vkCmdCopyBuffer = vkCmdCopyBuffer,
-
     };
-
 
     VmaAllocatorCreateInfo createInfo{
         .flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
@@ -56,9 +45,8 @@ void VuRenderer::CreateVulkanMemoryAllocator() {
 }
 
 void VuRenderer::CreateSurface() {
-    //VK_CHECK(glfwCreateWindowSurface(Vu::Instance, Vu::window, nullptr, &surface));
 
-    SDL_Vulkan_CreateSurface(Vu::sdlWindow, Vu::Instance, nullptr, &surface);
+    SDL_Vulkan_CreateSurface(Vu::sdlWindow, Vu::Instance, nullptr, &Surface);
 }
 
 void VuRenderer::InitVulkan() {
@@ -70,7 +58,7 @@ void VuRenderer::InitVulkan() {
     auto inst_ret = builder.set_app_name("VuMake")
             .request_validation_layers(enableValidationLayers)
             .use_default_debug_messenger()
-            .require_api_version(1, 3)
+            .require_api_version(1, 1)
             .build();
     if (!inst_ret) {
         std::cerr << "Failed to create Vulkan instance. Error: " << inst_ret.error().message() << "\n";
@@ -86,10 +74,10 @@ void VuRenderer::InitVulkan() {
 
     //PhysicalDevice
     vkb::PhysicalDeviceSelector selector{vkb_inst};
-    auto phys_ret = selector.set_surface(surface)
-            .set_minimum_version(1, 3) // require a vulkan 1.3 capable device
+    auto phys_ret = selector.set_surface(Surface)
+            .set_minimum_version(1, 1)
             .require_dedicated_transfer_queue()
-            .add_required_extension(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME)
+            .add_required_extension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
             .select();
     if (!phys_ret) {
         std::cerr << "Failed to select Vulkan Physical Device. Error: " << phys_ret.error().message() << "\n";
@@ -97,38 +85,17 @@ void VuRenderer::InitVulkan() {
 
     Vu::PhysicalDevice = phys_ret.value().physical_device;
 
-    //Device Extensions
-    // VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures{
-    //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
-    //     .dynamicRendering = VK_TRUE,
-    // };
-    //Enbale Sync2
-    // VkPhysicalDeviceSynchronization2Features sync2Features{
-    //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
-    //     .synchronization2 = VK_TRUE,
-    // };
-
-    VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures = {
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES,
-        .bufferDeviceAddress = VK_TRUE
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeatures = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
+        .bufferDeviceAddress = VK_TRUE,
     };
-
-
-    // VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptorBufferFeatures{
-    //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT,
-    //     .descriptorBuffer = VK_TRUE,
-    // };
-
 
     // Device
     vkb::DeviceBuilder device_builder{phys_ret.value()};
     auto dev_ret = device_builder
-            //.add_pNext(&dynamicRenderingFeatures)
-            //.add_pNext(&sync2Features)
             .add_pNext(&bufferDeviceAddressFeatures)
-            //.add_pNext(&descriptorBufferFeatures)
-
             .build();
+
     if (!dev_ret) {
         std::cerr << "Failed to create Vulkan device. Error: " << dev_ret.error().message() << "\n";
     }
@@ -160,15 +127,15 @@ void VuRenderer::InitVulkan() {
 
 void VuRenderer::CreateSwapChain() {
     SwapChain = Vu::VuSwapChain{};
-    SwapChain.InitSwapChain(surface);
+    SwapChain.InitSwapChain(Surface);
 }
 
 void VuRenderer::CreateGraphicsPipeline() {
-    DebugPipeline.CreateGraphicsPipeline(descriptorSetLayout, SwapChain.renderPass);
+    DebugPipeline.CreateGraphicsPipeline(descriptorSetLayout, SwapChain.RenderPass.RenderPass);
 }
 
 void VuRenderer::CreateCommandPool() {
-    QueueFamilyIndices queueFamilyIndices = Vu::FindQueueFamilies(Vu::PhysicalDevice, surface);
+    QueueFamilyIndices queueFamilyIndices = Vu::FindQueueFamilies(Vu::PhysicalDevice, Surface);
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -209,6 +176,7 @@ void VuRenderer::CreateSyncObjects() {
 
 void VuRenderer::CreateUniformBuffers() {
 
+    uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDeviceSize bufferSize = sizeof(FrameUBO);
 
@@ -234,65 +202,6 @@ void VuRenderer::CreateDescriptorSetLayout() {
     };
 
     VK_CHECK(vkCreateDescriptorSetLayout(Vu::Device, &layoutInfo, nullptr, &descriptorSetLayout));
-
-    // ////////////
-    //
-    // VkDeviceSize maxObjectCount = 256;
-    //
-    // VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties{
-    //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT,
-    // };
-    //
-    // VkPhysicalDeviceProperties2KHR device_properties{
-    //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR,
-    //     .pNext = &descriptor_buffer_properties,
-    //
-    // };
-    // vkGetPhysicalDeviceProperties2(Vu::PhysicalDevice, &device_properties);
-    //
-    //
-    // vkGetDescriptorSetLayoutSizeEXT(Vu::Device, descriptorSetLayout, &uniformDescriptor.layoutSize);
-    // uniformDescriptor.layoutSize = aligned_size(uniformDescriptor.layoutSize, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
-    //
-    // VkDeviceSize descriptor_buffer_offset = 0;
-    // vkGetDescriptorSetLayoutBindingOffsetEXT(Vu::Device, descriptorSetLayout, 0U, &descriptor_buffer_offset);
-    //
-    // uniformDescriptor.layoutOffset = descriptor_buffer_offset;
-    //
-    //
-    // VuBuffer descriptorBuffer(Vu::VmaAllocator, maxObjectCount, uniformDescriptor.layoutSize,
-    //                           VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT
-    //                           | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-    //
-    //                           VMA_ALLOCATION_CREATE_MAPPED_BIT
-    //                           | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
-    //
-    // uniformDescriptor.descriptorBuffer = descriptorBuffer;
-    //
-    // uniformDescriptor.bufferDeviceAddress = get_device_address(Vu::Device, uniformDescriptor.descriptorBuffer.VulkanBuffer);
-    //
-    // void* descriptorBufferMapped = nullptr;
-    // vmaMapMemory(Vu::VmaAllocator, uniformDescriptor.descriptorBuffer.Allocation, &descriptorBufferMapped);
-    //
-    // for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    //
-    //     VkDescriptorAddressInfoEXT descriptorAddressInfo{};
-    //     descriptorAddressInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT;
-    //     descriptorAddressInfo.format = VK_FORMAT_UNDEFINED;
-    //     descriptorAddressInfo.address = get_device_address(Vu::Device, uniformBuffers[i].VulkanBuffer);
-    //     descriptorAddressInfo.range = uniformBuffers[i].GetDeviceSize();
-    //
-    //     VkDescriptorGetInfoEXT descriptorInfo{};
-    //     descriptorInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
-    //     descriptorInfo.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    //     descriptorInfo.data.pCombinedImageSampler = nullptr;
-    //     descriptorInfo.data.pUniformBuffer = &descriptorAddressInfo;
-    //
-    //     vkGetDescriptorEXT(Vu::Device, &descriptorInfo, descriptor_buffer_properties.uniformBufferDescriptorSize,
-    //                       (char *) descriptorBufferMapped + (uniformDescriptor.layoutSize * i) + uniformDescriptor.layoutOffset);
-    // }
-
-
 }
 
 void VuRenderer::CreateDescriptorPool() {
@@ -322,7 +231,7 @@ void VuRenderer::CreateDescriptorSets() {
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = uniformBuffers[i].VulkanBuffer;
+        bufferInfo.buffer = uniformBuffers[i].Buffer;
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(FrameUBO);
 
@@ -341,13 +250,11 @@ void VuRenderer::CreateDescriptorSets() {
 
 void VuRenderer::Dispose() {
     vkDeviceWaitIdle(Vu::Device);
-
     ImGui_ImplVulkan_Shutdown();
-    //ImGui_ImplGlfw_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
-    SwapChain.CleanupSwapchain();
+    SwapChain.Dispose();
     vkDestroyDescriptorSetLayout(Vu::Device, descriptorSetLayout, nullptr);
     vkDestroyDescriptorPool(Vu::Device, descriptorPool, nullptr);
     vkDestroyDescriptorPool(Vu::Device, uiDescriptorPool, nullptr);
@@ -363,8 +270,6 @@ void VuRenderer::Dispose() {
 
     }
 
-    //renderPass.Dispose();
-    //DepthStencil.Dispose();
     DebugPipeline.Dispose();
 
     vkDestroyCommandPool(Vu::Device, Vu::commandPool, nullptr);
@@ -373,10 +278,8 @@ void VuRenderer::Dispose() {
     if (enableValidationLayers) {
         Vu::DestroyDebugUtilsMessengerEXT(Vu::Instance, debugMessenger, nullptr);
     }
-    vkDestroySurfaceKHR(Vu::Instance, surface, nullptr);
+    vkDestroySurfaceKHR(Vu::Instance, Surface, nullptr);
     vkDestroyInstance(Vu::Instance, nullptr);
-    // glfwDestroyWindow(Vu::window);
-    // glfwTerminate();
 
     SDL_DestroyWindow(Vu::sdlWindow);
     SDL_Quit();
@@ -408,44 +311,20 @@ void VuRenderer::SetupImGui() {
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
 
-    //ImGui_ImplVulkan_LoadFunctions()
-    //ImGui_ImplGlfw_InitForVulkan(Vu::window, true);
     ImGui_ImplSDL3_InitForVulkan(Vu::sdlWindow);
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = Vu::Instance;
     init_info.PhysicalDevice = Vu::PhysicalDevice;
     init_info.Device = Vu::Device;
-    init_info.QueueFamily = Vu::VuSwapChain::FindQueueFamilies(Vu::PhysicalDevice, surface).graphicsFamily.
-            value();
+    init_info.QueueFamily = Vu::VuSwapChain::FindQueueFamilies(Vu::PhysicalDevice, Surface).graphicsFamily.value();
     init_info.Queue = Vu::graphicsQueue;
     init_info.DescriptorPool = uiDescriptorPool;
     init_info.MinImageCount = 2;
     init_info.ImageCount = 2;
     init_info.UseDynamicRendering = false;
-    init_info.RenderPass = SwapChain.renderPass;
-    //init_info.CheckVkResultFn = check_vk_result;
+    init_info.RenderPass = SwapChain.RenderPass.RenderPass;
 
-    // VkFormat colorRenderingFormats[1] = {
-    //     VK_FORMAT_B8G8R8A8_SRGB,
-    // };
-    //
-    // VkPipelineRenderingCreateInfo rfInfo = {
-    //     .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-    //     .pNext = nullptr,
-    //     .colorAttachmentCount = 1,
-    //     .pColorAttachmentFormats = colorRenderingFormats,
-    //     .depthAttachmentFormat = SwapChain.depthStencil.DepthFormat,
-    //     .stencilAttachmentFormat = SwapChain.depthStencil.DepthFormat
-    // };
-
-    //init_info.PipelineRenderingCreateInfo = rfInfo;
     ImGui_ImplVulkan_Init(&init_info);
     ImGui_ImplVulkan_CreateFontsTexture();
 }
-
-// void VuRenderer::MouseCallback(GLFWwindow* window, double xpos, double ypos) {
-//     Vu::MouseX = xpos;
-//     Vu::MouseY = ypos;
-// }

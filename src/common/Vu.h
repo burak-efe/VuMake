@@ -22,10 +22,13 @@ namespace Vu {
     inline SDL_Window* sdlWindow;
     inline SDL_Event sdlEvent;
 
-    inline float DeltaTime = 0;
-    inline uint64 PrevTimeNS = 0;
-    inline double MouseX = 0;
-    inline double MouseY = 0;
+    inline float DeltaAsSecond = 0;
+    inline uint64 PrevTimeAsNanoSecond = 0;
+    inline float MouseX = 0;
+    inline float MouseY = 0;
+
+    inline float MouseDeltaX = 0;
+    inline float MouseDeltaY = 0;
 
 
     inline VkCommandBuffer BeginSingleTimeCommands() {
@@ -61,14 +64,19 @@ namespace Vu {
         vkFreeCommandBuffers(Vu::Device, Vu::commandPool, 1, &commandBuffer);
     }
 
-    inline void UpdateDeltaTime() {
-        //deltaTime
-        // DeltaTime = (glfwGetTime() - PrevTime);
-        // PrevTime = glfwGetTime();
+    inline void PreUpdate() {
+        //nano => micro => mili => second
+        DeltaAsSecond = (SDL_GetTicksNS() - PrevTimeAsNanoSecond) / 1000.0f / 1000.0f / 1000.0f;
+        PrevTimeAsNanoSecond = SDL_GetTicksNS();
 
-        //nano to micro to mili to second
-        DeltaTime = (SDL_GetTicksNS() - PrevTimeNS) / 1000.0f / 1000.0f / 1000.0f;
-        PrevTimeNS = SDL_GetTicksNS();
+
+    }
+
+    inline void UpdateInput() {
+
+        SDL_GetRelativeMouseState(&MouseDeltaX, &MouseDeltaY);
+        //::cout << MouseDeltaX  << "   " << MouseDeltaY<< std::endl;
+        SDL_GetMouseState(&MouseX, &MouseY);
     }
 
 

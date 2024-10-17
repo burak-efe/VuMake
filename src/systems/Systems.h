@@ -24,7 +24,7 @@ inline flecs::system AddSpinningSystem(flecs::world& world) {
 
     return world.system<Transform, Spinn>("SpinningSystem")
             .each([](Transform& trs, Spinn& spinn) {
-                trs.Rotate(spinn.Axis, spinn.Angle * Vu::DeltaTime);
+                trs.Rotate(spinn.Axis, spinn.Angle * Vu::DeltaAsSecond);
             });
 }
 
@@ -63,16 +63,16 @@ inline flecs::system AddTransformUISystem(flecs::world& world) {
 
 inline flecs::system AddCameraUISystem(flecs::world& world) {
 
-    return  world.system<Camera>("camUI")
-        .each([](flecs::entity e, Camera& cam) {
+    return world.system<Camera>("camUI")
+            .each([](flecs::entity e, Camera& cam) {
 
-            if (ImGui::CollapsingHeader("Camera Components")) {
-                ImGui::Separator();
-                ImGui::Text(e.name());
-                ImGui::SliderFloat(std::format("FOV##{0}", e.id()).c_str(), &cam.fov, 20.0f, 140.0f);
+                if (ImGui::CollapsingHeader("Camera Components")) {
+                    ImGui::Separator();
+                    ImGui::Text(e.name());
+                    ImGui::SliderFloat(std::format("FOV##{0}", e.id()).c_str(), &cam.fov, 20.0f, 140.0f);
 
-            }
-        });
+                }
+            });
 
 }
 
@@ -84,58 +84,84 @@ inline flecs::system AddFlyCameraSystem(flecs::world& world) {
 
     return world.system<Transform, Camera>("CameraMovement")
             .each([](Transform& trs, Camera& cam) {
+                SDL_PumpEvents();
 
-                //assert(Vu::window != nullptr);
+                const auto* state = SDL_GetKeyboardState(nullptr);
+
                 float velocity = cam.cameraSpeed;
-                // if (glfwGetKey(Vu::window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-                //     velocity *= 2.0f;
-                // }
+                if (state[SDL_SCANCODE_LSHIFT]) {
+                    velocity *= 2.0f;
+                }
+
 
                 float3 input{};
-                // if (glfwGetKey(Vu::window, GLFW_KEY_W) == GLFW_PRESS) {
-                //     input.z -= 1;
-                // }
-                // if (glfwGetKey(Vu::window, GLFW_KEY_S) == GLFW_PRESS) {
-                //     input.z += 1;
-                // }
-                // if (glfwGetKey(Vu::window, GLFW_KEY_A) == GLFW_PRESS) {
-                //     input.x -= 1;
-                // }
-                // if (glfwGetKey(Vu::window, GLFW_KEY_D) == GLFW_PRESS) {
-                //     input.x += 1;
-                // }
-                // if (glfwGetKey(Vu::window, GLFW_KEY_E) == GLFW_PRESS) {
-                //     input.y += 1;
-                // }
-                // if (glfwGetKey(Vu::window, GLFW_KEY_Q) == GLFW_PRESS) {
-                //     input.y -= 1;
-                // }
+                if (state[SDL_SCANCODE_W]) {
+                    input.z -= 1;
+                }
+                if (state[SDL_SCANCODE_S]) {
+                    input.z += 1;
+                }
+                if (state[SDL_SCANCODE_A]) {
+                    input.x -= 1;
+                }
+                if (state[SDL_SCANCODE_D]) {
+                    input.x += 1;
+                }
+                if (state[SDL_SCANCODE_E]) {
+                    input.y += 1;
+                }
+                if (state[SDL_SCANCODE_Q]) {
+                    input.y -= 1;
+                }
 
+                float3 movement = input * velocity * Vu::DeltaAsSecond;
+                //Mouse
+                auto mouseState = SDL_GetMouseState(nullptr, nullptr);
 
-                float3 movement = input * velocity * Vu::DeltaTime;
-                // if (glfwGetMouseButton(Vu::window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
-                //     if (cam.firstClick) {
-                //         cam.firstClick = false;
-                //         return;
-                //     }
-                //     float xOffset = cam.lastX - Vu::MouseX;
-                //     float yOffset = cam.lastY - Vu::MouseY; // Reversed since y-coordinates range from bottom to top
-                //
-                //
-                //     xOffset *= cam.sensitivity;
-                //     yOffset *= cam.sensitivity;
-                //
-                //     cam.yaw += yOffset;
-                //     cam.pitch += xOffset;
-                //
-                //     cam.pitch = std::clamp(cam.pitch, -89.0f, 89.0f);
-                //
-                // } else {
-                //     cam.firstClick = true;
-                // }
+                bool mouseRightClick = (mouseState & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) != 0;
 
-                cam.lastX = Vu::MouseX;
-                cam.lastY = Vu::MouseY;
+                if (mouseRightClick) {
+                    // if (!SDL_GetWindowRelativeMouseMode(Vu::sdlWindow)) {
+                    //     std::cout << 1 << std::endl;
+                    //     SDL_SetWindowRelativeMouseMode(Vu::sdlWindow, true);
+                    // }
+
+                    SDL_HideCursor();
+                    //SDL_SetWindowMouseGrab(Vu::sdlWindow, true);
+                    //if (true) {
+
+                    if (cam.firstClick) {
+                        cam.firstClick = false;
+                        return;
+                    }
+
+                    float xOffset = -Vu::MouseDeltaX;
+                    float yOffset = -Vu::MouseDeltaY;
+
+                    xOffset *= cam.sensitivity;
+                    yOffset *= cam.sensitivity;
+
+                    float smoothingFactor = 0.4f; // tweak this value
+                    float smoothedDeltaX = (cam.lastX * smoothingFactor) + (xOffset * (1.0f - smoothingFactor));
+                    float smoothedDeltaY = (cam.lastY * smoothingFactor) + (yOffset * (1.0f - smoothingFactor));
+
+                    cam.yaw +=
+                            smoothedDeltaY;
+                    cam.pitch +=
+                            smoothedDeltaX;
+
+                    cam.pitch = std::clamp(cam.pitch, -89.0f, 89.0f);
+
+                    cam.lastX = smoothedDeltaX;
+                    cam.lastY = smoothedDeltaY;
+                } else {
+                    SDL_ShowCursor();
+                    // if (SDL_GetWindowRelativeMouseMode(Vu::sdlWindow)) {
+                    //     SDL_SetWindowRelativeMouseMode(Vu::sdlWindow, false);
+                    // }
+                    cam.firstClick = true;
+                }
+
 
                 trs.SetEulerAngles(float3(cam.yaw, cam.pitch, cam.roll));
 
@@ -151,8 +177,8 @@ inline flecs::system AddFlyCameraSystem(flecs::world& world) {
                 ubo.view = glm::inverse(trs.ToTRS());
                 ubo.proj = glm::perspective(
                     glm::radians(cam.fov),
-                    static_cast<float>(Vu::Renderer->SwapChain.swapChainExtent.width)
-                    / static_cast<float>(Vu::Renderer->SwapChain.swapChainExtent.height),
+                    static_cast<float>(Vu::Renderer->SwapChain.SwapChainExtent.width)
+                    / static_cast<float>(Vu::Renderer->SwapChain.SwapChainExtent.height),
                     cam.near,
                     cam.far);
                 Vu::Renderer->UpdateUniformBuffer(ubo);

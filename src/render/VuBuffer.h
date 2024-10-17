@@ -5,7 +5,7 @@
 
 class VuBuffer {
 public:
-    VkBuffer VulkanBuffer;
+    VkBuffer Buffer;
     VmaAllocator Allocator;
     VmaAllocation Allocation;
     VmaAllocationInfo AllocationInfo;
