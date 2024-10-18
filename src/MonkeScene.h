@@ -19,7 +19,7 @@ struct MonkeScene {
         VuRenderer vuRenderer;
         vuRenderer.Init();
         Vu::Renderer = &vuRenderer;
-        Mesh monke("shaders/monka.gltf");
+        Mesh monke("shaders/monka500k.glb");
 
         flecs::world world;
         world.set<VuRenderer>(vuRenderer);

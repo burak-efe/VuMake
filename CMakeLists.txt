@@ -138,6 +138,15 @@ FetchContent_MakeAvailable(fetch_flecs)
 target_link_libraries(${PROJECT_NAME} PRIVATE flecs::flecs_static)
 ####################################################################################################
 #Copy asset files to build directory
+#add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E copy_directory
+#        ${CMAKE_SOURCE_DIR}/shaders $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders)
+#if(WIN32)
+#    add_custom_command(TARGET {PROJECT_NAME} POST_BUILD
+#            COMMAND ${CMAKE_COMMAND} cmd ${CMAKE_SOURCE_DIR}/shaders/compile.bat)
+#endif()
+
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
         ${CMAKE_SOURCE_DIR}/shaders $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders)
+

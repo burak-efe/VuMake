@@ -11,19 +11,21 @@ layout (push_constant) uniform constants
     mat4 model;
 } PushConstants;
 
-layout (location = 0) in vec3 inPosition;
-layout (location = 1) in vec3 inNormal;
-layout (location = 2) in vec2 inUV;
+layout (location = 0) in vec3 VertexPosition;
+layout (location = 1) in vec3 VertexNormal;
+layout (location = 2) in vec2 VertexUV;
 
-layout (location = 0) out vec3 fragNormal;
-layout (location = 1) out vec2 fragUV;
+layout (location = 0) out vec3 FragPosWS;
+layout (location = 1) out vec3 FragNormalWS;
+layout (location = 2) out vec2 FragUV;
 
 
 void main() {
-    gl_Position = ubo.proj * ubo.view * PushConstants.model * vec4(inPosition, 1.0);
+    gl_Position = ubo.proj * ubo.view * PushConstants.model * vec4(VertexPosition, 1.0);
 
-    fragNormal.xyz = mat3(PushConstants.model) * inNormal;
+    FragPosWS = vec3(PushConstants.model * vec4(VertexPosition, 1.0));
 
-    fragUV = inUV;
+    FragNormalWS.xyz = mat3(PushConstants.model) * VertexNormal;
+    FragUV = VertexUV;
 
 }

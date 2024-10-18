@@ -55,13 +55,14 @@ void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 
 void VuRenderer::EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex) {
     SwapChain.EndRenderPass(commandBuffer);
     VK_CHECK(vkEndCommandBuffer(commandBuffer));
+
 }
 
 void VuRenderer::RenderMesh(::Mesh& mesh, glm::mat4 trs) {
     auto commandBuffer = commandBuffers[currentFrame];
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, DebugPipeline.Pipeline);
 
-    PushConstants(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(trs), &trs);
+    PushConstants(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(trs), &trs);
 
     std::array vertexBuffers = {mesh.VertexBuffer.Buffer, mesh.NormalBuffer.Buffer, mesh.UvBuffer.Buffer};
     VkDeviceSize offsets[] = {0, 0, 0};
