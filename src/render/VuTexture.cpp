@@ -37,17 +37,17 @@ void VuTexture::Alloc(std::filesystem::path path) {
     createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                TextureImage,
-                TextureImageMemory);
+                textureImage,
+                textureImageMemory);
 
-    transitionImageLayout(TextureImage, VK_FORMAT_R8G8B8A8_SRGB,
+    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB,
                           VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    copyBufferToImage(staging.Buffer, TextureImage,
+    copyBufferToImage(staging.buffer, textureImage,
                       static_cast<uint32>(texWidth), static_cast<uint32>(texHeight));
 
-    transitionImageLayout(TextureImage, VK_FORMAT_R8G8B8A8_SRGB,
+    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -165,8 +165,8 @@ void VuTexture::copyBufferToImage(VkBuffer buffer, VkImage image, uint32 width, 
 }
 
 void VuTexture::Dispose() {
-    vkDestroyImage(Vu::Device, TextureImage, nullptr);
-    vkFreeMemory(Vu::Device, TextureImageMemory, nullptr);
-    vkDestroyImageView(Vu::Device, TextureImageView, nullptr);
-    vkDestroySampler(Vu::Device, TextureImageSampler, nullptr);
+    vkDestroyImage(Vu::Device, textureImage, nullptr);
+    vkFreeMemory(Vu::Device, textureImageMemory, nullptr);
+    vkDestroyImageView(Vu::Device, textureImageView, nullptr);
+    vkDestroySampler(Vu::Device, textureImageSampler, nullptr);
 }

@@ -10,17 +10,17 @@ namespace std::filesystem {
 
 class Mesh {
 public:
-    VuBuffer IndexBuffer;
-    VuBuffer VertexBuffer;
-    VuBuffer NormalBuffer;
-    VuBuffer UvBuffer;
+    VuBuffer indexBuffer;
+    VuBuffer vertexBuffer;
+    VuBuffer normalBuffer;
+    VuBuffer uvBuffer;
 
-    uint32 VertexCount;
+    uint32 vertexCount;
 
-    std::vector<uint32> Indices;
-    std::vector<float3> Vertices;
-    std::vector<float3> Normals;
-    std::vector<float2> Uvs;
+    std::vector<uint32> indices;
+    std::vector<float3> vertices;
+    std::vector<float3> normals;
+    std::vector<float2> uvs;
 
 
     Mesh(const std::filesystem::path& gltfPath);

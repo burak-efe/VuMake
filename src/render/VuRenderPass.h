@@ -7,10 +7,10 @@
 
 struct VuRenderPass {
 
-    VkRenderPass RenderPass;
+    VkRenderPass renderPass;
 
     void Dispose() {
-        vkDestroyRenderPass(Vu::Device, RenderPass, nullptr);
+        vkDestroyRenderPass(Vu::Device, renderPass, nullptr);
     }
 
     void Init(VkFormat colorFormat,VkFormat depthFormat) {
@@ -67,7 +67,7 @@ struct VuRenderPass {
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        VK_CHECK(vkCreateRenderPass(Vu::Device, &renderPassInfo, nullptr, &RenderPass));
+        VK_CHECK(vkCreateRenderPass(Vu::Device, &renderPassInfo, nullptr, &renderPass));
     }
 
 

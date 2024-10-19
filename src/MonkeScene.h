@@ -21,6 +21,17 @@ struct MonkeScene {
         Vu::Renderer = &vuRenderer;
         Mesh monke("shaders/monka500k.glb");
 
+        VuShader shader;
+        shader.initShader("shaders/vert.spv", "shaders/frag.spv", vuRenderer.swapChain.renderPass.renderPass);
+        uint32 monkeMat0 = shader.createMaterial(&vuRenderer.debugTexture);
+
+        VuTexture floorTex;
+        floorTex.Alloc("shaders/textures/floor0.png");
+        uint32 monkeMat1 = shader.createMaterial(&floorTex);
+
+
+        //return;
+
         flecs::world world;
         world.set<VuRenderer>(vuRenderer);
 
@@ -29,14 +40,18 @@ struct MonkeScene {
         auto flyCameraSystem = AddFlyCameraSystem(world);
         auto drawMeshSystem = AddRenderingSystem(world);
         auto spinUI = AddSpinUISystem(world);
-       auto trsUI = AddTransformUISystem(world);
+        auto trsUI = AddTransformUISystem(world);
         auto camUI = AddCameraUISystem(world);
 
 
         //Add Entities
-        world.entity("Monke2").set(Transform{
+        world.entity("Monke1").set(Transform{
             .Position = float3(0, 0, 0)
-        }).set(MeshRenderer{&monke}).set(Spinn{});
+        }).set(MeshRenderer{&monke, &shader, monkeMat0}).set(Spinn{});
+
+        world.entity("Monke2").set(Transform{
+            .Position = float3(4, 0, 0)
+        }).set(MeshRenderer{&monke, &shader, monkeMat1}).set(Spinn{});
 
         world.entity("Cam").set(
             Transform(float3(0, 0, 4.0f), float3(0, 0, 0), float3(1, 1, 1))
@@ -76,6 +91,6 @@ struct MonkeScene {
         vuRenderer.WaitIdle();
         monke.Dispose();
         vuRenderer.Dispose();
-        system("pause");
+        //system("pause");
     }
 };

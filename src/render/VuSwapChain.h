@@ -15,10 +15,9 @@ namespace Vu {
         void createFramebuffers();
 
     public:
-        VkSwapchainKHR SwapChain;
-        //VkSurfaceKHR Surface;
-        VuRenderPass RenderPass;
-        VuDepthStencil DepthStencil;
+        VkSwapchainKHR swapChain;
+        VuRenderPass renderPass;
+        VuDepthStencil depthStencil;
 
         std::vector<VkImage> SwapChainImages;
         std::vector<VkImageView> SwapChainImageViews;
@@ -34,8 +33,8 @@ namespace Vu {
         void InitSwapChain(VkSurfaceKHR surface) {
             createSwapChain(surface);
             createImageViews(Vu::Device);
-            DepthStencil.Init(SwapChainExtent);
-            RenderPass.Init(SwapChainImageFormat, DepthStencil.DepthFormat);
+            depthStencil.Init(SwapChainExtent);
+            renderPass.Init(SwapChainImageFormat, depthStencil.depthFormat);
             createFramebuffers();
         }
 
@@ -47,10 +46,10 @@ namespace Vu {
                 vkDestroyFramebuffer(Device, framebuffer, nullptr);
             }
 
-            RenderPass.Dispose();
+            renderPass.Dispose();
 
-            DepthStencil.Dispose();
-            vkDestroySwapchainKHR(Vu::Device, SwapChain, nullptr);
+            depthStencil.Dispose();
+            vkDestroySwapchainKHR(Vu::Device, swapChain, nullptr);
         }
 
 
@@ -71,12 +70,12 @@ namespace Vu {
             for (auto framebuffer: Framebuffers) {
                 vkDestroyFramebuffer(Device, framebuffer, nullptr);
             }
-            DepthStencil.Dispose();
-            vkDestroySwapchainKHR(Vu::Device, SwapChain, nullptr);
+            depthStencil.Dispose();
+            vkDestroySwapchainKHR(Vu::Device, swapChain, nullptr);
 
             createSwapChain(surface);
             createImageViews(Device);
-            DepthStencil.Init(SwapChainExtent);
+            depthStencil.Init(SwapChainExtent);
             createFramebuffers();
         }
 
@@ -89,7 +88,7 @@ namespace Vu {
 
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            renderPassInfo.renderPass = RenderPass.RenderPass;
+            renderPassInfo.renderPass = renderPass.renderPass;
             renderPassInfo.framebuffer = Framebuffers[frameIndex];
             renderPassInfo.renderArea.offset = {0, 0};
             renderPassInfo.renderArea.extent = SwapChainExtent;

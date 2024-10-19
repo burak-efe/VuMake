@@ -145,11 +145,11 @@ namespace Vu {
         createInfo.clipped = VK_TRUE;
         createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-        VK_CHECK(vkCreateSwapchainKHR(Vu::Device, &createInfo, nullptr, &SwapChain));
+        VK_CHECK(vkCreateSwapchainKHR(Vu::Device, &createInfo, nullptr, &swapChain));
 
-        vkGetSwapchainImagesKHR(Vu::Device, SwapChain, &imageCount, nullptr);
+        vkGetSwapchainImagesKHR(Vu::Device, swapChain, &imageCount, nullptr);
         SwapChainImages.resize(imageCount);
-        vkGetSwapchainImagesKHR(Vu::Device, SwapChain, &imageCount, SwapChainImages.data());
+        vkGetSwapchainImagesKHR(Vu::Device, swapChain, &imageCount, SwapChainImages.data());
 
         SwapChainImageFormat = surfaceFormat.format;
         SwapChainExtent = extend;
@@ -189,13 +189,13 @@ namespace Vu {
         for (size_t i = 0; i < SwapChainImageViews.size(); i++) {
             std::array attachments = {
                 SwapChainImageViews[i],
-                DepthStencil.ImageView
+                depthStencil.imageView
 
             };
 
             VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = RenderPass.RenderPass;
+            framebufferInfo.renderPass = renderPass.renderPass;
             framebufferInfo.attachmentCount = attachments.size();
             framebufferInfo.pAttachments = attachments.data();
             framebufferInfo.width = SwapChainExtent.width;

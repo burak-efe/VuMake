@@ -19,7 +19,7 @@ layout (location = 2) in vec2 fragUV;
 
 layout (location = 0) out vec4 outColor;
 
-const vec3 lightPos = vec3(0.0, 3.0, 0.0);
+const vec3 lightPos = vec3(0.0, 2.0, 3.0);
 const vec3 lightColor = vec3(1.0, 1.0, 1.0);
 
 const float ambient = 0.03f;

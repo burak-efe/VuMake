@@ -11,11 +11,11 @@ namespace std::filesystem {
 
 class VuTexture {
 public:
-    VkImage TextureImage;
-    VkDeviceMemory TextureImageMemory;
+    VkImage textureImage;
+    VkDeviceMemory textureImageMemory;
 
-    VkImageView TextureImageView;
-    VkSampler TextureImageSampler;
+    VkImageView textureImageView;
+    VkSampler textureImageSampler;
 
     void Alloc(std::filesystem::path path);
 
@@ -32,7 +32,7 @@ private:
     void createImageView() {
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = TextureImage;
+        viewInfo.image = textureImage;
         viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
         viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
         viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -42,7 +42,7 @@ private:
         viewInfo.subresourceRange.layerCount = 1;
 
 
-        VK_CHECK(vkCreateImageView(Vu::Device, &viewInfo, nullptr, &TextureImageView));
+        VK_CHECK(vkCreateImageView(Vu::Device, &viewInfo, nullptr, &textureImageView));
 
     }
 
@@ -69,7 +69,7 @@ private:
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = 0.0f;
 
-        VK_CHECK(vkCreateSampler(Vu::Device, &samplerInfo, nullptr, &TextureImageSampler));
+        VK_CHECK(vkCreateSampler(Vu::Device, &samplerInfo, nullptr, &textureImageSampler));
     }
 
 

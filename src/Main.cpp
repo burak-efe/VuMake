@@ -14,6 +14,9 @@
 #include "Common.h"
 #include "MonkeScene.h"
 
+#include "spirv_reflect.h"
+
+
 int main(int argc, char* argv[]) {
     MonkeScene scen;
     scen.Run();

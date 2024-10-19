@@ -14,7 +14,7 @@ void VuRenderer::BeginFrame() {
     vkWaitForFences(Vu::Device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
     VkResult result = vkAcquireNextImageKHR(
-        Vu::Device, SwapChain.SwapChain, UINT64_MAX,
+        Vu::Device, swapChain.swapChain, UINT64_MAX,
         imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &currentFrameImageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -34,48 +34,63 @@ void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
     VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo));
-    SwapChain.BeginRenderPass(commandBuffer, imageIndex);
+    swapChain.BeginRenderPass(commandBuffer, imageIndex);
 
     VkViewport viewport{};
     viewport.x = 0.0f;
-    viewport.y = (float) SwapChain.SwapChainExtent.height;
-    viewport.width = (float) SwapChain.SwapChainExtent.width;
-    viewport.height = -(float) SwapChain.SwapChainExtent.height;
+    viewport.y = (float) swapChain.SwapChainExtent.height;
+    viewport.width = (float) swapChain.SwapChainExtent.width;
+    viewport.height = -(float) swapChain.SwapChainExtent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = SwapChain.SwapChainExtent;
+    scissor.extent = swapChain.SwapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 }
 
 void VuRenderer::EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex) {
-    SwapChain.EndRenderPass(commandBuffer);
+    swapChain.EndRenderPass(commandBuffer);
     VK_CHECK(vkEndCommandBuffer(commandBuffer));
 
 }
 
-void VuRenderer::RenderMesh(::Mesh& mesh, glm::mat4 trs) {
+void VuRenderer::BindMesh(const Mesh& mesh) {
     auto commandBuffer = commandBuffers[currentFrame];
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, DebugPipeline.Pipeline);
 
-    PushConstants(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(trs), &trs);
-
-    std::array vertexBuffers = {mesh.VertexBuffer.Buffer, mesh.NormalBuffer.Buffer, mesh.UvBuffer.Buffer};
+    std::array vertexBuffers = {mesh.vertexBuffer.buffer, mesh.normalBuffer.buffer, mesh.uvBuffer.buffer};
     VkDeviceSize offsets[] = {0, 0, 0};
     vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), offsets);
 
-    vkCmdBindIndexBuffer(commandBuffer, mesh.IndexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+}
 
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, DebugPipeline.PipelineLayout,
-                            0, 1, &FrameConstantDescriptorSets[currentFrame], 0, nullptr);
+void VuRenderer::BindMaterial(const VuMaterial& material, glm::mat4 modelMatrix) {
+    auto commandBuffer = commandBuffers[currentFrame];
+    material.bindFrameConstants(commandBuffer, currentFrame);
+    material.bind(commandBuffer, currentFrame);
+    material.PushConstants(commandBuffer,
+                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                           0, sizeof(modelMatrix), &modelMatrix);
+}
 
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, DebugPipeline.PipelineLayout,
-                            1, 1, &ImageDescriptorSets[currentFrame], 0, nullptr);
-    vkCmdDrawIndexed(commandBuffer, mesh.IndexBuffer.Lenght, 1, 0, 0, 0);
+void VuRenderer::DrawIndexed(uint32 indexCount) {
+    auto commandBuffer = commandBuffers[currentFrame];
+    //vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, debugPipeline.Pipeline);
+
+    //PushConstants(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(trs), &trs);
+
+    // vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, debugPipeline.PipelineLayout,
+    //                         0, 1, &frameConstantDescriptorSets[currentFrame], 0, nullptr);
+
+    // vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, debugPipeline.PipelineLayout,
+    //                         1, 1, &ImageDescriptorSets[currentFrame], 0, nullptr);
+
+
+    vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
 }
 
 void VuRenderer::BeginImgui() {
@@ -117,7 +132,7 @@ void VuRenderer::EndFrame() {
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
 
-    VkSwapchainKHR swapChains[] = {SwapChain.SwapChain};
+    VkSwapchainKHR swapChains[] = {swapChain.swapChain};
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = swapChains;
 
@@ -131,16 +146,17 @@ void VuRenderer::EndFrame() {
         throw std::runtime_error("failed to present swap chain image!");
     }
 
-    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    currentFrame = (currentFrame + 1) % Vu::MAX_FRAMES_IN_FLIGHT;
 }
+
 
 void VuRenderer::UpdateUniformBuffer(FrameUBO ubo) {
     uniformBuffers[currentFrame].SetData(&ubo, sizeof(ubo));
 }
 
-void VuRenderer::PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32_t size, const void* pValues) {
-    vkCmdPushConstants(commandBuffers[currentFrame], DebugPipeline.PipelineLayout, stage, offset, size, pValues);
-}
+// void VuRenderer::PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32_t size, const void* pValues) {
+//     vkCmdPushConstants(commandBuffers[currentFrame], debugPipeline.PipelineLayout, stage, offset, size, pValues);
+// }
 
 void VuRenderer::ResetSwapChain() {
     SDL_Event event;
@@ -156,5 +172,5 @@ void VuRenderer::ResetSwapChain() {
         SDL_WaitEvent(&event);
     }
     vkDeviceWaitIdle(Vu::Device);
-    SwapChain.ResetSwapChain(Surface);
+    swapChain.ResetSwapChain(surface);
 }

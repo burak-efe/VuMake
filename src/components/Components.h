@@ -1,11 +1,14 @@
 #pragma once
 
 #include "Common.h"
+#include "VuShader.h"
 
 class Mesh;
 
 struct MeshRenderer {
-    Mesh* Mesh;
+    Mesh* mesh;
+    VuShader* vuShader;
+    uint32 materialIndex;
 };
 
 

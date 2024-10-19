@@ -48,7 +48,7 @@ void VuRenderer::CreateVulkanMemoryAllocator() {
 
 void VuRenderer::CreateSurface() {
 
-    SDL_Vulkan_CreateSurface(Vu::Window, Vu::Instance, nullptr, &Surface);
+    SDL_Vulkan_CreateSurface(Vu::Window, Vu::Instance, nullptr, &surface);
 }
 
 void VuRenderer::InitVulkan() {
@@ -76,7 +76,7 @@ void VuRenderer::InitVulkan() {
 
     //PhysicalDevice
     vkb::PhysicalDeviceSelector selector{vkb_inst};
-    auto phys_ret = selector.set_surface(Surface)
+    auto phys_ret = selector.set_surface(surface)
             .set_minimum_version(1, 1)
             .require_dedicated_transfer_queue()
             .add_required_extension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
@@ -127,10 +127,10 @@ void VuRenderer::InitVulkan() {
     CreateVulkanMemoryAllocator();
     CreateSwapChain();
     CreateCommandPool();
-    DebugTexture.Alloc(std::filesystem::path("shaders/uvChecker.png"));
+    debugTexture.Alloc(std::filesystem::path("shaders/uvChecker.png"));
     CreateUniformBuffers();
     CreateDescriptorSetLayout();
-    CreateGraphicsPipeline();
+    //CreateGraphicsPipeline();
     CreateDescriptorPool();
     CreateDescriptorSets();
     CreateCommandBuffers();
@@ -139,18 +139,18 @@ void VuRenderer::InitVulkan() {
 }
 
 void VuRenderer::CreateSwapChain() {
-    SwapChain = Vu::VuSwapChain{};
-    SwapChain.InitSwapChain(Surface);
+    swapChain = Vu::VuSwapChain{};
+    swapChain.InitSwapChain(surface);
 }
 
-void VuRenderer::CreateGraphicsPipeline() {
-
-    std::vector descriptorLayouts{FrameConstantsDescriptorSetLayout, ImageDescriptorSetLayout};
-    DebugPipeline.CreateGraphicsPipeline(descriptorLayouts, SwapChain.RenderPass.RenderPass);
-}
+// void VuRenderer::CreateGraphicsPipeline() {
+//
+//     std::vector descriptorLayouts{FrameConstantsDescriptorSetLayout, ImageDescriptorSetLayout};
+//     debugPipeline.CreateGraphicsPipeline(descriptorLayouts, swapChain.renderPass.renderPass);
+// }
 
 void VuRenderer::CreateCommandPool() {
-    QueueFamilyIndices queueFamilyIndices = Vu::FindQueueFamilies(Vu::PhysicalDevice, Surface);
+    QueueFamilyIndices queueFamilyIndices = Vu::FindQueueFamilies(Vu::PhysicalDevice, surface);
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -161,7 +161,7 @@ void VuRenderer::CreateCommandPool() {
 }
 
 void VuRenderer::CreateCommandBuffers() {
-    commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    commandBuffers.resize(Vu::MAX_FRAMES_IN_FLIGHT);
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = Vu::commandPool;
@@ -171,9 +171,9 @@ void VuRenderer::CreateCommandBuffers() {
 }
 
 void VuRenderer::CreateSyncObjects() {
-    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+    imageAvailableSemaphores.resize(Vu::MAX_FRAMES_IN_FLIGHT);
+    renderFinishedSemaphores.resize(Vu::MAX_FRAMES_IN_FLIGHT);
+    inFlightFences.resize(Vu::MAX_FRAMES_IN_FLIGHT);
 
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -182,7 +182,7 @@ void VuRenderer::CreateSyncObjects() {
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < Vu::MAX_FRAMES_IN_FLIGHT; i++) {
         VK_CHECK(vkCreateSemaphore(Vu::Device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]));
         VK_CHECK(vkCreateSemaphore(Vu::Device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]));
         VK_CHECK(vkCreateFence(Vu::Device, &fenceInfo, nullptr, &inFlightFences[i]));
@@ -191,8 +191,8 @@ void VuRenderer::CreateSyncObjects() {
 
 void VuRenderer::CreateUniformBuffers() {
 
-    uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    uniformBuffers.resize(Vu::MAX_FRAMES_IN_FLIGHT);
+    for (size_t i = 0; i < Vu::MAX_FRAMES_IN_FLIGHT; i++) {
         VkDeviceSize bufferSize = sizeof(FrameUBO);
 
         uniformBuffers[i] = VuBuffer();
@@ -216,79 +216,53 @@ void VuRenderer::CreateDescriptorSetLayout() {
         .bindingCount = 1,
         .pBindings = &uboLayoutBinding,
     };
-    VK_CHECK(vkCreateDescriptorSetLayout(Vu::Device, &frameLayout, nullptr, &FrameConstantsDescriptorSetLayout));
+    VK_CHECK(vkCreateDescriptorSetLayout(Vu::Device, &frameLayout, nullptr, &Vu::FrameConstantsDescriptorSetLayout));
 
 
-    VkDescriptorSetLayoutBinding samplerLayoutBinding{
-        .binding = 0,
-        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        .descriptorCount = 1,
-        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-        .pImmutableSamplers = nullptr,
-    };
-    VkDescriptorSetLayoutCreateInfo imageLayout{
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .bindingCount = 1,
-        .pBindings = &samplerLayoutBinding,
-    };
-    VK_CHECK(vkCreateDescriptorSetLayout(Vu::Device, &imageLayout, nullptr, &ImageDescriptorSetLayout));
 }
 
 void VuRenderer::CreateDescriptorPool() {
     std::array<VkDescriptorPoolSize, 2> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    poolSizes[0].descriptorCount = static_cast<uint32_t>(Vu::MAX_FRAMES_IN_FLIGHT);
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    poolSizes[1].descriptorCount = static_cast<uint32_t>(Vu::MAX_FRAMES_IN_FLIGHT) * 128;
 
     VkDescriptorPoolCreateInfo poolInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-        .maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * 4,
+        .maxSets = static_cast<uint32_t>(Vu::MAX_FRAMES_IN_FLIGHT) * 4,
         .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
         .pPoolSizes = poolSizes.data(),
     };
 
-    VK_CHECK(vkCreateDescriptorPool(Vu::Device, &poolInfo, nullptr, &DescriptorPool));
+    VK_CHECK(vkCreateDescriptorPool(Vu::Device, &poolInfo, nullptr, &Vu::DescriptorPool));
 }
 
 void VuRenderer::CreateDescriptorSets() {
 
     //frame
-    std::vector frameLayouts(MAX_FRAMES_IN_FLIGHT, FrameConstantsDescriptorSetLayout);
+    std::vector frameLayouts(Vu::MAX_FRAMES_IN_FLIGHT, Vu::FrameConstantsDescriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        .descriptorPool = DescriptorPool,
-        .descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT),
+        .descriptorPool = Vu::DescriptorPool,
+        .descriptorSetCount = static_cast<uint32_t>(Vu::MAX_FRAMES_IN_FLIGHT),
         .pSetLayouts = frameLayouts.data(),
     };
 
-    FrameConstantDescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-    VK_CHECK(vkAllocateDescriptorSets(Vu::Device, &allocInfo, FrameConstantDescriptorSets.data()));
-
-
-    //image
-    std::vector imageLayouts(MAX_FRAMES_IN_FLIGHT, ImageDescriptorSetLayout);
-    VkDescriptorSetAllocateInfo imageSetsAllocInfo{
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        .descriptorPool = DescriptorPool,
-        .descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT),
-        .pSetLayouts = imageLayouts.data(),
-    };
-
-    ImageDescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-    VK_CHECK(vkAllocateDescriptorSets(Vu::Device, &imageSetsAllocInfo, ImageDescriptorSets.data()));
+    Vu::frameConstantDescriptorSets.resize(Vu::MAX_FRAMES_IN_FLIGHT);
+    VK_CHECK(vkAllocateDescriptorSets(Vu::Device, &allocInfo, Vu::frameConstantDescriptorSets.data()));
 
 
     //frame
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < Vu::MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = uniformBuffers[i].Buffer;
+        bufferInfo.buffer = uniformBuffers[i].buffer;
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(FrameUBO);
 
         VkWriteDescriptorSet descriptorWrite{};
         descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = FrameConstantDescriptorSets[i];
+        descriptorWrite.dstSet = Vu::frameConstantDescriptorSets[i];
         descriptorWrite.dstBinding = 0;
         descriptorWrite.dstArrayElement = 0;
         descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -296,25 +270,6 @@ void VuRenderer::CreateDescriptorSets() {
         descriptorWrite.pBufferInfo = &bufferInfo;
 
         vkUpdateDescriptorSets(Vu::Device, 1, &descriptorWrite, 0, nullptr);
-    }
-
-    //image
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.sampler = DebugTexture.TextureImageSampler;
-        imageInfo.imageView = DebugTexture.TextureImageView;
-
-        VkWriteDescriptorSet imageDescWrite{};
-        imageDescWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        imageDescWrite.dstSet = ImageDescriptorSets[i];
-        imageDescWrite.dstBinding = 0;
-        imageDescWrite.dstArrayElement = 0;
-        imageDescWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        imageDescWrite.descriptorCount = 1;
-        imageDescWrite.pImageInfo = &imageInfo;
-
-        vkUpdateDescriptorSets(Vu::Device, 1, &imageDescWrite, 0, nullptr);
     }
 }
 
@@ -324,21 +279,21 @@ void VuRenderer::Dispose() {
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
-    SwapChain.Dispose();
-    DebugTexture.Dispose();
-    vkDestroyDescriptorSetLayout(Vu::Device, FrameConstantsDescriptorSetLayout, nullptr);
-    vkDestroyDescriptorSetLayout(Vu::Device, ImageDescriptorSetLayout, nullptr);
-    vkDestroyDescriptorPool(Vu::Device, DescriptorPool, nullptr);
-    vkDestroyDescriptorPool(Vu::Device, UI_DescriptorPool, nullptr);
+    swapChain.Dispose();
+    debugTexture.Dispose();
+    vkDestroyDescriptorSetLayout(Vu::Device, Vu::FrameConstantsDescriptorSetLayout, nullptr);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    vkDestroyDescriptorPool(Vu::Device, Vu::DescriptorPool, nullptr);
+    vkDestroyDescriptorPool(Vu::Device, Vu::UI_DescriptorPool, nullptr);
+
+    for (size_t i = 0; i < Vu::MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(Vu::Device, renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(Vu::Device, imageAvailableSemaphores[i], nullptr);
         vkDestroyFence(Vu::Device, inFlightFences[i], nullptr);
         uniformBuffers[i].Dispose();
     }
 
-    DebugPipeline.Dispose();
+    debugPipeline.Dispose();
 
     vkDestroyCommandPool(Vu::Device, Vu::commandPool, nullptr);
     vmaDestroyAllocator(Vu::VmaAllocator);
@@ -346,7 +301,7 @@ void VuRenderer::Dispose() {
     if (enableValidationLayers) {
         Vu::DestroyDebugUtilsMessengerEXT(Vu::Instance, debugMessenger, nullptr);
     }
-    vkDestroySurfaceKHR(Vu::Instance, Surface, nullptr);
+    vkDestroySurfaceKHR(Vu::Instance, surface, nullptr);
     vkDestroyInstance(Vu::Instance, nullptr);
 
     SDL_DestroyWindow(Vu::Window);
@@ -367,7 +322,7 @@ void VuRenderer::SetupImGui() {
     poolInfo.maxSets = 1000;
     poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-    VK_CHECK(vkCreateDescriptorPool(Vu::Device, &poolInfo, nullptr, &UI_DescriptorPool));
+    VK_CHECK(vkCreateDescriptorPool(Vu::Device, &poolInfo, nullptr, &Vu::UI_DescriptorPool));
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -385,13 +340,13 @@ void VuRenderer::SetupImGui() {
     init_info.Instance = Vu::Instance;
     init_info.PhysicalDevice = Vu::PhysicalDevice;
     init_info.Device = Vu::Device;
-    init_info.QueueFamily = Vu::VuSwapChain::FindQueueFamilies(Vu::PhysicalDevice, Surface).graphicsFamily.value();
+    init_info.QueueFamily = Vu::VuSwapChain::FindQueueFamilies(Vu::PhysicalDevice, surface).graphicsFamily.value();
     init_info.Queue = Vu::graphicsQueue;
-    init_info.DescriptorPool = UI_DescriptorPool;
+    init_info.DescriptorPool = Vu::UI_DescriptorPool;
     init_info.MinImageCount = 2;
     init_info.ImageCount = 2;
     init_info.UseDynamicRendering = false;
-    init_info.RenderPass = SwapChain.RenderPass.RenderPass;
+    init_info.RenderPass = swapChain.renderPass.renderPass;
 
     ImGui_ImplVulkan_Init(&init_info);
     ImGui_ImplVulkan_CreateFontsTexture();

@@ -1,13 +1,13 @@
 #pragma once
 
 #include "Common.h"
-//#include "VuUtils.h"
 #include "SDL3/SDL.h"
-
 
 class VuRenderer;
 
 namespace Vu {
+
+    constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
     inline VmaAllocator VmaAllocator;
     inline VkInstance Instance;
@@ -15,6 +15,12 @@ namespace Vu {
     inline VkDevice Device;
 
     inline VkCommandPool commandPool;
+    inline VkDescriptorPool DescriptorPool;
+    inline VkDescriptorPool UI_DescriptorPool;
+
+    inline VkDescriptorSetLayout FrameConstantsDescriptorSetLayout;
+    inline std::vector<VkDescriptorSet> frameConstantDescriptorSets;
+
     inline VkQueue graphicsQueue;
     inline VkQueue presentQueue;
 
@@ -30,21 +36,14 @@ namespace Vu {
     inline float MouseDeltaX = 0;
     inline float MouseDeltaY = 0;
 
-
-
-
     inline void PreUpdate() {
         //nano => micro => mili => second
         DeltaAsSecond = (SDL_GetTicksNS() - PrevTimeAsNanoSecond) / 1000.0f / 1000.0f / 1000.0f;
         PrevTimeAsNanoSecond = SDL_GetTicksNS();
-
-
     }
 
     inline void UpdateInput() {
         SDL_GetRelativeMouseState(&MouseDeltaX, &MouseDeltaY);
         SDL_GetMouseState(&MouseX, &MouseY);
     }
-
-
 }

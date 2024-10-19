@@ -9,10 +9,11 @@
 #include "VuGraphicsPipeline.h"
 #include "VuSwapChain.h"
 #include "Vu.h"
+#include "VuMaterial.h"
 #include "VuTexture.h"
 #include "SDL3/SDL_vulkan.h"
 
-constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+//constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 constexpr uint32 WIDTH = 1280;
 constexpr uint32 HEIGHT = 720;
 
@@ -24,7 +25,6 @@ constexpr bool enableValidationLayers = true;
 
 class VuRenderer {
 public:
-
     VkDebugUtilsMessengerEXT debugMessenger;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkSemaphore> imageAvailableSemaphores;
@@ -33,24 +33,19 @@ public:
 
     std::vector<VuBuffer> uniformBuffers;
 
-    VkDescriptorPool DescriptorPool;
-    VkDescriptorPool UI_DescriptorPool;
 
-    VkDescriptorSetLayout FrameConstantsDescriptorSetLayout;
-    std::vector<VkDescriptorSet> FrameConstantDescriptorSets;
+    //VkDescriptorSetLayout ImageDescriptorSetLayout;
+    //std::vector<VkDescriptorSet> ImageDescriptorSets;
 
-    VkDescriptorSetLayout ImageDescriptorSetLayout;
-    std::vector<VkDescriptorSet> ImageDescriptorSets;
-
-    VkSurfaceKHR Surface;
-    Vu::VuSwapChain SwapChain;
-    VuGraphicsPipeline DebugPipeline;
-    ImGui_ImplVulkanH_Window g_MainWindowData;
+    VkSurfaceKHR surface;
+    Vu::VuSwapChain swapChain;
+    VuGraphicsPipeline debugPipeline;
+    ImGui_ImplVulkanH_Window imguiMainWindowData;
 
     uint32 currentFrame = 0;
     uint32 currentFrameImageIndex = 0;
 
-    VuTexture DebugTexture;
+    VuTexture debugTexture;
 
 
     void Init();
@@ -65,7 +60,11 @@ public:
 
     void EndFrame();
 
-    void RenderMesh(Mesh& mesh, glm::mat4 trs);
+    void BindMesh(const Mesh& mesh);
+
+    void BindMaterial(const VuMaterial& material, glm::mat4 modelMatrix);
+
+    void DrawIndexed(uint32 indexCount);
 
     void BeginImgui();
 
@@ -73,7 +72,7 @@ public:
 
     void UpdateUniformBuffer(FrameUBO ubo);
 
-    void PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32_t size, const void* pValues);
+    //void PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32_t size, const void* pValues);
 
     void BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
 
@@ -89,7 +88,7 @@ public:
 
     void CreateSwapChain();
 
-    void CreateGraphicsPipeline();
+    //void CreateGraphicsPipeline();
 
     void CreateCommandPool();
 

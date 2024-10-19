@@ -16,7 +16,11 @@
 inline flecs::system AddRenderingSystem(flecs::world& world) {
     return world.system<Transform, const MeshRenderer>("Rendering")
             .each([](Transform& trs, const MeshRenderer& meshRenderer) {
-                Vu::Renderer->RenderMesh(*meshRenderer.Mesh, trs.ToTRS());
+
+                auto mat = meshRenderer.vuShader->materials[meshRenderer.materialIndex];
+                Vu::Renderer->BindMaterial(mat, trs.ToTRS());
+                Vu::Renderer->BindMesh(*meshRenderer.mesh);
+                Vu::Renderer->DrawIndexed(meshRenderer.mesh->indices.size());
             });
 }
 
@@ -51,12 +55,12 @@ inline flecs::system AddTransformUISystem(flecs::world& world) {
                 // open = ImGui::CollapsingHeader("Transform Components");
                 //if (open) {
 
-                 ImGui::Separator();
-                 ImGui::Text(e.name());
-                 ImGui::SliderFloat3(std::format("Position ##{0}", e.id()).c_str(),
-                                     &trs.Position.x, -8.0f, 8.0f);
-                 ImGui::Text(std::format("Rotation {0:}", glm::to_string(trs.Rotation)).c_str());
-                 ImGui::Text(std::format("Scale {0:}", glm::to_string(trs.Scale)).c_str());
+                ImGui::Separator();
+                ImGui::Text(e.name());
+                ImGui::SliderFloat3(std::format("Position ##{0}", e.id()).c_str(),
+                                    &trs.Position.x, -8.0f, 8.0f);
+                ImGui::Text(std::format("Rotation {0:}", glm::to_string(trs.Rotation)).c_str());
+                ImGui::Text(std::format("Scale {0:}", glm::to_string(trs.Scale)).c_str());
                 //}
             });
 }
@@ -177,8 +181,8 @@ inline flecs::system AddFlyCameraSystem(flecs::world& world) {
                 ubo.view = glm::inverse(trs.ToTRS());
                 ubo.proj = glm::perspective(
                     glm::radians(cam.fov),
-                    static_cast<float>(Vu::Renderer->SwapChain.SwapChainExtent.width)
-                    / static_cast<float>(Vu::Renderer->SwapChain.SwapChainExtent.height),
+                    static_cast<float>(Vu::Renderer->swapChain.SwapChainExtent.width)
+                    / static_cast<float>(Vu::Renderer->swapChain.SwapChainExtent.height),
                     cam.near,
                     cam.far);
                 Vu::Renderer->UpdateUniformBuffer(ubo);
