@@ -1,9 +1,14 @@
 #version 450
+#extension GL_EXT_nonuniform_qualifier : require
 
 layout (set = 0, binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 proj;
 } ubo;
+
+layout (set = 1, binding = 1) uniform sampler globalSamplers[];
+layout (set = 1, binding = 2) uniform texture2D globalTextures[];
+
 
 layout (push_constant) uniform constants
 {
@@ -11,7 +16,7 @@ layout (push_constant) uniform constants
 } PushConstants;
 
 
-layout (set = 1, binding = 0) uniform sampler2D samplerColor;
+//layout (set = 1, binding = 0) uniform sampler2D samplerColor;
 
 layout (location = 0) in vec3 fragPosWS;
 layout (location = 1) in vec3 fragNormalWS;
@@ -39,7 +44,9 @@ void main() {
     vec3 diffuse = diff * lightColor;
 
     vec3 halfwayDir = normalize(lightDir + viewDir);
-    vec4 texColor = texture(samplerColor, fragUV);
+
+    //vec4 texColor = texture(samplerColor, fragUV);
+    vec4 texColor = texture(sampler2D(globalTextures[0], globalSamplers[0]), fragUV);
 
 
 

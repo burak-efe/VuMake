@@ -3,25 +3,22 @@
 #include "VuUtils.h"
 
 
-void VuBuffer::Alloc(uint32 lenght, uint32 stride,
-                     VkBufferUsageFlags vkUsageFlags,
-                     VmaMemoryUsage vmaMemoryUsage,
-                     VmaAllocationCreateFlags vmaCreateFlags) {
+void VuBuffer::Alloc(VuBufferAllocInfo allocInfo) {
 
-    Stride = stride;
-    Lenght = lenght;
+    Stride = allocInfo.strideInBytes;
+    Lenght = allocInfo.lenght;
 
     VkBufferCreateInfo createInfo{
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .size = static_cast<VkDeviceSize>(lenght * stride),
-        .usage = vkUsageFlags
+        .size = static_cast<VkDeviceSize>(Lenght * Stride),
+        .usage = allocInfo.vkUsageFlags
     };
 
     VmaAllocationCreateInfo allocCreateInfo = {};
-    allocCreateInfo.usage = vmaMemoryUsage;
-    allocCreateInfo.flags = vmaCreateFlags;
+    allocCreateInfo.usage = allocInfo.vmaMemoryUsage;
+    allocCreateInfo.flags = allocInfo.vmaCreateFlags;
 
     VK_CHECK(vmaCreateBuffer(Vu::VmaAllocator, &createInfo, &allocCreateInfo, &buffer, &allocation, &allocationInfo));
 }

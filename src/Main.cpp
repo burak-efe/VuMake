@@ -15,10 +15,13 @@
 #include "MonkeScene.h"
 
 #include "spirv_reflect.h"
+#define BUDDY_ALLOC_IMPLEMENTATION
+#include "buddy_alloc.h"
 
 
 int main(int argc, char* argv[]) {
     MonkeScene scen;
     scen.Run();
+
     return EXIT_SUCCESS;
 }

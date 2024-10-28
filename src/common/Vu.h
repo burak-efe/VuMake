@@ -6,7 +6,6 @@
 class VuRenderer;
 
 namespace Vu {
-
     constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
     inline VmaAllocator VmaAllocator;
@@ -20,6 +19,10 @@ namespace Vu {
 
     inline VkDescriptorSetLayout FrameConstantsDescriptorSetLayout;
     inline std::vector<VkDescriptorSet> frameConstantDescriptorSets;
+
+    inline VkDescriptorSetLayout globalDescriptorSetLayout;
+    inline std::vector<VkDescriptorSet> globalDescriptorSets;
+    inline VkPipelineLayout globalPipelineLayout;
 
     inline VkQueue graphicsQueue;
     inline VkQueue presentQueue;
@@ -46,4 +49,5 @@ namespace Vu {
         SDL_GetRelativeMouseState(&MouseDeltaX, &MouseDeltaY);
         SDL_GetMouseState(&MouseX, &MouseY);
     }
+
 }

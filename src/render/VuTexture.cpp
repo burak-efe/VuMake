@@ -29,7 +29,12 @@ void VuTexture::Alloc(std::filesystem::path path) {
 
 
     VuBuffer staging{};
-    staging.Alloc(texWidth * texHeight, 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    VkDeviceSize size = texWidth * texHeight;
+    staging.Alloc({
+        .lenght = size,
+        .strideInBytes = 4,
+        .vkUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+    });
     staging.SetData(pixels, imageSize);
 
     stbi_image_free(pixels);
@@ -51,7 +56,6 @@ void VuTexture::Alloc(std::filesystem::path path) {
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    createImageSampler();
     createImageView();
 
     staging.Dispose();
@@ -168,5 +172,4 @@ void VuTexture::Dispose() {
     vkDestroyImage(Vu::Device, textureImage, nullptr);
     vkFreeMemory(Vu::Device, textureImageMemory, nullptr);
     vkDestroyImageView(Vu::Device, textureImageView, nullptr);
-    vkDestroySampler(Vu::Device, textureImageSampler, nullptr);
 }

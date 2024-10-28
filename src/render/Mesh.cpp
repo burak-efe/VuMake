@@ -40,8 +40,12 @@ Mesh::Mesh(const std::filesystem::path& gltfPath) {
             indices[idx++] = index;
         });
     }
-    indexBuffer = VuBuffer();
-    indexBuffer.Alloc(static_cast<uint32>(indices.size()), sizeof(indices[0]), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    //indexBuffer = VuBuffer();
+    indexBuffer.Alloc({
+        .lenght = indices.size(),
+        .strideInBytes = sizeof(indices[0]),
+        .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+    });
     VK_CHECK(indexBuffer.SetData(indices.data(), indices.size() * sizeof(indices[0])));
 
     //Position
@@ -57,8 +61,12 @@ Mesh::Mesh(const std::filesystem::path& gltfPath) {
         [&](glm::vec3 pos, std::size_t idx) { vertices[idx] = pos; }
     );
 
-    vertexBuffer = VuBuffer();
-    vertexBuffer.Alloc(static_cast<uint32>(vertices.size()), sizeof(vertices[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    //vertexBuffer = VuBuffer();
+    vertexBuffer.Alloc({
+        .lenght = static_cast<uint32>(vertices.size()),
+        .strideInBytes = sizeof(vertices[0]),
+        .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+    });
     VK_CHECK(vertexBuffer.SetData(vertices.data(), vertices.size() * sizeof(vertices[0])));
 
     //normal
@@ -75,8 +83,12 @@ Mesh::Mesh(const std::filesystem::path& gltfPath) {
         [&](glm::vec3 normal, std::size_t idx) { normals[idx] = normal; }
     );
 
-    normalBuffer = VuBuffer();
-    normalBuffer.Alloc(static_cast<uint32>(normals.size()), sizeof(normals[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    //normalBuffer = VuBuffer();
+    normalBuffer.Alloc({
+        .lenght = static_cast<uint32>(normals.size()),
+        .strideInBytes = sizeof(normals[0]),
+        .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+    });
     VK_CHECK(normalBuffer.SetData(normals.data(), normals.size() * sizeof(normals[0])));
 
 
@@ -93,8 +105,12 @@ Mesh::Mesh(const std::filesystem::path& gltfPath) {
         [&](glm::vec2 uv, std::size_t idx) { uvs[idx] = uv; }
     );
 
-    uvBuffer = VuBuffer();
-    uvBuffer.Alloc(static_cast<uint32>(uvs.size()), sizeof(uvs[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    //uvBuffer = VuBuffer();
+    uvBuffer.Alloc({
+        .lenght = static_cast<uint32>(uvs.size()),
+        .strideInBytes = sizeof(uvs[0]),
+        .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+    });
     VK_CHECK(uvBuffer.SetData(uvs.data(), uvs.size() * sizeof(uvs[0])));
 
 }

@@ -10,14 +10,26 @@
 #include "Vu.h"
 
 __declspec(noinline) static void VK_CHECK(VkResult res) {
+
+
     if (res != VK_SUCCESS) {
         // creating and initializing stacktrace object
         auto st = std::stacktrace::current();
         // printing stacktrace
-        std::cout << "[ERROR] VkResult is " << string_VkResult(res) << " at "
-                << st[1].source_file() << " line " << st[1].source_line() << "\n";
+
+        auto msg = std::format("[ERROR] VkResult is {0} at {1} line {2}",
+                               string_VkResult(res),
+                               st[1].source_file(), st[1].source_line());
+
+        std::cerr << msg << std::endl;
+        throw std::runtime_error(msg.c_str());
     }
 }
+
+struct VuPushConstant {
+    glm::mat4 trs;
+    uint32_t materiealDataOffset;
+};
 
 struct AllocatedImage {
     VkImage Image;
@@ -198,7 +210,7 @@ namespace Vu {
     }
 
 
-    static VkShaderModule CreateShaderModule(const std::vector<char> &code) {
+    static VkShaderModule CreateShaderModule(const std::vector<char>& code) {
 
         VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

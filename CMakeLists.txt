@@ -34,7 +34,10 @@ endfunction()
 project("VuMake")
 add_executable(${PROJECT_NAME}
         src/render/VuRenderPass.h
-        src/MonkeScene.h)
+        src/MonkeScene.h
+        src/render/VuMaterialData.h
+        src/render/VuSampler.h
+        src/render/VuPipelineLayout.h)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 ####################################################################################################
 # Precompiled Headers
@@ -136,6 +139,18 @@ FetchContent_Declare(
         GIT_TAG v4.0.2)
 FetchContent_MakeAvailable(fetch_flecs)
 target_link_libraries(${PROJECT_NAME} PRIVATE flecs::flecs_static)
+####################################################################################################
+FetchContent_Declare(
+        fetch_buddy_alloc
+        GIT_REPOSITORY https://github.com/spaskalev/buddy_alloc
+        GIT_TAG v1.2.0)
+FetchContent_MakeAvailable(fetch_buddy_alloc)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${buddy_alloc_SOURCE_DIR}/)
+#target_include_directories(${PROJECT_NAME} PRIVATE ${fetch_buddy_alloc_SOURCE_DIR}/)
+#target_link_libraries(${PROJECT_NAME} PRIVATE fetch_buddy_alloc_SOURCE_DIR/buddy_alloc.h)
+
+#message(${fetch_buddy_alloc_SOURCE_DIR}/buddy_alloc.h)
 ####################################################################################################
 #Copy asset files to build directory
 #add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

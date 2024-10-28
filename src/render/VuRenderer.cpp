@@ -68,28 +68,15 @@ void VuRenderer::BindMesh(const Mesh& mesh) {
     vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 }
 
-void VuRenderer::BindMaterial(const VuMaterial& material, glm::mat4 modelMatrix) {
+void VuRenderer::BindMaterial(const VuMaterial& material, VuPushConstant pushConstant) {
     auto commandBuffer = commandBuffers[currentFrame];
     material.bindFrameConstants(commandBuffer, currentFrame);
-    material.bind(commandBuffer, currentFrame);
-    material.PushConstants(commandBuffer,
-                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                           0, sizeof(modelMatrix), &modelMatrix);
+    material.PushConstants(commandBuffer, pushConstant);
+    material.bindPipeline(commandBuffer);
 }
 
 void VuRenderer::DrawIndexed(uint32 indexCount) {
     auto commandBuffer = commandBuffers[currentFrame];
-    //vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, debugPipeline.Pipeline);
-
-    //PushConstants(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(trs), &trs);
-
-    // vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, debugPipeline.PipelineLayout,
-    //                         0, 1, &frameConstantDescriptorSets[currentFrame], 0, nullptr);
-
-    // vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, debugPipeline.PipelineLayout,
-    //                         1, 1, &ImageDescriptorSets[currentFrame], 0, nullptr);
-
-
     vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
 }
 

@@ -18,7 +18,7 @@ inline flecs::system AddRenderingSystem(flecs::world& world) {
             .each([](Transform& trs, const MeshRenderer& meshRenderer) {
 
                 auto mat = meshRenderer.vuShader->materials[meshRenderer.materialIndex];
-                Vu::Renderer->BindMaterial(mat, trs.ToTRS());
+                Vu::Renderer->BindMaterial(mat, {trs.ToTRS(), 0});
                 Vu::Renderer->BindMesh(*meshRenderer.mesh);
                 Vu::Renderer->DrawIndexed(meshRenderer.mesh->indices.size());
             });

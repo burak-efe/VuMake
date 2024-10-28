@@ -6,32 +6,7 @@
 #include "VuDepthStencil.h"
 
 
-struct VuPipelineLayout {
-    VkPipelineLayout pipelineLayout;
 
-    void Dispose() const {
-        vkDestroyPipelineLayout(Vu::Device, pipelineLayout, nullptr);
-    }
-
-    void CreatePipelineLayout(const std::span<VkDescriptorSetLayout>& descriptorSetLayouts, uint32 pushConstantSizeAsByte = 64) {
-
-        //push constants
-        VkPushConstantRange push_constant;
-        push_constant.offset = 0;
-        push_constant.size = pushConstantSizeAsByte;
-        push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
-
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
-        pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
-        pipelineLayoutInfo.pushConstantRangeCount = 1;
-        pipelineLayoutInfo.pPushConstantRanges = &push_constant;
-
-        VK_CHECK(vkCreatePipelineLayout(Vu::Device, &pipelineLayoutInfo, nullptr, &pipelineLayout));
-    }
-};
 
 struct VuGraphicsPipeline {
     VkPipeline Pipeline;

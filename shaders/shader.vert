@@ -1,14 +1,20 @@
 #version 450
 #extension GL_ARB_separate_shader_objects: enable
+#extension GL_EXT_nonuniform_qualifier : require
 
 layout (set = 0, binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 proj;
 } ubo;
 
+//layout (set = 1, binding = 0) uniform buffer<uint64> globalBuffers[];
+layout (set = 1, binding = 1) uniform sampler globalSamplers[];
+layout (set = 1, binding = 2) uniform texture2D globalTextures[];
+
 layout (push_constant) uniform constants
 {
     mat4 model;
+    uint materialDataIndex;
 } PushConstants;
 
 layout (location = 0) in vec3 VertexPosition;
