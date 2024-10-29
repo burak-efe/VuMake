@@ -37,7 +37,8 @@ add_executable(${PROJECT_NAME}
         src/MonkeScene.h
         src/render/VuMaterialData.h
         src/render/VuSampler.h
-        src/render/VuPipelineLayout.h)
+        src/render/VuPipelineLayout.h
+        src/render/VuResourcePool.h)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 ####################################################################################################
 # Precompiled Headers
@@ -145,13 +146,17 @@ FetchContent_Declare(
         GIT_REPOSITORY https://github.com/spaskalev/buddy_alloc
         GIT_TAG v1.2.0)
 FetchContent_MakeAvailable(fetch_buddy_alloc)
-
 target_include_directories(${PROJECT_NAME} PRIVATE ${buddy_alloc_SOURCE_DIR}/)
-#target_include_directories(${PROJECT_NAME} PRIVATE ${fetch_buddy_alloc_SOURCE_DIR}/)
-#target_link_libraries(${PROJECT_NAME} PRIVATE fetch_buddy_alloc_SOURCE_DIR/buddy_alloc.h)
-
-#message(${fetch_buddy_alloc_SOURCE_DIR}/buddy_alloc.h)
 ####################################################################################################
+FetchContent_Declare(
+        fetch_daw_json
+        GIT_REPOSITORY https://github.com/beached/daw_json_link
+        GIT_TAG release)
+FetchContent_MakeAvailable(fetch_daw_json)
+target_link_libraries(${PROJECT_NAME} PRIVATE daw::daw-json-link)
+####################################################################################################
+
+
 #Copy asset files to build directory
 #add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 #        COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -163,5 +168,5 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${buddy_alloc_SOURCE_DIR}/)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E create_symlink
-        ${CMAKE_SOURCE_DIR}/shaders $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders)
+        ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets)
 

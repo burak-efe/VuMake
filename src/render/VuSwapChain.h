@@ -4,6 +4,8 @@
 #include "VuRenderPass.h"
 #include "VuUtils.h"
 
+#include "volk.h"
+
 
 namespace Vu {
     class VuSwapChain {

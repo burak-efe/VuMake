@@ -1,10 +1,9 @@
 #pragma once
 
 #include "Common.h"
-
+#include "volk.h"
 
 namespace VuSync {
-
 
     inline VkImageMemoryBarrier ImageMemoryBarrier() {
         VkImageMemoryBarrier imageMemoryBarrier{};

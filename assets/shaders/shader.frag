@@ -31,11 +31,7 @@ const float ambient = 0.03f;
 const float roughness = 0.0f;
 
 void main() {
-    //vec3 viewPos = vec3(-ubo.view[2][0], -ubo.view[2][1], -ubo.view[2][2]);
     vec3 viewPos = vec3(-ubo.view[0][3], -ubo.view[1][3], -ubo.view[2][3]);
-    //vec3 viewPos = vec3(-ubo.view[3][0], -ubo.view[3][1], -ubo.view[3][2]);
-
-
 
     vec3 normal = normalize(fragNormalWS);
     vec3 lightDir = normalize(lightPos - fragPosWS);
@@ -45,25 +41,13 @@ void main() {
 
     vec3 halfwayDir = normalize(lightDir + viewDir);
 
-    //vec4 texColor = texture(samplerColor, fragUV);
     vec4 texColor = texture(sampler2D(globalTextures[0], globalSamplers[0]), fragUV);
-
-
-
 
     float shininess = 1.0 / (roughness * roughness + 0.001); // Avoid division by 0 for roughness = 0
     float spec = pow(max(dot(normal, halfwayDir), 0.0), 64);
     vec3 specular = spec * lightColor; // Specular reflection color
 
-
-
-    vec3 finalColor = (
-    ambient +
-    diffuse +
-    specular
-    )
-    * texColor.rgb;
-    ;
+    vec3 finalColor = (ambient +diffuse +specular)* texColor.rgb;;
 
     outColor = vec4(finalColor, 1);
 }

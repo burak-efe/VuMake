@@ -3,6 +3,9 @@
 #include "Common.h"
 #include "SDL3/SDL.h"
 
+#include "volk.h"
+#include "vk_mem_alloc.h"
+
 class VuRenderer;
 
 namespace Vu {

@@ -19,14 +19,14 @@ struct MonkeScene {
         VuRenderer vuRenderer;
         vuRenderer.Init();
         Vu::Renderer = &vuRenderer;
-        Mesh monke("shaders/monka500k.glb");
+        Mesh monke("assets/meshes/monka500k.glb");
 
         VuShader shader;
-        shader.initShader("shaders/vert.spv", "shaders/frag.spv", vuRenderer.swapChain.renderPass.renderPass);
+        shader.initShader("assets/shaders/vert.spv", "assets/shaders/frag.spv", vuRenderer.swapChain.renderPass.renderPass);
         uint32 monkeMat0 = shader.createMaterial();
 
 
-        vuRenderer.updateGlobalSets();
+        //vuRenderer.writeTexture();
 
 
         // VuTexture floorTex;

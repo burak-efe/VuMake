@@ -18,10 +18,46 @@
 #define BUDDY_ALLOC_IMPLEMENTATION
 #include "buddy_alloc.h"
 
+#include "daw/json/daw_json_link.h"
+
+struct Thing {
+    uint32 a;
+    uint32 b;
+};
+
+namespace daw::json {
+    template<>
+    struct json_data_contract<Thing> {
+        using type = json_member_list<
+            json_number<"a", uint32>,
+            json_number<"b", uint32>
+        >;
+
+        static auto to_json_data(Thing const& v) {
+            return std::forward_as_tuple(v.a, v.b);
+        }
+    };
+}
 
 int main(int argc, char* argv[]) {
     MonkeScene scen;
     scen.Run();
+
+    // Thing toWrite{21, 23};
+    // std::string s = daw::json::to_json(toWrite);
+    //
+    // std::string filename("assets/materials/tmp.json");
+    // std::fstream file_out;
+    //
+    // file_out.open(filename, std::ios_base::out);
+    //
+    // if (!file_out.is_open()) {
+    //     std::cout << "failed to open " << filename << '\n';
+    // } else {
+    //     file_out << s.c_str() << std::endl;
+    //     std::cout << "Done Writing!" << std::endl;
+    // }
+
 
     return EXIT_SUCCESS;
 }

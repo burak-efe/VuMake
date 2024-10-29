@@ -10,7 +10,6 @@
 #include "VuMaterialData.h"
 
 #include "Mesh.h"
-#include "VuGraphicsPipeline.h"
 #include "VuSwapChain.h"
 #include "Vu.h"
 #include "VuMaterial.h"
@@ -39,7 +38,6 @@ public:
 
     VkSurfaceKHR surface;
     Vu::VuSwapChain swapChain;
-    //VuGraphicsPipeline debugPipeline;
     ImGui_ImplVulkanH_Window imguiMainWindowData;
 
     uint32 currentFrame = 0;
@@ -55,9 +53,7 @@ public:
     const uint32 STORAGE_BINDING = 0;
     const uint32 SAMPLER_BINDING = 1;
     const uint32 IMAGE_BINDING = 2;
-    // Max count of each descriptor type
-    // You can query the max values for these with
-    // physicalDevice.getProperties().limits.maxDescriptrorSet*******
+
     const uint32 STORAGE_COUNT = 256;
     const uint32 SAMPLER_COUNT = 125;
     const uint32 IMAGE_COUNT = 256;
@@ -66,46 +62,88 @@ public:
     uint32 lastSamplerResource;
     uint32 lastStorageResource;
 
-    std::stack<std::function<void()>> disposeStack;
+    std::stack<std::function<void()> > disposeStack;
 
 
-    void updateGlobalSets() {
+    // void updateGlobalSets() {
+    //     for (size_t i = 0; i < Vu::MAX_FRAMES_IN_FLIGHT; i++) {
+    //
+    //         for (size_t j = 0; j < VuTexture::allTextures.size(); j++) {
+    //
+    //             VkDescriptorImageInfo imageInfo{
+    //                 .sampler = VK_NULL_HANDLE,
+    //                 .imageView = VuTexture::allTextures[j].textureImageView,
+    //                 .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    //             };
+    //
+    //             VkWriteDescriptorSet descriptorWrite{};
+    //             descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    //             descriptorWrite.dstSet = Vu::globalDescriptorSets[i];
+    //             descriptorWrite.dstBinding = IMAGE_BINDING;
+    //             descriptorWrite.dstArrayElement = j;
+    //             descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    //             descriptorWrite.descriptorCount = 1;
+    //             descriptorWrite.pImageInfo = &imageInfo;
+    //
+    //             vkUpdateDescriptorSets(Vu::Device, 1, &descriptorWrite, 0, nullptr);
+    //         }
+    //
+    //         //sampler
+    //         VkDescriptorImageInfo imageInfo{
+    //             .sampler = debugSampler.vkSampler,
+    //         };
+    //
+    //         VkWriteDescriptorSet samplerWrite{};
+    //         samplerWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    //         samplerWrite.dstSet = Vu::globalDescriptorSets[i];
+    //         samplerWrite.dstBinding = SAMPLER_BINDING;
+    //         samplerWrite.dstArrayElement = 0;
+    //         samplerWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    //         samplerWrite.descriptorCount = 1;
+    //         samplerWrite.pImageInfo = &imageInfo;
+    //
+    //         vkUpdateDescriptorSets(Vu::Device, 1, &samplerWrite, 0, nullptr);
+    //     }
+    // }
 
 
+    void writeTexture(uint32 writeIndex, VuTexture& texture) {
+
+        VkDescriptorImageInfo imageInfo{
+            .sampler = VK_NULL_HANDLE,
+            .imageView = texture.textureImageView,
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        };
 
         for (size_t i = 0; i < Vu::MAX_FRAMES_IN_FLIGHT; i++) {
 
-            for (size_t j = 0; j < VuTexture::allTextures.size(); j++) {
+            VkWriteDescriptorSet descriptorWrite{};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = Vu::globalDescriptorSets[i];
+            descriptorWrite.dstBinding = IMAGE_BINDING;
+            descriptorWrite.dstArrayElement = writeIndex;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pImageInfo = &imageInfo;
 
-                VkDescriptorImageInfo imageInfo{
-                    .sampler = VK_NULL_HANDLE,
-                    .imageView = VuTexture::allTextures[j].textureImageView,
-                    .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                };
+            vkUpdateDescriptorSets(Vu::Device, 1, &descriptorWrite, 0, nullptr);
+        }
 
-                VkWriteDescriptorSet descriptorWrite{};
-                descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                descriptorWrite.dstSet = Vu::globalDescriptorSets[i];
-                descriptorWrite.dstBinding = IMAGE_BINDING;
-                descriptorWrite.dstArrayElement = j;
-                descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                descriptorWrite.descriptorCount = 1;
-                //descriptorWrite.pBufferInfo = &bufferInfo;
-                descriptorWrite.pImageInfo = &imageInfo;
+    }
 
-                vkUpdateDescriptorSets(Vu::Device, 1, &descriptorWrite, 0, nullptr);
-            }
+    void writeSampler(uint32 writeIndex, VkSampler& sampler) {
 
-            VkDescriptorImageInfo imageInfo{
-                .sampler = debugSampler.vkSampler,
-            };
+        VkDescriptorImageInfo imageInfo{
+            .sampler = sampler,
+        };
 
-            //sampler
+        for (size_t i = 0; i < Vu::MAX_FRAMES_IN_FLIGHT; i++) {
+
             VkWriteDescriptorSet samplerWrite{};
             samplerWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             samplerWrite.dstSet = Vu::globalDescriptorSets[i];
             samplerWrite.dstBinding = SAMPLER_BINDING;
-            samplerWrite.dstArrayElement = 0;
+            samplerWrite.dstArrayElement = writeIndex;
             samplerWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
             samplerWrite.descriptorCount = 1;
             samplerWrite.pImageInfo = &imageInfo;
@@ -116,69 +154,68 @@ public:
     }
 
 
+    void Init();
 
-void Init();
+    void Dispose();
 
-void Dispose();
+    bool ShouldWindowClose();
 
-bool ShouldWindowClose();
+    void WaitIdle();
 
-void WaitIdle();
+    void BeginFrame();
 
-void BeginFrame();
+    void EndFrame();
 
-void EndFrame();
+    void BindMesh(const Mesh& mesh);
 
-void BindMesh(const Mesh& mesh);
+    void BindMaterial(const VuMaterial& material, VuPushConstant pushConstant);
 
-void BindMaterial(const VuMaterial& material, VuPushConstant pushConstant);
+    void DrawIndexed(uint32 indexCount);
 
-void DrawIndexed(uint32 indexCount);
+    void BeginImgui();
 
-void BeginImgui();
+    void EndImgui();
 
-void EndImgui();
+    void UpdateUniformBuffer(FrameUBO ubo);
 
-void UpdateUniformBuffer(FrameUBO ubo);
+    //void PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32_t size, const void* pValues);
 
-//void PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32_t size, const void* pValues);
+    void BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
 
-void BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
+    void EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
 
-void EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
+    void InitWindow();
 
-void InitWindow();
+    //void InitVulkan();
 
-//void InitVulkan();
+    void InitVulkanDevice();
 
-void InitVulkanDevice();
+    void CreateVulkanMemoryAllocator();
 
-void CreateVulkanMemoryAllocator();
+    void CreateSurface();
 
-void CreateSurface();
+    void CreateSwapChain();
 
-void CreateSwapChain();
+    //void CreateGraphicsPipeline();
 
-//void CreateGraphicsPipeline();
+    void CreateCommandPool();
 
-void CreateCommandPool();
+    void CreateCommandBuffers();
 
-void CreateCommandBuffers();
+    void CreateSyncObjects();
 
-void CreateSyncObjects();
+    void ResetSwapChain();
 
-void ResetSwapChain();
+    void CreateDescriptorPool();
 
-void CreateDescriptorPool();
+    void CreateDescriptorSets();
 
-void CreateDescriptorSets();
+    void CreateDescriptorSetLayout();
 
-void CreateDescriptorSetLayout();
+    void CreateUniformBuffers();
 
-void CreateUniformBuffers();
+    void SetupImGui();
 
-void SetupImGui();
-
-//static void MouseCallback(GLFWwindow* window, double xpos, double ypos);
+    //static void MouseCallback(GLFWwindow* window, double xpos, double ypos);
 
 };

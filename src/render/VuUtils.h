@@ -37,8 +37,8 @@ struct AllocatedImage {
 };
 
 struct FrameUBO {
-    float4x4 view;
-    float4x4 proj;
+    glm::mat4 view;
+    glm::mat4 proj;
 };
 
 

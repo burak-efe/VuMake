@@ -1,7 +1,11 @@
 #include <filesystem>
+#include "VuRenderer.h"
 
 #include "VuPipelineLayout.h"
-#include "VuRenderer.h"
+
+#include "volk.h"
+#include "VkBootstrap.h"
+#include "vk_mem_alloc.h"
 
 void VuRenderer::Init() {
     InitWindow();
@@ -15,12 +19,6 @@ void VuRenderer::Init() {
     CreateSwapChain();
     CreateCommandPool();
 
-    debugTexture.Alloc(std::filesystem::path("shaders/uvChecker.png"));
-    disposeStack.push([&] { debugTexture.Dispose(); });
-    VuTexture::allTextures.push_back(debugTexture);
-
-    debugSampler.createImageSampler();
-    disposeStack.push([&] { debugSampler.Dispose(); });
 
 
     CreateUniformBuffers();
@@ -38,6 +36,17 @@ void VuRenderer::Init() {
     CreateSyncObjects();
 
     SetupImGui();
+
+    //debug resources
+    debugTexture.Alloc(std::filesystem::path("assets/textures/error.png"));
+    disposeStack.push([&] { debugTexture.Dispose(); });
+    VuTexture::allTextures.push_back(debugTexture);
+
+    writeTexture(0,debugTexture);
+
+    debugSampler.createImageSampler();
+    disposeStack.push([&] { debugSampler.Dispose(); });
+    writeSampler(0,debugSampler.vkSampler);
 
 }
 
