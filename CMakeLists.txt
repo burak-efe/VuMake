@@ -38,7 +38,9 @@ add_executable(${PROJECT_NAME}
         src/render/VuMaterialData.h
         src/render/VuSampler.h
         src/render/VuPipelineLayout.h
-        src/render/VuResourcePool.h)
+        src/render/VuResourcePool.h
+        src/common/Common.cpp
+        src/render/VuTypes.h)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 ####################################################################################################
 # Precompiled Headers

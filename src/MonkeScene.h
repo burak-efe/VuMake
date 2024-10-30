@@ -7,10 +7,12 @@
 
 #include "Camera.h"
 #include "Components.h"
-#include "Mesh.h"
+#include "VuMesh.h"
 #include "Systems.h"
 #include "Transform.h"
 #include "VuRenderer.h"
+
+using namespace Vu;
 
 struct MonkeScene {
 
@@ -18,12 +20,12 @@ struct MonkeScene {
 
         VuRenderer vuRenderer;
         vuRenderer.Init();
-        Vu::Renderer = &vuRenderer;
-        Mesh monke("assets/meshes/monka500k.glb");
+        ctx::vuRenderer = &vuRenderer;
+        VuMesh monke("assets/meshes/monka500k.glb");
 
         VuShader shader;
-        shader.initShader("assets/shaders/vert.spv", "assets/shaders/frag.spv", vuRenderer.swapChain.renderPass.renderPass);
-        uint32 monkeMat0 = shader.createMaterial();
+        shader.InitShader("assets/shaders/vert.spv", "assets/shaders/frag.spv", vuRenderer.swapChain.renderPass.renderPass);
+        uint32 monkeMat0 = shader.CreateMaterial();
 
 
         //vuRenderer.writeTexture();
@@ -62,8 +64,8 @@ struct MonkeScene {
 
         //Update Loop
         while (!vuRenderer.ShouldWindowClose()) {
-            Vu::PreUpdate();
-            Vu::UpdateInput();
+            ctx::PreUpdate();
+            ctx::UpdateInput();
 
             //Pre-Render Begins
             spinningSystem.run();
@@ -77,8 +79,8 @@ struct MonkeScene {
                 //UI
                 {
                     vuRenderer.BeginImgui();
-                    ImGui::Text(std::format("Frame Per Second: {0:.0f}", (1.0f / Vu::DeltaAsSecond)).c_str());
-                    ImGui::Text(std::format("Frame Time as miliSec: {0:.4}", Vu::DeltaAsSecond * 1000).c_str());
+                    ImGui::Text(std::format("Frame Per Second: {0:.0f}", (1.0f / ctx::deltaAsSecond)).c_str());
+                    ImGui::Text(std::format("Frame Time as miliSec: {0:.4}", ctx::deltaAsSecond * 1000).c_str());
                     spinUI.run();
                     camUI.run();
                     trsUI.run();
@@ -91,7 +93,7 @@ struct MonkeScene {
 
         //Mission complete
         vuRenderer.WaitIdle();
-        shader.dispose();
+        shader.Dispose();
         monke.Dispose();
         vuRenderer.Dispose();
         //system("pause");

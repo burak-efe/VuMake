@@ -5,15 +5,16 @@
 
 class Mesh;
 
-struct MeshRenderer {
-    Mesh* mesh;
-    VuShader* vuShader;
-    uint32 materialIndex;
-};
+namespace Vu {
+    struct MeshRenderer {
+        VuMesh* mesh;
+        VuShader* vuShader;
+        uint32 materialIndex;
+    };
 
 
-struct Spinn {
-    float3 Axis = float3(0, 1, 0);
-    float Angle = glm::radians(0.f);
-};
-
+    struct Spinn {
+        float3 axis = float3(0, 1, 0);
+        float angle = glm::radians(0.f);
+    };
+}

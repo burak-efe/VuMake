@@ -2,51 +2,72 @@
 
 #include "VuUtils.h"
 
+namespace Vu {
+    void VuBuffer::Alloc(VuBufferAllocInfo allocInfo) {
 
-void VuBuffer::Alloc(VuBufferAllocInfo allocInfo) {
+        stride = allocInfo.strideInBytes;
+        lenght = allocInfo.lenght;
 
-    Stride = allocInfo.strideInBytes;
-    Lenght = allocInfo.lenght;
+        VkBufferCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .size = static_cast<VkDeviceSize>(lenght * stride),
+            .usage = allocInfo.vkUsageFlags
+        };
 
-    VkBufferCreateInfo createInfo{
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .size = static_cast<VkDeviceSize>(Lenght * Stride),
-        .usage = allocInfo.vkUsageFlags
-    };
+        VmaAllocationCreateInfo allocCreateInfo = {};
+        allocCreateInfo.usage = allocInfo.vmaMemoryUsage;
+        allocCreateInfo.flags = allocInfo.vmaCreateFlags;
 
-    VmaAllocationCreateInfo allocCreateInfo = {};
-    allocCreateInfo.usage = allocInfo.vmaMemoryUsage;
-    allocCreateInfo.flags = allocInfo.vmaCreateFlags;
+        VkCheck(vmaCreateBuffer(ctx::vma, &createInfo, &allocCreateInfo, &buffer, &allocation, &allocationInfo));
+    }
 
-    VK_CHECK(vmaCreateBuffer(Vu::VmaAllocator, &createInfo, &allocCreateInfo, &buffer, &allocation, &allocationInfo));
-}
+    void VuBuffer::Map() {
+        vmaMapMemory(ctx::vma, allocation, &mapPtr);
+    }
 
-void VuBuffer::Dispose() {
-    vmaDestroyBuffer(Vu::VmaAllocator, buffer, allocation);
-}
+    void VuBuffer::Unmap() {
+        vmaUnmapMemory(ctx::vma, allocation);
+    }
 
-VkResult VuBuffer::SetData(void* data, VkDeviceSize byteSize) {
-    return vmaCopyMemoryToAllocation(Vu::VmaAllocator, data, allocation, 0, byteSize);
-}
+    void VuBuffer::Dispose() {
+        vmaDestroyBuffer(ctx::vma, buffer, allocation);
+    }
 
-VkResult VuBuffer::SetDataWithOffset(void* data, VkDeviceSize offset, VkDeviceSize byteSize) {
-    return vmaCopyMemoryToAllocation(Vu::VmaAllocator, data, allocation, offset, byteSize);
-}
+    VkResult VuBuffer::SetData(void* data, VkDeviceSize byteSize) {
+        return vmaCopyMemoryToAllocation(ctx::vma, data, allocation, 0, byteSize);
+    }
 
-void VuBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-    VkCommandBuffer commandBuffer = Vu::BeginSingleTimeCommands();
+    VkResult VuBuffer::SetDataWithOffset(void* data, VkDeviceSize offset, VkDeviceSize byteSize) {
+        return vmaCopyMemoryToAllocation(ctx::vma, data, allocation, offset, byteSize);
+    }
 
-    VkBufferCopy copyRegion{};
-    copyRegion.srcOffset = 0;
-    copyRegion.dstOffset = 0;
-    copyRegion.size = size;
-    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+    void VuBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+        VkCommandBuffer commandBuffer = ctx::BeginSingleTimeCommands();
 
-    Vu::EndSingleTimeCommands(commandBuffer);
-}
+        VkBufferCopy copyRegion{};
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = 0;
+        copyRegion.size = size;
+        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-VkDeviceSize VuBuffer::GetDeviceSize() {
-    return Lenght * Stride;
+        ctx::EndSingleTimeCommands(commandBuffer);
+    }
+
+    VkDeviceSize VuBuffer::GetSizeInBytes() {
+        return lenght * stride;
+    }
+
+    VkDeviceSize VuBuffer::AlignedSize(VkDeviceSize value, VkDeviceSize alignment) {
+        return (value + alignment - 1) & ~(alignment - 1);
+    }
+
+    VkDeviceAddress VuBuffer::GetDeviceAddress(VkDevice device, VkBuffer buffer) {
+        VkBufferDeviceAddressInfo deviceAdressInfo{};
+        deviceAdressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        deviceAdressInfo.buffer = buffer;
+        uint64_t address = vkGetBufferDeviceAddress(device, &deviceAdressInfo);
+        return address;
+    }
 }

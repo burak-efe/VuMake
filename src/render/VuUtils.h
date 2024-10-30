@@ -1,64 +1,16 @@
 #pragma once
 
 #include "Common.h"
-#include <optional>
+
 #include <fstream>
 #include <stacktrace>
 
-
 #include "vulkan/vk_enum_string_helper.h"
-#include "Vu.h"
-
-__declspec(noinline) static void VK_CHECK(VkResult res) {
-
-
-    if (res != VK_SUCCESS) {
-        // creating and initializing stacktrace object
-        auto st = std::stacktrace::current();
-        // printing stacktrace
-
-        auto msg = std::format("[ERROR] VkResult is {0} at {1} line {2}",
-                               string_VkResult(res),
-                               st[1].source_file(), st[1].source_line());
-
-        std::cerr << msg << std::endl;
-        throw std::runtime_error(msg.c_str());
-    }
-}
-
-struct VuPushConstant {
-    glm::mat4 trs;
-    uint32_t materiealDataOffset;
-};
-
-struct AllocatedImage {
-    VkImage Image;
-    VmaAllocation Allocation;
-};
-
-struct FrameUBO {
-    glm::mat4 view;
-    glm::mat4 proj;
-};
-
-
-struct QueueFamilyIndices {
-    std::optional<uint32> graphicsFamily;
-    std::optional<uint32> presentFamily;
-
-    bool IsComplete() {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-};
-
-struct SwapChainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
-
+#include "VuCtx.h"
+#include "VuTypes.h"
 
 namespace Vu {
+
 
     inline void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
                                               const VkAllocationCallbacks* pAllocator) {
@@ -163,9 +115,9 @@ namespace Vu {
         return indices;
     }
 
-    inline uint32 findMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties) {
+    inline uint32 FindMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties) {
         VkPhysicalDeviceMemoryProperties memProperties{};
-        vkGetPhysicalDeviceMemoryProperties(Vu::PhysicalDevice, &memProperties);
+        vkGetPhysicalDeviceMemoryProperties(ctx::physicalDevice, &memProperties);
         for (uint32 i = 0; i < memProperties.memoryTypeCount; i++) {
             if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
                 return i;
@@ -176,38 +128,7 @@ namespace Vu {
     }
 
 
-    inline VkCommandBuffer BeginSingleTimeCommands() {
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = Vu::commandPool;
-        allocInfo.commandBufferCount = 1;
 
-        VkCommandBuffer commandBuffer;
-        VK_CHECK(vkAllocateCommandBuffers(Vu::Device, &allocInfo, &commandBuffer));
-
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-        return commandBuffer;
-    }
-
-    inline void EndSingleTimeCommands(VkCommandBuffer commandBuffer) {
-        vkEndCommandBuffer(commandBuffer);
-
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
-
-        vkQueueSubmit(Vu::graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(Vu::graphicsQueue);
-
-        vkFreeCommandBuffers(Vu::Device, Vu::commandPool, 1, &commandBuffer);
-    }
 
 
     static VkShaderModule CreateShaderModule(const std::vector<char>& code) {
@@ -219,7 +140,7 @@ namespace Vu {
         createInfo.pNext = nullptr;
 
         VkShaderModule shaderModule;
-        VK_CHECK(vkCreateShaderModule(Vu::Device, &createInfo, nullptr, &shaderModule));
+        VkCheck(vkCreateShaderModule(ctx::device, &createInfo, nullptr, &shaderModule));
         return shaderModule;
     }
 }
