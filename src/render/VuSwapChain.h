@@ -2,6 +2,7 @@
 #include "Common.h"
 #include "VuDepthStencil.h"
 #include "VuRenderPass.h"
+#include "VuTypes.h"
 
 namespace Vu {
     struct VuSwapChain {

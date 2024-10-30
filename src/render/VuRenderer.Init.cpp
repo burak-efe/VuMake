@@ -266,7 +266,7 @@ namespace Vu {
     }
 
     void VuRenderer::CreateCommandPool() {
-        QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(ctx::physicalDevice, surface);
+        QueueFamilyIndices queueFamilyIndices = QueueFamilyIndices::FindQueueFamilies(ctx::physicalDevice, surface);
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -322,7 +322,7 @@ namespace Vu {
 
         uniformBuffers.resize(ctx::MAX_FRAMES_IN_FLIGHT);
         for (size_t i = 0; i < ctx::MAX_FRAMES_IN_FLIGHT; i++) {
-            VkDeviceSize bufferSize = sizeof(FrameUBO);
+            VkDeviceSize bufferSize = sizeof(VuFrameConst);
 
             uniformBuffers[i] = VuBuffer();
             uniformBuffers[i].Alloc({
@@ -465,7 +465,7 @@ namespace Vu {
             VkDescriptorBufferInfo bufferInfo{};
             bufferInfo.buffer = uniformBuffers[i].buffer;
             bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(FrameUBO);
+            bufferInfo.range = sizeof(VuFrameConst);
 
             VkWriteDescriptorSet descriptorWrite{};
             descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -554,4 +554,7 @@ namespace Vu {
             disposeStack.pop();
         }
     }
+
+
+
 }

@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "Common.h"
-#include <vk_mem_alloc.h>
 
 namespace Vu {
     struct VuPushConstant {
@@ -12,16 +11,10 @@ namespace Vu {
         uint32_t materiealDataOffset;
     };
 
-    struct AllocatedImage {
-        VkImage Image;
-        VmaAllocation Allocation;
-    };
-
-    struct FrameUBO {
+    struct VuFrameConst {
         float4x4 view;
         float4x4 proj;
     };
-
 
     struct QueueFamilyIndices {
         std::optional<uint32> graphicsFamily;
@@ -30,6 +23,40 @@ namespace Vu {
         bool IsComplete() {
             return graphicsFamily.has_value() && presentFamily.has_value();
         }
+
+        static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
+            //Logic to find graphics queue family
+            QueueFamilyIndices indices;
+
+            uint32 queueFamilyCount = 0;
+            vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+            std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+            vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+            int i = 0;
+
+            for (const auto& queuefamily: queueFamilies) {
+                if (queuefamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                    indices.graphicsFamily = i;
+                }
+
+                VkBool32 presentSupport = false;
+                vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+
+                if (presentSupport) {
+                    indices.presentFamily = i;
+                }
+
+                if (indices.IsComplete()) {
+                    break;
+                }
+
+                i++;
+            }
+
+            return indices;
+        }
     };
 
     struct SwapChainSupportDetails {
@@ -37,4 +64,5 @@ namespace Vu {
         std::vector<VkSurfaceFormatKHR> formats;
         std::vector<VkPresentModeKHR> presentModes;
     };
+
 }

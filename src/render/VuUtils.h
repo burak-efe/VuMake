@@ -1,26 +1,11 @@
 #pragma once
 
-#include "Common.h"
-
 #include <fstream>
-#include <stacktrace>
 
-#include "vulkan/vk_enum_string_helper.h"
+#include "Common.h"
 #include "VuCtx.h"
-#include "VuTypes.h"
 
 namespace Vu {
-
-
-    inline void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
-                                              const VkAllocationCallbacks* pAllocator) {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)
-                vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-
-        if (func != nullptr) {
-            func(instance, debugMessenger, pAllocator);
-        }
-    }
 
 
     inline std::vector<char> ReadFile(const std::string& filename) {
@@ -79,41 +64,7 @@ namespace Vu {
         return info;
     }
 
-    inline QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
-        //Logic to find graphics queue family
-        QueueFamilyIndices indices;
 
-        uint32 queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-        int i = 0;
-
-
-        for (const auto& queuefamily: queueFamilies) {
-            if (queuefamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-                indices.graphicsFamily = i;
-            }
-
-            VkBool32 presentSupport = false;
-
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-
-            if (presentSupport) {
-                indices.presentFamily = i;
-            }
-
-            if (indices.IsComplete()) {
-                break;
-            }
-
-            i++;
-        }
-
-        return indices;
-    }
 
     inline uint32 FindMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties) {
         VkPhysicalDeviceMemoryProperties memProperties{};
@@ -125,22 +76,5 @@ namespace Vu {
         }
 
         throw std::runtime_error("failed to find suitable memory type!");
-    }
-
-
-
-
-
-    static VkShaderModule CreateShaderModule(const std::vector<char>& code) {
-
-        VkShaderModuleCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = code.size();
-        createInfo.pCode = reinterpret_cast<const uint32 *>(code.data());
-        createInfo.pNext = nullptr;
-
-        VkShaderModule shaderModule;
-        VkCheck(vkCreateShaderModule(ctx::device, &createInfo, nullptr, &shaderModule));
-        return shaderModule;
     }
 }

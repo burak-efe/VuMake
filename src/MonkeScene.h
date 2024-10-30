@@ -24,20 +24,29 @@ struct MonkeScene {
         VuMesh monke("assets/meshes/monka500k.glb");
 
         VuShader shader;
-        shader.InitShader("assets/shaders/vert.spv", "assets/shaders/frag.spv", vuRenderer.swapChain.renderPass.renderPass);
+        shader.CreateShader(
+            "assets/shaders/vert.spv",
+            "assets/shaders/frag.spv",
+            vuRenderer.swapChain.renderPass.renderPass
+        );
         uint32 monkeMat0 = shader.CreateMaterial();
 
 
-        //vuRenderer.writeTexture();
+        VuTexture floorColorTex;
+        floorColorTex.Alloc("assets/textures/floor0.png");
+
+        VuTexture floorNormalTex;
+        floorNormalTex.Alloc("assets/textures/debug_n.png");
 
 
-        // VuTexture floorTex;
-        // floorTex.Alloc("shaders/textures/floor0.png");
+        vuRenderer.WriteTexture(1, floorColorTex);
+        vuRenderer.WriteTexture(2, floorNormalTex);
+
+
         // uint32 monkeMat1 = shader.createMaterial(&floorTex);
 
 
         flecs::world world;
-        //world.set<VuRenderer*>(&vuRenderer);
 
         //Add Systems
         auto spinningSystem = AddSpinningSystem(world);

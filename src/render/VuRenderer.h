@@ -93,7 +93,7 @@ constexpr bool enableValidationLayers = false;
 
         void EndImgui();
 
-        void UpdateUniformBuffer(FrameUBO ubo);
+        void UpdateUniformBuffer(VuFrameConst ubo);
 
         void BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
 
@@ -126,5 +126,16 @@ constexpr bool enableValidationLayers = false;
         void CreateUniformBuffers();
 
         void SetupImGui();
+
+
+        static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
+                                                  const VkAllocationCallbacks* pAllocator) {
+            auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)
+                    vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+
+            if (func != nullptr) {
+                func(instance, debugMessenger, pAllocator);
+            }
+        }
     };
 }

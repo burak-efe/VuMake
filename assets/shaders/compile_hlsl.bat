@@ -20,8 +20,8 @@
 
 ::\path\to\dxc.exe -spirv -T <target-prfile> -E <entry-point> <hlsl-src-file> -Fo <spirv-bin-file>
 
-dxc.exe -spirv -T vs_6_3 vert.hlsl -Fo vert.spv
-dxc.exe -spirv -T ps_6_3 frag.hlsl -Fo frag.spv
+..\..\bin\dxc.exe -spirv -T vs_6_3 vert.hlsl -Fo vert.spv
+..\..\bin\dxc.exe -spirv -T ps_6_3 frag.hlsl -Fo frag.spv
 
 ::dxc.exe -dumpbin vs.dxil
 ::dxc.exe -dumpbin ps.dxil

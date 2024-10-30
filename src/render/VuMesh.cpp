@@ -19,7 +19,8 @@ namespace Vu {
             std::cout << "gltf file cannot be loaded!" << "\n";
         }
 
-        auto asset = parser.loadGltf(data.get(), gltfPath.parent_path(), fastgltf::Options::None);
+        auto asset = parser.loadGltf(data.get(),
+                                     gltfPath.parent_path(), fastgltf::Options::None);
         if (auto error = asset.error(); error != fastgltf::Error::None) {
             std::cout << "Some error occurred while reading the buffer, parsing the JSON, or validating the data." << "\n";
         }
@@ -72,7 +73,6 @@ namespace Vu {
 
         //normal
         auto* normalIt = primitive.findAttribute("NORMAL");
-
         auto& normalAccessor = asset->accessors[normalIt->accessorIndex];
         auto normalbufferIndex = normalAccessor.bufferViewIndex.value();
         auto& normalbufferView = asset->bufferViews.at(normalbufferIndex);
@@ -84,7 +84,6 @@ namespace Vu {
             [&](glm::vec3 normal, std::size_t idx) { normals[idx] = normal; }
         );
 
-        //normalBuffer = VuBuffer();
         normalBuffer.Alloc({
             .lenght = static_cast<uint32>(normals.size()),
             .strideInBytes = sizeof(normals[0]),
@@ -92,8 +91,28 @@ namespace Vu {
         });
         VkCheck(normalBuffer.SetData(normals.data(), normals.size() * sizeof(normals[0])));
 
+        //tangent
+        auto* tangentIt = primitive.findAttribute("TANGENT");
+        auto& tangentAccessor = asset->accessors[tangentIt->accessorIndex];
+        auto tangentbufferIndex = tangentAccessor.bufferViewIndex.value();
+        auto& tangentbufferView = asset->bufferViews.at(tangentbufferIndex);
+        auto tangentDataBuffer = asset->buffers.at(tangentbufferView.bufferIndex);
 
-        //normal
+        tangents.resize(positionAccessor.count);
+        fastgltf::iterateAccessorWithIndex<glm::vec4>(
+            asset.get(), tangentAccessor,
+            [&](glm::vec4 tangent, std::size_t idx) { tangents[idx] = tangent; }
+        );
+
+        tangentBuffer.Alloc({
+            .lenght = static_cast<uint32>(tangents.size()),
+            .strideInBytes = sizeof(tangents[0]),
+            .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+        });
+        VkCheck(tangentBuffer.SetData(tangents.data(), tangents.size() * sizeof(tangents[0])));
+
+
+        //uv
         auto* uvIter = primitive.findAttribute("TEXCOORD_0");
         auto& uvAccessor = asset->accessors[uvIter->accessorIndex];
         auto uvbufferIndex = uvAccessor.bufferViewIndex.value();
@@ -106,7 +125,6 @@ namespace Vu {
             [&](glm::vec2 uv, std::size_t idx) { uvs[idx] = uv; }
         );
 
-        //uvBuffer = VuBuffer();
         uvBuffer.Alloc({
             .lenght = static_cast<uint32>(uvs.size()),
             .strideInBytes = sizeof(uvs[0]),
@@ -116,25 +134,29 @@ namespace Vu {
 
     }
 
-    std::array<VkVertexInputBindingDescription, 3> VuMesh::getBindingDescription() {
-        std::array<VkVertexInputBindingDescription, 3> bindingDescriptions{};
+    std::array<VkVertexInputBindingDescription, 4> VuMesh::getBindingDescription() {
+        std::array<VkVertexInputBindingDescription, 4> bindingDescriptions{};
         bindingDescriptions[0].binding = 0;
         bindingDescriptions[0].stride = sizeof(glm::vec3);
         bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
 
         bindingDescriptions[1].binding = 1;
         bindingDescriptions[1].stride = sizeof(glm::vec3);
         bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
         bindingDescriptions[2].binding = 2;
-        bindingDescriptions[2].stride = sizeof(glm::vec2);
+        bindingDescriptions[2].stride = sizeof(glm::vec4);
         bindingDescriptions[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        bindingDescriptions[3].binding = 3;
+        bindingDescriptions[3].stride = sizeof(glm::vec2);
+        bindingDescriptions[3].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
         return bindingDescriptions;
     }
 
-    std::array<VkVertexInputAttributeDescription, 3> VuMesh::getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+    std::array<VkVertexInputAttributeDescription, 4> VuMesh::getAttributeDescriptions() {
+        std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -147,8 +169,13 @@ namespace Vu {
 
         attributeDescriptions[2].binding = 2;
         attributeDescriptions[2].location = 2;
-        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
         attributeDescriptions[2].offset = 0;
+
+        attributeDescriptions[3].binding = 3;
+        attributeDescriptions[3].location = 3;
+        attributeDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[3].offset = 0;
 
         return attributeDescriptions;
     }
@@ -157,6 +184,7 @@ namespace Vu {
         vertexBuffer.Dispose();
         indexBuffer.Dispose();
         normalBuffer.Dispose();
+        tangentBuffer.Dispose();
         uvBuffer.Dispose();
     }
 }

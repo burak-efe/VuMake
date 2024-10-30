@@ -8,13 +8,6 @@ struct VSInput
     [[vk::location(2)]] float2 VertexUV : TEXCOORD0;
 };
 
-struct VSOutput
-{
-    float4 Pos : SV_POSITION;
-    [[vk::location(0)]]float3 FragPosWS : POSITION0;
-    [[vk::location(1)]]float3 FragNormalWS : NORMAL0;
-    [[vk::location(2)]]float2 FragUV : TEXCOORD0;
-};
 
 
 VSOutput main(VSInput input)

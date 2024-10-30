@@ -2,7 +2,7 @@
 #include "VuGraphicsPipeline.h"
 #include "Common.h"
 #include "VuMesh.h"
-#include "VuTexture.h"
+#include "VuTypes.h"
 
 namespace Vu {
     struct VuMaterial {

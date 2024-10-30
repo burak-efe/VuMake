@@ -177,7 +177,7 @@ namespace Vu {
                     trs.Position.z += rotatedTranslation.z;
 
 
-                    FrameUBO ubo{};
+                    VuFrameConst ubo{};
                     ubo.view = glm::inverse(trs.ToTRS());
                     ubo.proj = glm::perspective(
                         glm::radians(cam.fov),

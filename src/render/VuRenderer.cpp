@@ -62,9 +62,15 @@ namespace Vu {
     void VuRenderer::BindMesh(const VuMesh& mesh) {
         auto commandBuffer = commandBuffers[currentFrame];
 
-        std::array vertexBuffers = {mesh.vertexBuffer.buffer, mesh.normalBuffer.buffer, mesh.uvBuffer.buffer};
-        VkDeviceSize offsets[] = {0, 0, 0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), offsets);
+        std::array vertexBuffers = {
+            mesh.vertexBuffer.buffer,
+            mesh.normalBuffer.buffer,
+            mesh.tangentBuffer.buffer,
+            mesh.uvBuffer.buffer
+        };
+
+        std::array<VkDeviceSize, 4> offsets = {0, 0, 0, 0};
+        vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), offsets.data());
 
         vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
     }
@@ -138,7 +144,7 @@ namespace Vu {
     }
 
 
-    void VuRenderer::UpdateUniformBuffer(FrameUBO ubo) {
+    void VuRenderer::UpdateUniformBuffer(VuFrameConst ubo) {
         uniformBuffers[currentFrame].SetData(&ubo, sizeof(ubo));
     }
 

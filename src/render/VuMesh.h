@@ -12,6 +12,7 @@ namespace Vu {
         VuBuffer indexBuffer;
         VuBuffer vertexBuffer;
         VuBuffer normalBuffer;
+        VuBuffer tangentBuffer;
         VuBuffer uvBuffer;
 
         uint32 vertexCount;
@@ -19,6 +20,7 @@ namespace Vu {
         std::vector<uint32> indices;
         std::vector<float3> vertices;
         std::vector<float3> normals;
+        std::vector<float4> tangents;
         std::vector<float2> uvs;
 
 
@@ -26,8 +28,8 @@ namespace Vu {
 
         void Dispose();
 
-        static std::array<VkVertexInputBindingDescription, 3> getBindingDescription();
+        static std::array<VkVertexInputBindingDescription, 4> getBindingDescription();
 
-        static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+        static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions();
     };
 }
