@@ -21,7 +21,7 @@ struct MonkeScene {
         VuRenderer vuRenderer;
         vuRenderer.Init();
         ctx::vuRenderer = &vuRenderer;
-        VuMesh monke("assets/meshes/monka500k.glb");
+        VuMesh monke("assets/meshes/monka.glb");
 
         VuShader shader;
         shader.CreateShader(

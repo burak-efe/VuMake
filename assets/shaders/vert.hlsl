@@ -16,8 +16,8 @@ VSOutput main(VSInput input)
     VSOutput output = (VSOutput)0;
     output.Pos = mul(ubo.proj, mul(ubo.view, mul(pc.model, float4(input.VertexPosition, 1))));
 
-    //float4 m = mul(pc.model , float4(input.VertexPosition, 1.0));
-    //output.FragPosWS = m.xyz;
+    float4 m = mul(pc.model , float4(input.VertexPosition, 1.0));
+    output.Position = m.xyz;
 
     output.Normal.xyz = mul(pc.model, input.VertexNormal).xyz;
     output.UV = input.VertexUV;
