@@ -7,40 +7,59 @@ struct FSOutput
 };
 
 
-static const float3 lightPos = float3(0.0, 2.0, 3.0);
+//static const float3 lightPos = float3(0.0, 0.0, -1.0);
 static const float3 lightColor = float3(1.0, 1.0, 1.0);
 
-static const float ambient = 0.03f;
-static const float roughness = 0.0f;
+static const float3 ambient = float3(0.01f, 0.01f, 0.01f);
+static const float roughness = 0.5f;
+static const float specularIntensity = 0.5f;
 
 FSOutput main(VSOutput input)
 {
+
+    float3 lightPos = ubo.cameraPos;
      FSOutput output = (FSOutput) 0;
 
-     float2 uv = input.UV * 5;
+     float2 uv = input.UV;
+    float4 colorSample  = globalTextures[1].Sample(globalSamplers[0], uv);
+    float3 normalSample = globalTextures[2].Sample(globalSamplers[0], uv).rgb;
+    //normalSample.g = 1.0f - normalSample.g;
+    float3 normal = normalize(normalSample * 2.0 - 1.0);
 
-    float3 viewPos = float3(-ubo.view[0][3], -ubo.view[1][3], -ubo.view[2][3]);
+    // Calculate TBN matrix
+    float3x3 TBN = float3x3(input.Tangent, input.Bitangent, input.Normal);
 
-    float4 colorSample  = globalTextures[0].Sample(globalSamplers[0], uv);
-    float4 normalSample = globalTextures[2].Sample(globalSamplers[0], uv);
-    float3 normal = normalize(input.Normal);
+    // Transform the normal to world space
+    normal = normalize(mul(normal, TBN));
 
-    float3 lightDir = normalize(lightPos - input.Position);
-    float3 viewDir = normalize(viewPos - input.Position);
-    float diff = max(dot(normal, lightDir), 0.0f);
-    float3 diffuse = diff * lightColor;
+    // Calculate lighting
+    float3 viewDir = normalize(ubo.cameraPos - input.PosWS);
+    viewDir =  mul (float4(viewDir,0), TBN);
 
-    float3 halfwayDir = normalize(lightDir + viewDir);
+    float3 lightDir = normalize(lightPos - input.PosWS);
+    lightDir = mul (float4(lightDir,0), TBN);
 
 
-    float shininess = 1.0 / (roughness * roughness + 0.001f); // Avoid division by 0 for roughness = 0
-    float spec = pow(max(dot(normal, halfwayDir), 0.0f), 64);
-    float3 specular = spec * lightColor; // Specular reflection color
+    float3 halfVector = normalize(viewDir + lightDir);
 
-    float3 finalColor = (ambient + diffuse + specular) * colorSample.rgb;
+    // Adjust shininess based on roughness (roughness of 0 -> sharp highlights, roughness of 1 -> soft highlights)
+    float shininess = pow(1.0 - roughness, 4.0) * 128.0;
 
-    output.Color0 = float4(normalSample.xyz, 1);
+    // Blinn-Phong lighting model
+    float3 diffuse = max(dot(lightDir, normal), 0.0) * lightColor * colorSample.rgb;
+    float3 specular = pow(max(dot(normal, halfVector), 0.0), shininess) * lightColor * specularIntensity;
+
+    // Final color
+    float3 color = (ambient + diffuse + specular);
+
+    //output.Color0 = float4(viewDir, 1.0); // Debug: Output view direction
+    //output.Color0 = float4(lightDir, 1.0); // Debug: Output light direction
+    //output.Color0 = float4(normal, 1);
+    output.Color0 = float4(normal, 1);
+
+
+
+
 
     return output;
-
 }

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <array>
+#include <vector>
 
 #include "glm/fwd.hpp"
 #include "glm/mat4x4.hpp"

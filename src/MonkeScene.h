@@ -21,7 +21,7 @@ struct MonkeScene {
         VuRenderer vuRenderer;
         vuRenderer.Init();
         ctx::vuRenderer = &vuRenderer;
-        VuMesh monke("assets/meshes/monka.glb");
+        VuMesh monke("assets/meshes/cat.glb");
 
         VuShader shader;
         shader.CreateShader(
@@ -33,10 +33,10 @@ struct MonkeScene {
 
 
         VuTexture floorColorTex;
-        floorColorTex.Alloc("assets/textures/floor0.png");
+        floorColorTex.Alloc("assets/textures/cat.png");
 
         VuTexture floorNormalTex;
-        floorNormalTex.Alloc("assets/textures/debug_n.png");
+        floorNormalTex.Alloc("assets/textures/cat_n.png");
 
 
         vuRenderer.WriteTexture(1, floorColorTex);
@@ -59,12 +59,12 @@ struct MonkeScene {
 
         //Add Entities
         world.entity("Monke1").set(Transform{
-            .Position = float3(0, 0, 0)
+            .Position = float3(0, 0, 0), .Scale = {10,10,10}
         }).set(MeshRenderer{&monke, &shader, monkeMat0}).set(Spinn{});
 
-        world.entity("Monke2").set(Transform{
-            .Position = float3(4, 0, 0)
-        }).set(MeshRenderer{&monke, &shader, monkeMat0}).set(Spinn{});
+        // world.entity("Monke2").set(Transform{
+        //     .Position = float3(4, 0, 0)
+        // }).set(MeshRenderer{&monke, &shader, monkeMat0}).set(Spinn{});
 
         world.entity("Cam").set(
             Transform(float3(0, 0, 4.0f), float3(0, 0, 0), float3(1, 1, 1))
@@ -103,6 +103,8 @@ struct MonkeScene {
         //Mission complete
         vuRenderer.WaitIdle();
         shader.Dispose();
+        floorColorTex.Dispose();
+        floorNormalTex.Dispose();
         monke.Dispose();
         vuRenderer.Dispose();
         //system("pause");

@@ -28,7 +28,7 @@ namespace Vu {
         CreateDescriptorPool();
         CreateDescriptorSets();
 
-        std::array descSetLayouts{ctx::frameConstantsDescriptorSetLayout, ctx::globalDescriptorSetLayout};
+        std::array descSetLayouts{ ctx::globalDescriptorSetLayout};
         Vu::Initializers::CreatePipelineLayout(descSetLayouts, sizeof(VuPushConstant), ctx::globalPipelineLayout);
         disposeStack.push([&] { vkDestroyPipelineLayout(ctx::device, ctx::globalPipelineLayout, nullptr); });
 
@@ -344,22 +344,35 @@ namespace Vu {
     }
 
     void VuRenderer::CreateDescriptorSetLayout() {
-        VkDescriptorSetLayoutBinding frameConstBinding{
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_ALL,
-        };
-        VkDescriptorSetLayoutCreateInfo frameConstLayout{
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-            .bindingCount = 1,
-            .pBindings = &frameConstBinding,
-        };
-        VkCheck(vkCreateDescriptorSetLayout(ctx::device, &frameConstLayout, nullptr, &ctx::frameConstantsDescriptorSetLayout));
-
-        disposeStack.push([&] { vkDestroyDescriptorSetLayout(ctx::device, ctx::frameConstantsDescriptorSetLayout, nullptr); });
+        // VkDescriptorSetLayoutBinding frameConstBinding{
+        //     .binding = 0,
+        //     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        //     .descriptorCount = 1,
+        //     .stageFlags = VK_SHADER_STAGE_ALL,
+        // };
+        // VkDescriptorSetLayoutCreateInfo frameConstLayout{
+        //     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        //     .bindingCount = 1,
+        //     .pBindings = &frameConstBinding,
+        // };
+        // VkCheck(vkCreateDescriptorSetLayout(ctx::device, &frameConstLayout, nullptr,
+        //                                     &ctx::frameConstantsDescriptorSetLayout));
+        //
+        // disposeStack.push([&] {
+        //     vkDestroyDescriptorSetLayout(ctx::device,
+        //                                  ctx::frameConstantsDescriptorSetLayout, nullptr);
+        // });
 
         //Global Set
+
+        VkDescriptorSetLayoutBinding globalUniform{
+            .binding = UBO_BINDING,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = UNIFORM_COUNT,
+            .stageFlags = VK_SHADER_STAGE_ALL,
+        };
+
+
         VkDescriptorSetLayoutBinding globalStorage{
             .binding = STORAGE_BINDING,
             .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -382,13 +395,13 @@ namespace Vu {
         };
 
 
-        std::array descriptorSetLayoutBindings{globalStorage, globalSampler, globalImage};
+        std::array descriptorSetLayoutBindings{globalUniform, globalStorage, globalSampler, globalImage};
 
 
         VkDescriptorSetLayoutCreateInfo globalSetLayout{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
-            .bindingCount = 3,
+            .bindingCount = descriptorSetLayoutBindings.size(),
             .pBindings = descriptorSetLayoutBindings.data(),
         };
 
@@ -403,10 +416,8 @@ namespace Vu {
                 | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT
                 | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
 
-        std::array<VkDescriptorSetLayoutCreateFlags, 3> descriptorSetLayoutFlags{flag, flag, flag};
+        std::array descriptorSetLayoutFlags{flag, flag, flag, flag};
 
-        // In unextended Vulkan, there is no way to pass down flags to a binding, so we're going to do so via a pNext.
-        // Each pBinding has a corresponding pBindingFlags.
         VkDescriptorSetLayoutBindingFlagsCreateInfoEXT binding_flags{};
         binding_flags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
         binding_flags.bindingCount = descriptorSetLayoutFlags.size();
@@ -422,7 +433,7 @@ namespace Vu {
     void VuRenderer::CreateDescriptorPool() {
         std::array<VkDescriptorPoolSize, 4> poolSizes{};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[0].descriptorCount = 1;
+        poolSizes[0].descriptorCount = UNIFORM_COUNT;
 
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         poolSizes[1].descriptorCount = STORAGE_COUNT;
@@ -436,7 +447,7 @@ namespace Vu {
         VkDescriptorPoolCreateInfo poolInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
             .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
-            .maxSets = 2048,
+            .maxSets = 1024,
             .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
             .pPoolSizes = poolSizes.data(),
         };
@@ -447,38 +458,38 @@ namespace Vu {
 
     void VuRenderer::CreateDescriptorSets() {
 
-        //frameConstant
-        std::vector frameLayouts(ctx::MAX_FRAMES_IN_FLIGHT, ctx::frameConstantsDescriptorSetLayout);
-        VkDescriptorSetAllocateInfo allocInfo{
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .descriptorPool = ctx::descriptorPool,
-            .descriptorSetCount = static_cast<uint32_t>(ctx::MAX_FRAMES_IN_FLIGHT),
-            .pSetLayouts = frameLayouts.data(),
-        };
-
-        ctx::frameConstantDescriptorSets.resize(ctx::MAX_FRAMES_IN_FLIGHT);
-        VkCheck(vkAllocateDescriptorSets(ctx::device, &allocInfo, ctx::frameConstantDescriptorSets.data()));
-
-
-        //frame
-        for (size_t i = 0; i < ctx::MAX_FRAMES_IN_FLIGHT; i++) {
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = uniformBuffers[i].buffer;
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(VuFrameConst);
-
-            VkWriteDescriptorSet descriptorWrite{};
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = ctx::frameConstantDescriptorSets[i];
-            descriptorWrite.dstBinding = 0;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pBufferInfo = &bufferInfo;
-
-            vkUpdateDescriptorSets(ctx::device, 1, &descriptorWrite, 0, nullptr);
-        }
-
+        // //frameConstant
+        // std::vector frameLayouts(ctx::MAX_FRAMES_IN_FLIGHT, ctx::frameConstantsDescriptorSetLayout);
+        // VkDescriptorSetAllocateInfo allocInfo{
+        //     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        //     .descriptorPool = ctx::descriptorPool,
+        //     .descriptorSetCount = static_cast<uint32_t>(ctx::MAX_FRAMES_IN_FLIGHT),
+        //     .pSetLayouts = frameLayouts.data(),
+        // };
+        //
+        // ctx::frameConstantDescriptorSets.resize(ctx::MAX_FRAMES_IN_FLIGHT);
+        // VkCheck(vkAllocateDescriptorSets(ctx::device, &allocInfo, ctx::frameConstantDescriptorSets.data()));
+        //
+        //
+        // //frame
+        // for (size_t i = 0; i < ctx::MAX_FRAMES_IN_FLIGHT; i++) {
+        //     VkDescriptorBufferInfo bufferInfo{};
+        //     bufferInfo.buffer = uniformBuffers[i].buffer;
+        //     bufferInfo.offset = 0;
+        //     bufferInfo.range = sizeof(VuFrameConst);
+        //
+        //     VkWriteDescriptorSet descriptorWrite{};
+        //     descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        //     descriptorWrite.dstSet = ctx::frameConstantDescriptorSets[i];
+        //     descriptorWrite.dstBinding = 0;
+        //     descriptorWrite.dstArrayElement = 0;
+        //     descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        //     descriptorWrite.descriptorCount = 1;
+        //     descriptorWrite.pBufferInfo = &bufferInfo;
+        //
+        //     vkUpdateDescriptorSets(ctx::device, 1, &descriptorWrite, 0, nullptr);
+        // }
+        //
 
         //global sets
         std::vector globalLayouts(ctx::MAX_FRAMES_IN_FLIGHT, ctx::globalDescriptorSetLayout);
@@ -492,6 +503,26 @@ namespace Vu {
 
         ctx::globalDescriptorSets.resize(ctx::MAX_FRAMES_IN_FLIGHT);
         VkCheck(vkAllocateDescriptorSets(ctx::device, &globalSetsAllocInfo, ctx::globalDescriptorSets.data()));
+
+
+        //uniforms
+        for (size_t i = 0; i < ctx::MAX_FRAMES_IN_FLIGHT; i++) {
+            VkDescriptorBufferInfo bufferInfo{};
+            bufferInfo.buffer = uniformBuffers[i].buffer;
+            bufferInfo.offset = 0;
+            bufferInfo.range = sizeof(VuFrameConst);
+
+            VkWriteDescriptorSet descriptorWrite{};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = ctx::globalDescriptorSets[i];
+            descriptorWrite.dstBinding = 0;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pBufferInfo = &bufferInfo;
+
+            vkUpdateDescriptorSets(ctx::device, 1, &descriptorWrite, 0, nullptr);
+        }
     }
 
     void VuRenderer::SetupImGui() {
@@ -554,7 +585,6 @@ namespace Vu {
             disposeStack.pop();
         }
     }
-
 
 
 }

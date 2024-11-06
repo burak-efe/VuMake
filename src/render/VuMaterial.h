@@ -5,14 +5,20 @@
 #include "VuTypes.h"
 
 namespace Vu {
+
+    struct PBRMaterialData {
+        uint32 colorMap;
+        uint32 normalMap;
+    };
+
     struct VuMaterial {
         VuGraphicsPipeline vuPipeline;
 
-        void Dispose() {
+        void dispose() {
             vuPipeline.Dispose();
         }
 
-        void Init(
+        void init(
             const VkShaderModule& vertexShaderModule,
             const VkShaderModule& fragmentShaderModule,
             const VkRenderPass& renderPass
@@ -29,30 +35,30 @@ namespace Vu {
             );
         }
 
-        void PushConstants(VkCommandBuffer& commandBuffer, VuPushConstant pushConstant) const {
+        void pushConstants(VkCommandBuffer& commandBuffer, VuPushConstant pushConstant) const {
             vkCmdPushConstants(commandBuffer, ctx::globalPipelineLayout, VK_SHADER_STAGE_ALL,
                                0, sizeof(VuPushConstant), &pushConstant);
         }
 
         void bindFrameConstants(const VkCommandBuffer& commandBuffer, uint32 currentFrame) const {
-            //frame const
-            vkCmdBindDescriptorSets(
-                commandBuffer,
-                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                ctx::globalPipelineLayout,
-                0,
-                1,
-                &ctx::frameConstantDescriptorSets[currentFrame],
-                0,
-                nullptr
-            );
+            // //frame const
+            // vkCmdBindDescriptorSets(
+            //     commandBuffer,
+            //     VK_PIPELINE_BIND_POINT_GRAPHICS,
+            //     ctx::globalPipelineLayout,
+            //     0,
+            //     1,
+            //     &ctx::frameConstantDescriptorSets[currentFrame],
+            //     0,
+            //     nullptr
+            // );
 
             //global
             vkCmdBindDescriptorSets(
                 commandBuffer,
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                 ctx::globalPipelineLayout,
-                1,
+                0,
                 1,
                 &ctx::globalDescriptorSets[currentFrame],
                 0,
@@ -64,5 +70,7 @@ namespace Vu {
         void bindPipeline(const VkCommandBuffer& commandBuffer) const {
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vuPipeline.pipeline);
         }
+
+    private:
     };
 }

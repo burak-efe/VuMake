@@ -21,7 +21,7 @@ namespace Vu {
             vkDestroyShaderModule(ctx::device, fragmentShaderModule, nullptr);
 
             for (auto& material: materials) {
-                material.Dispose();
+                material.dispose();
             }
         }
 
@@ -40,7 +40,7 @@ namespace Vu {
         uint32 CreateMaterial() {
 
             VuMaterial material;
-            material.Init(vertexShaderModule, fragmentShaderModule, renderPass);
+            material.init(vertexShaderModule, fragmentShaderModule, renderPass);
             materials.push_back(material);
             return materials.capacity() - 1;
         }

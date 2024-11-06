@@ -14,6 +14,12 @@ namespace Vu {
     struct VuFrameConst {
         float4x4 view;
         float4x4 proj;
+        float3 cameraPos;
+        float pad0;
+        float3 cameraDir;
+        float pad1;
+        float time;
+        float3 pad2;
     };
 
     struct QueueFamilyIndices {

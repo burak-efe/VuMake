@@ -32,15 +32,7 @@ endfunction()
 ####################################################################################################
 #Project
 project("VuMake")
-add_executable(${PROJECT_NAME}
-        src/render/VuRenderPass.h
-        src/MonkeScene.h
-        src/render/VuMaterialData.h
-        src/render/VuSampler.h
-        src/render/VuPipelineLayout.h
-        src/render/VuResourcePool.h
-        src/common/Common.cpp
-        src/render/VuTypes.h)
+add_executable(${PROJECT_NAME})
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 ####################################################################################################
 # Precompiled Headers
@@ -49,6 +41,7 @@ set(PCH
 )
 #target_precompile_headers(${PROJECT_NAME} PUBLIC ${PCH})
 target_precompile_headers(${PROJECT_NAME} PUBLIC
+        ${PCH}
         <chrono>
         <iostream>
         <print>

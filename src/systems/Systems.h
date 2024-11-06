@@ -177,15 +177,23 @@ namespace Vu {
                     trs.Position.z += rotatedTranslation.z;
 
 
-                    VuFrameConst ubo{};
-                    ubo.view = glm::inverse(trs.ToTRS());
-                    ubo.proj = glm::perspective(
+                    //VuFrameConst ubo{};
+                    ctx::frameConst.view = glm::inverse(trs.ToTRS());
+                    ctx::frameConst.proj = glm::perspective(
                         glm::radians(cam.fov),
                         static_cast<float>(ctx::vuRenderer->swapChain.swapChainExtent.width)
                         / static_cast<float>(ctx::vuRenderer->swapChain.swapChainExtent.height),
                         cam.near,
                         cam.far);
-                    ctx::vuRenderer->UpdateUniformBuffer(ubo);
+
+                    ctx::frameConst.cameraPos = trs.Position;
+                    ctx::frameConst.cameraDir = float3(cam.yaw, cam.pitch, cam.roll);
+                    ctx::frameConst.time = ctx::time();
+
+
+
+
+                    ctx::vuRenderer->UpdateUniformBuffer(ctx::frameConst);
                 });
     }
 }

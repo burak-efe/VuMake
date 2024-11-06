@@ -19,8 +19,8 @@ namespace Vu {
             std::cout << "gltf file cannot be loaded!" << "\n";
         }
 
-        auto asset = parser.loadGltf(data.get(),
-                                     gltfPath.parent_path(), fastgltf::Options::None);
+        auto asset = parser.loadGltf(
+            data.get(),gltfPath.parent_path(), fastgltf::Options::LoadExternalBuffers);
         if (auto error = asset.error(); error != fastgltf::Error::None) {
             std::cout << "Some error occurred while reading the buffer, parsing the JSON, or validating the data." << "\n";
         }

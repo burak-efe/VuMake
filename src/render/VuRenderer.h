@@ -7,7 +7,7 @@
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_sdl3.h"
-#include "VuMaterialData.h"
+#include "VuMaterialDataPool.h"
 
 #include "VuMesh.h"
 #include "VuSwapChain.h"
@@ -19,16 +19,18 @@
 
 namespace Vu {
 
-    const uint32 WIDTH = 1280;
-    const uint32 HEIGHT = 720;
+    constexpr uint32 WIDTH = 1280;
+    constexpr uint32 HEIGHT = 720;
 
-    const uint32 STORAGE_BINDING = 0;
-    const uint32 SAMPLER_BINDING = 1;
-    const uint32 IMAGE_BINDING = 2;
+    constexpr uint32 UBO_BINDING = 0;
+    constexpr uint32 STORAGE_BINDING = 1;
+    constexpr uint32 SAMPLER_BINDING = 2;
+    constexpr uint32 IMAGE_BINDING = 3;
 
-    const uint32 STORAGE_COUNT = 256;
-    const uint32 SAMPLER_COUNT = 125;
-    const uint32 IMAGE_COUNT = 256;
+    constexpr uint32 UNIFORM_COUNT = 2;
+    constexpr uint32 STORAGE_COUNT = 256;
+    constexpr uint32 SAMPLER_COUNT = 125;
+    constexpr uint32 IMAGE_COUNT = 256;
 
 #ifdef NDEBUG
 constexpr bool enableValidationLayers = false;
@@ -65,6 +67,9 @@ constexpr bool enableValidationLayers = false;
         uint32 lastStorageResource;
 
         std::stack<std::function<void()> > disposeStack;
+
+
+
 
         void WriteTexture(uint32 writeIndex, VuTexture& texture);
 

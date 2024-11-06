@@ -78,7 +78,7 @@ namespace Vu {
     void VuRenderer::BindMaterial(const VuMaterial& material, VuPushConstant pushConstant) {
         auto commandBuffer = commandBuffers[currentFrame];
         material.bindFrameConstants(commandBuffer, currentFrame);
-        material.PushConstants(commandBuffer, pushConstant);
+        material.pushConstants(commandBuffer, pushConstant);
         material.bindPipeline(commandBuffer);
     }
 

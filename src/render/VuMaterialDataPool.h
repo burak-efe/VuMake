@@ -4,6 +4,7 @@
 #include "VuBuffer.h"
 
 namespace Vu {
+
     struct VuMaterialDataPool {
 
     private:
@@ -52,16 +53,16 @@ namespace Vu {
         }
 
         //Returns the offset in bytes
-        VkDeviceSize AllocMaterialData(VkDeviceSize size) {
+        uint32 AllocMaterialData(VkDeviceSize size) {
             void* data0 = buddy_malloc(buddy, size);
-            VkDeviceSize offset = (uint64) data0 - (uint64) materialDataBuffer.mapPtr;
-            return offset;
+            VkDeviceSize offset = reinterpret_cast<uint64>(data0) - reinterpret_cast<uint64>(materialDataBuffer.mapPtr);
+            return static_cast<uint32>(offset);
         }
 
-        void FreeMaterialData(VkDeviceSize offset) {
+        void FreeMaterialData(uint32 offset) {
 
-            VkDeviceSize ptr = (VkDeviceSize) materialDataBuffer.mapPtr + offset;
-            buddy_free(buddy, (void *) ptr);
+            VkDeviceSize ptr = reinterpret_cast<VkDeviceSize>(materialDataBuffer.mapPtr) + offset;
+            buddy_free(buddy, reinterpret_cast<void *>(ptr));
         }
 
         void Dispose() {
@@ -69,7 +70,5 @@ namespace Vu {
             materialDataBuffer.Dispose();
             free(buddy_metadata);
         }
-
-
     };
 }
