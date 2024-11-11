@@ -12,6 +12,7 @@
 #include "VuMesh.h"
 #include "VuSwapChain.h"
 #include "VuBuffer.h"
+#include "VuGlobalSetManager.h"
 #include "VuMaterial.h"
 #include "VuSampler.h"
 #include "VuTexture.h"
@@ -22,15 +23,7 @@ namespace Vu {
     constexpr uint32 WIDTH = 1280;
     constexpr uint32 HEIGHT = 720;
 
-    constexpr uint32 UBO_BINDING = 0;
-    constexpr uint32 STORAGE_BINDING = 1;
-    constexpr uint32 SAMPLER_BINDING = 2;
-    constexpr uint32 IMAGE_BINDING = 3;
 
-    constexpr uint32 UNIFORM_COUNT = 2;
-    constexpr uint32 STORAGE_COUNT = 256;
-    constexpr uint32 SAMPLER_COUNT = 125;
-    constexpr uint32 IMAGE_COUNT = 256;
 
 #ifdef NDEBUG
 constexpr bool enableValidationLayers = false;
@@ -68,12 +61,12 @@ constexpr bool enableValidationLayers = false;
 
         std::stack<std::function<void()> > disposeStack;
 
+        VuGlobalSetManager globalSetManager;
 
 
-
-        void WriteTexture(uint32 writeIndex, VuTexture& texture);
-
-        void WriteSampler(uint32 writeIndex, VkSampler& sampler);
+        // void WriteTexture(uint32 writeIndex, VuTexture& texture);
+        //
+        // void WriteSampler(uint32 writeIndex, VkSampler& sampler);
 
 
         void Init();
@@ -100,9 +93,9 @@ constexpr bool enableValidationLayers = false;
 
         void UpdateUniformBuffer(VuFrameConst ubo);
 
-        void BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
+        void BeginRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex);
 
-        void EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex);
+        void EndRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex);
 
         void InitWindow();
 
@@ -141,6 +134,19 @@ constexpr bool enableValidationLayers = false;
             if (func != nullptr) {
                 func(instance, debugMessenger, pAllocator);
             }
+        }
+
+        void bindGlobalSet(const VkCommandBuffer& commandBuffer) {
+            vkCmdBindDescriptorSets(
+                commandBuffer,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                ctx::globalPipelineLayout,
+                0,
+                1,
+                &ctx::globalDescriptorSets[currentFrame],
+                0,
+                nullptr
+            );
         }
     };
 }

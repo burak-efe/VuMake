@@ -8,130 +8,124 @@
 #include <filesystem>
 
 namespace Vu {
-    VuMesh::VuMesh(const std::filesystem::path& gltfPath) {
-
-        //vertexBuffer = 0;
-        fastgltf::Parser parser;
-
-        auto data = fastgltf::GltfDataBuffer::FromPath(gltfPath);
-
-        if (data.error() != fastgltf::Error::None) {
-            std::cout << "gltf file cannot be loaded!" << "\n";
-        }
-
-        auto asset = parser.loadGltf(
-            data.get(),gltfPath.parent_path(), fastgltf::Options::LoadExternalBuffers);
-        if (auto error = asset.error(); error != fastgltf::Error::None) {
-            std::cout << "Some error occurred while reading the buffer, parsing the JSON, or validating the data." << "\n";
-        }
-
-
-        auto mesh = asset.get().meshes.at(0);
-        auto prims = mesh.primitives;
-
-        auto primitive = prims.at(0);
-
-        //Indices
-        if (primitive.indicesAccessor.has_value()) {
-            auto& accessor = asset->accessors[primitive.indicesAccessor.value()];
-            indices.resize(accessor.count);
-
-
-            std::size_t idx = 0;
-            fastgltf::iterateAccessor<std::uint32_t>(asset.get(), accessor, [&](std::uint32_t index) {
-                indices[idx++] = index;
-            });
-        }
-        //indexBuffer = VuBuffer();
-        indexBuffer.Alloc({
-            .lenght = indices.size(),
-            .strideInBytes = sizeof(indices[0]),
-            .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT
-        });
-        VkCheck(indexBuffer.SetData(indices.data(), indices.size() * sizeof(indices[0])));
-
-        //Position
-        auto* positionIt = primitive.findAttribute("POSITION");
-        auto& positionAccessor = asset->accessors[positionIt->accessorIndex];
-        auto bufferIndex = positionAccessor.bufferViewIndex.value();
-        auto& bufferView = asset->bufferViews.at(bufferIndex);
-        auto posBuffer = asset->buffers.at(bufferView.bufferIndex);
-
-        vertices.resize(positionAccessor.count);
-        fastgltf::iterateAccessorWithIndex<glm::vec3>(
-            asset.get(), positionAccessor,
-            [&](glm::vec3 pos, std::size_t idx) { vertices[idx] = pos; }
-        );
-
-        //vertexBuffer = VuBuffer();
-        vertexBuffer.Alloc({
-            .lenght = static_cast<uint32>(vertices.size()),
-            .strideInBytes = sizeof(vertices[0]),
-            .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-        });
-        VkCheck(vertexBuffer.SetData(vertices.data(), vertices.size() * sizeof(vertices[0])));
-
-        //normal
-        auto* normalIt = primitive.findAttribute("NORMAL");
-        auto& normalAccessor = asset->accessors[normalIt->accessorIndex];
-        auto normalbufferIndex = normalAccessor.bufferViewIndex.value();
-        auto& normalbufferView = asset->bufferViews.at(normalbufferIndex);
-        auto normalDataBuffer = asset->buffers.at(normalbufferView.bufferIndex);
-
-        normals.resize(positionAccessor.count);
-        fastgltf::iterateAccessorWithIndex<glm::vec3>(
-            asset.get(), normalAccessor,
-            [&](glm::vec3 normal, std::size_t idx) { normals[idx] = normal; }
-        );
-
-        normalBuffer.Alloc({
-            .lenght = static_cast<uint32>(normals.size()),
-            .strideInBytes = sizeof(normals[0]),
-            .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-        });
-        VkCheck(normalBuffer.SetData(normals.data(), normals.size() * sizeof(normals[0])));
-
-        //tangent
-        auto* tangentIt = primitive.findAttribute("TANGENT");
-        auto& tangentAccessor = asset->accessors[tangentIt->accessorIndex];
-        auto tangentbufferIndex = tangentAccessor.bufferViewIndex.value();
-        auto& tangentbufferView = asset->bufferViews.at(tangentbufferIndex);
-        auto tangentDataBuffer = asset->buffers.at(tangentbufferView.bufferIndex);
-
-        tangents.resize(positionAccessor.count);
-        fastgltf::iterateAccessorWithIndex<glm::vec4>(
-            asset.get(), tangentAccessor,
-            [&](glm::vec4 tangent, std::size_t idx) { tangents[idx] = tangent; }
-        );
-
-        tangentBuffer.Alloc({
-            .lenght = static_cast<uint32>(tangents.size()),
-            .strideInBytes = sizeof(tangents[0]),
-            .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-        });
-        VkCheck(tangentBuffer.SetData(tangents.data(), tangents.size() * sizeof(tangents[0])));
-
-
-        //uv
-        auto* uvIter = primitive.findAttribute("TEXCOORD_0");
-        auto& uvAccessor = asset->accessors[uvIter->accessorIndex];
-        auto uvbufferIndex = uvAccessor.bufferViewIndex.value();
-        auto& uvbufferView = asset->bufferViews.at(uvbufferIndex);
-        auto uvDataBuffer = asset->buffers.at(uvbufferView.bufferIndex);
-
-        uvs.resize(positionAccessor.count);
-        fastgltf::iterateAccessorWithIndex<glm::vec2>(
-            asset.get(), uvAccessor,
-            [&](glm::vec2 uv, std::size_t idx) { uvs[idx] = uv; }
-        );
-
-        uvBuffer.Alloc({
-            .lenght = static_cast<uint32>(uvs.size()),
-            .strideInBytes = sizeof(uvs[0]),
-            .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-        });
-        VkCheck(uvBuffer.SetData(uvs.data(), uvs.size() * sizeof(uvs[0])));
-
+    void VuMesh::init() {
+        //
+        // //vertexBuffer = 0;
+        // fastgltf::Parser parser;
+        //
+        // auto data = fastgltf::GltfDataBuffer::FromPath(gltfPath);
+        //
+        // if (data.error() != fastgltf::Error::None) {
+        //     std::cout << "gltf file cannot be loaded!" << "\n";
+        // }
+        //
+        // auto asset = parser.loadGltf(
+        //     data.get(), gltfPath.parent_path(), fastgltf::Options::LoadExternalBuffers);
+        // if (auto error = asset.error(); error != fastgltf::Error::None) {
+        //     std::cout << "Some error occurred while reading the buffer, parsing the JSON, or validating the data." << "\n";
+        // }
+        //
+        // auto mesh = asset.get().meshes.at(0);
+        // auto prims = mesh.primitives;
+        // auto primitive = prims.at(0);
+        //
+        // fastgltf::Optional<size_t> matIndex = primitive.materialIndex;
+        // fastgltf::Material& material = asset->materials.at(matIndex.value());
+        // fastgltf::TextureInfo& colorTex = material.pbrData.baseColorTexture.value();
+        // auto& image = asset->images[colorTex.textureIndex];
+        //
+        //
+        // //Indices
+        // if (!primitive.indicesAccessor.has_value()) {
+        //     std::cout << "Primitive index accessor has not been set!" << "\n";
+        //     return;
+        // }
+        // auto& indexAccesor = asset->accessors[primitive.indicesAccessor.value()];
+        // uint32 indexCount = indexAccesor.count;
+        // indexBuffer.Alloc({
+        //     .lenght = indexCount,
+        //     .strideInBytes = sizeof(uint32),
+        //     .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+        // });
+        // indexBuffer.Map();
+        // auto indexSpanByte = indexBuffer.getSpan(0, indexCount * sizeof(uint32));
+        // std::span<uint32> indexSpan = std::span(reinterpret_cast<uint32 *>(indexSpanByte.data()), indexCount);
+        // fastgltf::iterateAccessorWithIndex<uint32>(
+        //     asset.get(), indexAccesor,
+        //     [&](uint32 index, std::size_t idx) { indexSpan[idx] = index; }
+        // );
+        // indexBuffer.Unmap();
+        //
+        //
+        // //Position
+        // fastgltf::Attribute* positionIt = primitive.findAttribute("POSITION");
+        // fastgltf::Accessor& positionAccessor = asset->accessors[positionIt->accessorIndex];
+        //
+        // vertexCount = positionAccessor.count;
+        // vertexBuffer.Alloc({
+        //     .lenght = vertexCount * totalAttributesSizePerVertex(),
+        //     .strideInBytes = 1,
+        //     .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+        // });
+        // vertexBuffer.Map();
+        //
+        // std::span<uint8> vertexSpanByte = vertexBuffer.getSpan(0, sizeof(float3) * vertexCount);
+        // std::span<float3> vertexSpan = std::span(reinterpret_cast<float3 *>(vertexSpanByte.data()), vertexCount);
+        //
+        // std::span<uint8> normalSpanByte = vertexBuffer.getSpan(getNormalOffsetAsByte(), sizeof(float3) * vertexCount);
+        // std::span<float3> normalSpan = std::span(reinterpret_cast<float3 *>(normalSpanByte.data()), vertexCount);
+        //
+        // std::span<uint8> tangentSpanByte = vertexBuffer.getSpan(getTangentOffsetAsByte(), sizeof(float4) * vertexCount);
+        // std::span<float4> tangentSpan = std::span(reinterpret_cast<float4 *>(tangentSpanByte.data()), vertexCount);
+        //
+        // std::span<uint8> uvSpanByte = vertexBuffer.getSpan(getUV_OffsetAsByte(), sizeof(float2) * vertexCount);
+        // std::span<float2> uvSpan = std::span(reinterpret_cast<float2 *>(uvSpanByte.data()), vertexCount);
+        //
+        // fastgltf::iterateAccessorWithIndex<glm::vec3>(
+        //     asset.get(), positionAccessor,
+        //     [&](glm::vec3 pos, std::size_t idx) { vertexSpan[idx] = pos; }
+        // );
+        //
+        // //normal
+        // auto* normalIt = primitive.findAttribute("NORMAL");
+        // auto& normalAccessor = asset->accessors[normalIt->accessorIndex];
+        //
+        // fastgltf::iterateAccessorWithIndex<glm::vec3>(
+        //     asset.get(), normalAccessor,
+        //     [&](glm::vec3 normal, std::size_t idx) { normalSpan[idx] = normal; }
+        // );
+        //
+        // //uv
+        // auto* uvIter = primitive.findAttribute("TEXCOORD_0");
+        // auto& uvAccessor = asset->accessors[uvIter->accessorIndex];
+        //
+        // fastgltf::iterateAccessorWithIndex<glm::vec2>(
+        //     asset.get(), uvAccessor,
+        //     [&](glm::vec2 uv, std::size_t idx) { uvSpan[idx] = uv; }
+        // );
+        //
+        //
+        // //tangent
+        // auto* tangentIt = primitive.findAttribute("TANGENT");
+        // fastgltf::Accessor& tangentAccessor = asset->accessors[tangentIt->accessorIndex];
+        // auto tangentbufferIndex = tangentAccessor.bufferViewIndex.value();
+        // if (tangentbufferIndex == 0 && tangentAccessor.byteOffset == 0) {
+        //     std::cout << "Gltf file has no tangents" << std::endl;
+        //
+        //     calculateTangents(indexSpan, vertexSpan, normalSpan, uvSpan, tangentSpan);
+        //     // for (float4& tan: tangentSpan) {
+        //     //     tan = float4(1, 0, 0, 1);
+        //     // }
+        //
+        // } else {
+        //     fastgltf::iterateAccessorWithIndex<float4>(
+        //         asset.get(), tangentAccessor,
+        //         [&](float4 tangent, std::size_t idx) { tangentSpan[idx] = tangent; }
+        //     );
+        // }
+        //
+        //
+        // vertexBuffer.Unmap();
     }
 
     std::array<VkVertexInputBindingDescription, 4> VuMesh::getBindingDescription() {
@@ -183,8 +177,8 @@ namespace Vu {
     void VuMesh::Dispose() {
         vertexBuffer.Dispose();
         indexBuffer.Dispose();
-        normalBuffer.Dispose();
-        tangentBuffer.Dispose();
-        uvBuffer.Dispose();
+        //normalBuffer.Dispose();
+        //tangentBuffer.Dispose();
+        //uvBuffer.Dispose();
     }
 }

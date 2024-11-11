@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Common.h"
-#include "VuCtx.h"
+//#include "VuCtx.h"
 
 namespace Vu {
     struct VuBufferAllocInfo {
@@ -10,7 +10,7 @@ namespace Vu {
         VkBufferUsageFlags vkUsageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaMemoryUsage vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO;
         VmaAllocationCreateFlags vmaCreateFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
-        | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+                                                  | VMA_ALLOCATION_CREATE_MAPPED_BIT;
     };
 
 
@@ -31,17 +31,27 @@ namespace Vu {
 
         void Dispose();
 
+        VkDeviceAddress getDeviceAddress() const;
+
         VkResult SetData(void* data, VkDeviceSize byteSize);
 
         VkResult SetDataWithOffset(void* data, VkDeviceSize offset, VkDeviceSize byteSize);
 
         VkDeviceSize GetSizeInBytes();
 
+        std::span<uint8> getSpan(VkDeviceSize start, VkDeviceSize bytelenght) {
+            uint8* ptr = static_cast<uint8 *>(mapPtr);
+            ptr += start;
+            std::span span(ptr, bytelenght);
+            return span;
+        }
+
         static void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
         static VkDeviceSize AlignedSize(VkDeviceSize value, VkDeviceSize alignment);
 
-        static VkDeviceAddress GetDeviceAddress(VkDevice device, VkBuffer buffer);
+        //static VkDeviceAddress GetDeviceAddress(VkDevice device, VkBuffer buffer);
+
 
     };
 }

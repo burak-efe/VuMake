@@ -35,6 +35,16 @@ namespace Vu {
         vmaDestroyBuffer(ctx::vma, buffer, allocation);
     }
 
+    VkDeviceAddress VuBuffer::getDeviceAddress() const {
+        VkBufferDeviceAddressInfo deviceAdressInfo{};
+        deviceAdressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        deviceAdressInfo.buffer = buffer;
+
+        VkDeviceAddress address = vkGetBufferDeviceAddressKHR(ctx::device, &deviceAdressInfo);
+        return address;
+    }
+
+
     VkResult VuBuffer::SetData(void* data, VkDeviceSize byteSize) {
         return vmaCopyMemoryToAllocation(ctx::vma, data, allocation, 0, byteSize);
     }
@@ -63,11 +73,11 @@ namespace Vu {
         return (value + alignment - 1) & ~(alignment - 1);
     }
 
-    VkDeviceAddress VuBuffer::GetDeviceAddress(VkDevice device, VkBuffer buffer) {
-        VkBufferDeviceAddressInfo deviceAdressInfo{};
-        deviceAdressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-        deviceAdressInfo.buffer = buffer;
-        uint64_t address = vkGetBufferDeviceAddress(device, &deviceAdressInfo);
-        return address;
-    }
+    // VkDeviceAddress VuBuffer::GetDeviceAddress(VkDevice device, VkBuffer buffer) {
+    //     VkBufferDeviceAddressInfo deviceAdressInfo{};
+    //     deviceAdressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    //     deviceAdressInfo.buffer = buffer;
+    //     VkDeviceAddress address = vkGetBufferDeviceAddress(device, &deviceAdressInfo);
+    //     return address;
+    // }
 }

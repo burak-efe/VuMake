@@ -6,18 +6,19 @@
 
 #include "volk.h"
 #include "vk_mem_alloc.h"
+//#include "VuGlobalSetManager.h"
 #include "VuTypes.h"
+
+#include "VuMaterialDataPool.h"
 
 namespace Vu {
 
 struct VuRenderer;
 
-
     namespace ctx {
-        constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+
 
         inline VuFrameConst frameConst;
-
 
         inline VmaAllocator vma;
         inline VkInstance instance;
@@ -31,12 +32,13 @@ struct VuRenderer;
         inline VkDescriptorPool descriptorPool;
         inline VkDescriptorPool uiDescriptorPool;
 
-        //inline VkDescriptorSetLayout frameConstantsDescriptorSetLayout;
-        //inline std::vector<VkDescriptorSet> frameConstantDescriptorSets;
-
         inline VkDescriptorSetLayout globalDescriptorSetLayout;
         inline std::vector<VkDescriptorSet> globalDescriptorSets;
         inline VkPipelineLayout globalPipelineLayout;
+        inline VuMaterialDataPool materialDataPool;
+
+
+        //inline VuGlobalSetManager globalSetManager;
 
 
         inline VuRenderer* vuRenderer;
@@ -50,9 +52,6 @@ struct VuRenderer;
 
         inline float mouseDeltaX = 0;
         inline float mouseDeltaY = 0;
-
-
-
 
         inline void PreUpdate() {
             //nano => micro => mili => second

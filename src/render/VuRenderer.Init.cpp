@@ -15,8 +15,8 @@ namespace Vu {
         InitVulkanDevice();
         CreateVulkanMemoryAllocator();
 
-        materialDataPool.Init();
-        disposeStack.push([&] { materialDataPool.Dispose(); });
+        materialDataPool.init();
+        disposeStack.push([&] { materialDataPool.dispose(); });
 
         CreateSwapChain();
         CreateCommandPool();
@@ -28,7 +28,7 @@ namespace Vu {
         CreateDescriptorPool();
         CreateDescriptorSets();
 
-        std::array descSetLayouts{ ctx::globalDescriptorSetLayout};
+        std::array descSetLayouts{ctx::globalDescriptorSetLayout};
         Vu::Initializers::CreatePipelineLayout(descSetLayouts, sizeof(VuPushConstant), ctx::globalPipelineLayout);
         disposeStack.push([&] { vkDestroyPipelineLayout(ctx::device, ctx::globalPipelineLayout, nullptr); });
 
@@ -38,64 +38,29 @@ namespace Vu {
 
         SetupImGui();
 
-        //debug resources
-        debugTexture.Alloc(std::filesystem::path("assets/textures/error.png"));
-        disposeStack.push([&] { debugTexture.Dispose(); });
-        VuTexture::allTextures.push_back(debugTexture);
+        globalSetManager.init(config::STORAGE_COUNT,config::IMAGE_COUNT,config::SAMPLER_COUNT);
+        disposeStack.push([&] { globalSetManager.dispose(); });
 
-        WriteTexture(0, debugTexture);
+        ctx::materialDataPool.init();
+        disposeStack.push([&] { ctx::materialDataPool.dispose(); });
+
+        //debug resources
+        debugTexture.alloc(std::filesystem::path("assets/textures/error.png"), VK_FORMAT_R8G8B8A8_UNORM);
+        disposeStack.push([&] { debugTexture.Dispose(); });
+
+        uint32 dbgTex = globalSetManager.registerTexture(debugTexture);
+        assert(dbgTex == 0);
+        //VuTexture::allTextures.push_back(debugTexture);
+
 
         debugSampler.createImageSampler();
         disposeStack.push([&] { debugSampler.Dispose(); });
-        WriteSampler(0, debugSampler.vkSampler);
+
+        uint32 dbgSmp = globalSetManager.registerSampler(debugSampler);
+        assert(dbgSmp == 0);
 
     }
 
-    void VuRenderer::WriteTexture(uint32 writeIndex, VuTexture& texture) {
-
-        VkDescriptorImageInfo imageInfo{
-            .sampler = VK_NULL_HANDLE,
-            .imageView = texture.textureImageView,
-            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        };
-
-        for (size_t i = 0; i < ctx::MAX_FRAMES_IN_FLIGHT; i++) {
-
-            VkWriteDescriptorSet descriptorWrite{};
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = ctx::globalDescriptorSets[i];
-            descriptorWrite.dstBinding = IMAGE_BINDING;
-            descriptorWrite.dstArrayElement = writeIndex;
-            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pImageInfo = &imageInfo;
-
-            vkUpdateDescriptorSets(ctx::device, 1, &descriptorWrite, 0, nullptr);
-        }
-
-    }
-
-    void VuRenderer::WriteSampler(uint32 writeIndex, VkSampler& sampler) {
-
-        VkDescriptorImageInfo imageInfo{
-            .sampler = sampler,
-        };
-
-        for (size_t i = 0; i < ctx::MAX_FRAMES_IN_FLIGHT; i++) {
-
-            VkWriteDescriptorSet samplerWrite{};
-            samplerWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            samplerWrite.dstSet = ctx::globalDescriptorSets[i];
-            samplerWrite.dstBinding = SAMPLER_BINDING;
-            samplerWrite.dstArrayElement = writeIndex;
-            samplerWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-            samplerWrite.descriptorCount = 1;
-            samplerWrite.pImageInfo = &imageInfo;
-
-            vkUpdateDescriptorSets(ctx::device, 1, &samplerWrite, 0, nullptr);
-        }
-
-    }
 
     void VuRenderer::InitWindow() {
         assert(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) == true);
@@ -156,6 +121,7 @@ namespace Vu {
 
         VkPhysicalDeviceFeatures deviceFeatures{};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
+        deviceFeatures.shaderInt64 = VK_TRUE;
 
 
         VkPhysicalDeviceFeatures2 deviceFeatures2{
@@ -278,7 +244,7 @@ namespace Vu {
     }
 
     void VuRenderer::CreateCommandBuffers() {
-        commandBuffers.resize(ctx::MAX_FRAMES_IN_FLIGHT);
+        commandBuffers.resize(config::MAX_FRAMES_IN_FLIGHT);
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.commandPool = ctx::commandPool;
@@ -288,9 +254,9 @@ namespace Vu {
     }
 
     void VuRenderer::CreateSyncObjects() {
-        imageAvailableSemaphores.resize(ctx::MAX_FRAMES_IN_FLIGHT);
-        renderFinishedSemaphores.resize(ctx::MAX_FRAMES_IN_FLIGHT);
-        inFlightFences.resize(ctx::MAX_FRAMES_IN_FLIGHT);
+        imageAvailableSemaphores.resize(config::MAX_FRAMES_IN_FLIGHT);
+        renderFinishedSemaphores.resize(config::MAX_FRAMES_IN_FLIGHT);
+        inFlightFences.resize(config::MAX_FRAMES_IN_FLIGHT);
 
         VkSemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -299,7 +265,7 @@ namespace Vu {
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for (size_t i = 0; i < ctx::MAX_FRAMES_IN_FLIGHT; i++) {
+        for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
             VkCheck(vkCreateSemaphore(ctx::device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]));
             VkCheck(vkCreateSemaphore(ctx::device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]));
             VkCheck(vkCreateFence(ctx::device, &fenceInfo, nullptr, &inFlightFences[i]));
@@ -307,7 +273,7 @@ namespace Vu {
         }
 
         disposeStack.push([vr = *this] {
-            for (size_t i = 0; i < ctx::MAX_FRAMES_IN_FLIGHT; i++) {
+            for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
 
                 vkDestroySemaphore(ctx::device, vr.imageAvailableSemaphores[i], nullptr);
                 vkDestroySemaphore(ctx::device, vr.renderFinishedSemaphores[i], nullptr);
@@ -320,8 +286,8 @@ namespace Vu {
 
     void VuRenderer::CreateUniformBuffers() {
 
-        uniformBuffers.resize(ctx::MAX_FRAMES_IN_FLIGHT);
-        for (size_t i = 0; i < ctx::MAX_FRAMES_IN_FLIGHT; i++) {
+        uniformBuffers.resize(config::MAX_FRAMES_IN_FLIGHT);
+        for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
             VkDeviceSize bufferSize = sizeof(VuFrameConst);
 
             uniformBuffers[i] = VuBuffer();
@@ -335,7 +301,7 @@ namespace Vu {
         }
 
         disposeStack.push([vr = *this] {
-            for (size_t i = 0; i < ctx::MAX_FRAMES_IN_FLIGHT; i++) {
+            for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
 
                 auto v = vr.uniformBuffers;
                 v[i].Dispose();
@@ -344,53 +310,32 @@ namespace Vu {
     }
 
     void VuRenderer::CreateDescriptorSetLayout() {
-        // VkDescriptorSetLayoutBinding frameConstBinding{
-        //     .binding = 0,
-        //     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        //     .descriptorCount = 1,
-        //     .stageFlags = VK_SHADER_STAGE_ALL,
-        // };
-        // VkDescriptorSetLayoutCreateInfo frameConstLayout{
-        //     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        //     .bindingCount = 1,
-        //     .pBindings = &frameConstBinding,
-        // };
-        // VkCheck(vkCreateDescriptorSetLayout(ctx::device, &frameConstLayout, nullptr,
-        //                                     &ctx::frameConstantsDescriptorSetLayout));
-        //
-        // disposeStack.push([&] {
-        //     vkDestroyDescriptorSetLayout(ctx::device,
-        //                                  ctx::frameConstantsDescriptorSetLayout, nullptr);
-        // });
-
         //Global Set
-
         VkDescriptorSetLayoutBinding globalUniform{
-            .binding = UBO_BINDING,
+            .binding = config::UBO_BINDING,
             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .descriptorCount = UNIFORM_COUNT,
+            .descriptorCount = config::UNIFORM_COUNT,
             .stageFlags = VK_SHADER_STAGE_ALL,
         };
 
-
         VkDescriptorSetLayoutBinding globalStorage{
-            .binding = STORAGE_BINDING,
+            .binding = config::STORAGE_BINDING,
             .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = STORAGE_COUNT,
+            .descriptorCount = config::STORAGE_COUNT,
             .stageFlags = VK_SHADER_STAGE_ALL,
         };
 
         VkDescriptorSetLayoutBinding globalSampler{
-            .binding = SAMPLER_BINDING,
+            .binding = config::SAMPLER_BINDING,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
-            .descriptorCount = SAMPLER_COUNT,
+            .descriptorCount = config::SAMPLER_COUNT,
             .stageFlags = VK_SHADER_STAGE_ALL,
         };
 
         VkDescriptorSetLayoutBinding globalImage{
-            .binding = IMAGE_BINDING,
+            .binding = config::IMAGE_BINDING,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-            .descriptorCount = IMAGE_COUNT,
+            .descriptorCount = config::IMAGE_COUNT,
             .stageFlags = VK_SHADER_STAGE_ALL,
         };
 
@@ -410,11 +355,11 @@ namespace Vu {
                 | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT
                 | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
 
-        const VkDescriptorBindingFlagsEXT lastFlag =
-                VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT
-                | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT
-                | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT
-                | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
+        // const VkDescriptorBindingFlagsEXT lastFlag =
+        //         VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT
+        //         | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT
+        //         | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT
+        //         | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
 
         std::array descriptorSetLayoutFlags{flag, flag, flag, flag};
 
@@ -425,7 +370,6 @@ namespace Vu {
 
         globalSetLayout.pNext = &binding_flags;
 
-
         VkCheck(vkCreateDescriptorSetLayout(ctx::device, &globalSetLayout, nullptr, &ctx::globalDescriptorSetLayout));
         disposeStack.push([&] { vkDestroyDescriptorSetLayout(ctx::device, ctx::globalDescriptorSetLayout, nullptr); });
     }
@@ -433,21 +377,21 @@ namespace Vu {
     void VuRenderer::CreateDescriptorPool() {
         std::array<VkDescriptorPoolSize, 4> poolSizes{};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[0].descriptorCount = UNIFORM_COUNT;
+        poolSizes[0].descriptorCount = config::UNIFORM_COUNT;
 
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        poolSizes[1].descriptorCount = STORAGE_COUNT;
+        poolSizes[1].descriptorCount = config::STORAGE_COUNT;
 
         poolSizes[2].type = VK_DESCRIPTOR_TYPE_SAMPLER;
-        poolSizes[2].descriptorCount = SAMPLER_COUNT;
+        poolSizes[2].descriptorCount = config::SAMPLER_COUNT;
 
         poolSizes[3].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-        poolSizes[3].descriptorCount = IMAGE_COUNT;
+        poolSizes[3].descriptorCount = config::IMAGE_COUNT;
 
         VkDescriptorPoolCreateInfo poolInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
             .flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
-            .maxSets = 1024,
+            .maxSets = 2,
             .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
             .pPoolSizes = poolSizes.data(),
         };
@@ -458,55 +402,22 @@ namespace Vu {
 
     void VuRenderer::CreateDescriptorSets() {
 
-        // //frameConstant
-        // std::vector frameLayouts(ctx::MAX_FRAMES_IN_FLIGHT, ctx::frameConstantsDescriptorSetLayout);
-        // VkDescriptorSetAllocateInfo allocInfo{
-        //     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        //     .descriptorPool = ctx::descriptorPool,
-        //     .descriptorSetCount = static_cast<uint32_t>(ctx::MAX_FRAMES_IN_FLIGHT),
-        //     .pSetLayouts = frameLayouts.data(),
-        // };
-        //
-        // ctx::frameConstantDescriptorSets.resize(ctx::MAX_FRAMES_IN_FLIGHT);
-        // VkCheck(vkAllocateDescriptorSets(ctx::device, &allocInfo, ctx::frameConstantDescriptorSets.data()));
-        //
-        //
-        // //frame
-        // for (size_t i = 0; i < ctx::MAX_FRAMES_IN_FLIGHT; i++) {
-        //     VkDescriptorBufferInfo bufferInfo{};
-        //     bufferInfo.buffer = uniformBuffers[i].buffer;
-        //     bufferInfo.offset = 0;
-        //     bufferInfo.range = sizeof(VuFrameConst);
-        //
-        //     VkWriteDescriptorSet descriptorWrite{};
-        //     descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        //     descriptorWrite.dstSet = ctx::frameConstantDescriptorSets[i];
-        //     descriptorWrite.dstBinding = 0;
-        //     descriptorWrite.dstArrayElement = 0;
-        //     descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        //     descriptorWrite.descriptorCount = 1;
-        //     descriptorWrite.pBufferInfo = &bufferInfo;
-        //
-        //     vkUpdateDescriptorSets(ctx::device, 1, &descriptorWrite, 0, nullptr);
-        // }
-        //
-
         //global sets
-        std::vector globalLayouts(ctx::MAX_FRAMES_IN_FLIGHT, ctx::globalDescriptorSetLayout);
+        std::vector globalLayouts(config::MAX_FRAMES_IN_FLIGHT, ctx::globalDescriptorSetLayout);
 
         VkDescriptorSetAllocateInfo globalSetsAllocInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .descriptorPool = ctx::descriptorPool,
-            .descriptorSetCount = static_cast<uint32_t>(ctx::MAX_FRAMES_IN_FLIGHT),
+            .descriptorSetCount = static_cast<uint32_t>(config::MAX_FRAMES_IN_FLIGHT),
             .pSetLayouts = globalLayouts.data(),
         };
 
-        ctx::globalDescriptorSets.resize(ctx::MAX_FRAMES_IN_FLIGHT);
+        ctx::globalDescriptorSets.resize(config::MAX_FRAMES_IN_FLIGHT);
         VkCheck(vkAllocateDescriptorSets(ctx::device, &globalSetsAllocInfo, ctx::globalDescriptorSets.data()));
 
 
         //uniforms
-        for (size_t i = 0; i < ctx::MAX_FRAMES_IN_FLIGHT; i++) {
+        for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
             VkDescriptorBufferInfo bufferInfo{};
             bufferInfo.buffer = uniformBuffers[i].buffer;
             bufferInfo.offset = 0;

@@ -13,17 +13,16 @@ struct VSInput
 
 VSOutput main(VSInput input)
 {
-    VSOutput output = (VSOutput)0;
-    output.Pos = mul(ubo.proj, mul(ubo.view, mul(pc.model, float4(input.VertexPosition, 1))));
+    VSOutput o = (VSOutput)0;
+    o.Pos = mul(ubo.proj, mul(ubo.view, mul(pc.model, float4(input.VertexPosition, 1))));
 
-    output.PosWS = mul( float4(input.VertexPosition, 1.0),pc.model ).xyz;
+    o.PosWS = mul( float4(input.VertexPosition, 1.0),pc.model ).xyz;
 
-    output.Normal = normalize(mul(float4(input.VertexNormal, 0.0), pc.model).xyz);
-    output.Tangent = normalize(mul(float4(input.VertexTangent.xyz, 0.0), pc.model).xyz);
+    o.Normal = normalize(mul(input.VertexNormal, (float3x3)pc.model));
+    o.Tangent = normalize(mul(input.VertexTangent.xyz, (float3x3)pc.model));
+    o.Bitangent = normalize(cross(o.Normal, o.Tangent));
 
-    output.Bitangent = normalize(input.VertexTangent.w * cross(output.Normal, output.Tangent));
+    o.UV = input.VertexUV;
 
-    output.UV = input.VertexUV;
-
-    return output;
+    return o;
 }

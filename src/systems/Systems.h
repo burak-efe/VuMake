@@ -11,6 +11,7 @@
 #include "Transform.h"
 #include "Components.h"
 #include "VuRenderer.h"
+#include "VuMaterialDataPool.h"
 
 namespace Vu {
     inline flecs::system AddRenderingSystem(flecs::world& world) {
@@ -18,9 +19,12 @@ namespace Vu {
                 .each([](Transform& trs, const MeshRenderer& meshRenderer) {
 
                     auto mat = meshRenderer.vuShader->materials[meshRenderer.materialIndex];
-                    ctx::vuRenderer->BindMaterial(mat, {trs.ToTRS(), 0});
+                    //auto ptr = reinterpret_cast<void*>(mat.pbrMaterialData);
+                    //std::cout << reinterpret_cast<uint64>(ptr) << std::endl;
+                    auto adr = ctx::materialDataPool.mapAddressToBufferDeviceAddress(mat.pbrMaterialData);
+                    ctx::vuRenderer->BindMaterial(mat, {trs.ToTRS(), adr});
                     ctx::vuRenderer->BindMesh(*meshRenderer.mesh);
-                    ctx::vuRenderer->DrawIndexed(meshRenderer.mesh->indices.size());
+                    ctx::vuRenderer->DrawIndexed(meshRenderer.mesh->indexBuffer.lenght);
                 });
     }
 
@@ -191,6 +195,30 @@ namespace Vu {
                     ctx::frameConst.time = ctx::time();
 
 
+                    //const auto* state = SDL_GetKeyboardState(nullptr);
+
+                    //ubo.debugIndex = 0;
+                    if (state[SDL_SCANCODE_F1]) {
+                        ctx::frameConst.debugIndex = 1;
+                    }
+                    if (state[SDL_SCANCODE_F2]) {
+                        ctx::frameConst.debugIndex = 2;
+                    }
+                    if (state[SDL_SCANCODE_F3]) {
+                        ctx::frameConst.debugIndex = 3;
+                    }
+                    if (state[SDL_SCANCODE_F4]) {
+                        ctx::frameConst.debugIndex = 4;
+                    }
+                    if (state[SDL_SCANCODE_F5]) {
+                        ctx::frameConst.debugIndex = 5;
+                    }
+                    if (state[SDL_SCANCODE_F6]) {
+                        ctx::frameConst.debugIndex = 6;
+                    }
+                    if (state[SDL_SCANCODE_F7]) {
+                        ctx::frameConst.debugIndex = 7;
+                    }
 
 
                     ctx::vuRenderer->UpdateUniformBuffer(ctx::frameConst);

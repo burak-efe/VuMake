@@ -19,9 +19,9 @@ function(add_sources_recursively target_name source_dir)
     if (NOT TARGET ${target_name})
         message(FATAL_ERROR "Target ${target_name} does not exist. Please create the target before calling this function.")
     endif ()
-    # Recursively find all source files in the specified directory
     file(GLOB_RECURSE sources "${source_dir}/*.cpp" "${source_dir}/*.c" "${source_dir}/*.h" "${source_dir}/*.hpp")
     if (sources)
+        #message(${sources})
         target_sources(${target_name} PUBLIC ${sources})
     else ()
         message(WARNING "No source files found in directory: ${source_dir}")
@@ -37,11 +37,10 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 ####################################################################################################
 # Precompiled Headers
 set(PCH
-        src/common/Common.h
+        src/common/pch.h
 )
 #target_precompile_headers(${PROJECT_NAME} PUBLIC ${PCH})
 target_precompile_headers(${PROJECT_NAME} PUBLIC
-        ${PCH}
         <chrono>
         <iostream>
         <print>
@@ -51,7 +50,16 @@ target_precompile_headers(${PROJECT_NAME} PUBLIC
         <cassert>
         <cstdlib>
         <array>
-        <vector>)
+        <vector>
+        <stack>
+        <algorithm>
+        <functional>
+        <filesystem>
+        <mutex>
+        <span>
+        <ranges>
+        ${PCH}
+)
 ####################################################################################################
 #Add Sources
 add_sources_recursively(${PROJECT_NAME} src)
@@ -59,6 +67,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/common)
 target_include_directories(${PROJECT_NAME} PRIVATE src/components)
 target_include_directories(${PROJECT_NAME} PRIVATE src/systems)
 target_include_directories(${PROJECT_NAME} PRIVATE src/render)
+target_include_directories(${PROJECT_NAME} PRIVATE src/material)
 ####################################################################################################
 #imgui
 add_sources_recursively(${PROJECT_NAME} external/imgui)

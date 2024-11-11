@@ -1,8 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <array>
-#include <vector>
 
 #include "glm/fwd.hpp"
 #include "glm/mat4x4.hpp"
@@ -28,8 +26,6 @@ namespace Vu {
     using float4x4 = glm::mat4;
 
 
-    using array = std::array;
-    using vector = std::vector;
 
     __declspec(noinline) void VkCheck(VkResult res);
 

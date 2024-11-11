@@ -16,10 +16,10 @@
 #define BUDDY_ALLOC_IMPLEMENTATION
 #include "buddy_alloc.h"
 
-#include "MonkeScene.h"
+#include "Scene0.h"
 
 int main(int argc, char* argv[]) {
-    MonkeScene scen;
+    Scene0 scen;
     scen.Run();
     return EXIT_SUCCESS;
 }

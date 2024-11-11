@@ -6,9 +6,16 @@
 #include "Common.h"
 
 namespace Vu {
+
+    struct PBRMaterialData {
+        uint32 texture0;
+        uint32 texture1;
+    };
+
+
     struct VuPushConstant {
         float4x4 trs;
-        uint32_t materiealDataOffset;
+        uint64 materiealDataPtr;
     };
 
     struct VuFrameConst {
@@ -20,6 +27,8 @@ namespace Vu {
         float pad1;
         float time;
         float3 pad2;
+        float debugIndex = 1;
+        float3 pad3;
     };
 
     struct QueueFamilyIndices {

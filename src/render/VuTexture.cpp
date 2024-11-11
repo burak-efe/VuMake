@@ -10,12 +10,14 @@
 #include "VuUtils.h"
 
 namespace Vu {
-    void VuTexture::Alloc(std::filesystem::path path) {
+    void VuTexture::alloc(std::filesystem::path path,VkFormat format) {
 
         //Image
         int texWidth;
         int texHeight;
         int texChannels;
+
+
 
         stbi_uc* pixels = stbi_load(path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
         const auto imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
@@ -36,30 +38,30 @@ namespace Vu {
 
         stbi_image_free(pixels);
 
-        CreateImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+        createImage(texWidth, texHeight, format, VK_IMAGE_TILING_OPTIMAL,
                     VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     textureImage,
                     textureImageMemory);
 
-        TransitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB,
+        TransitionImageLayout(textureImage,
                               VK_IMAGE_LAYOUT_UNDEFINED,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         CopyBufferToImage(staging.buffer, textureImage,
                           static_cast<uint32>(texWidth), static_cast<uint32>(texHeight));
 
-        TransitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB,
+        TransitionImageLayout(textureImage,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-        CreateImageView();
+        createImageView(format);
 
         staging.Dispose();
 
     }
 
-    void VuTexture::CreateImage(uint32 width, uint32 height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+    void VuTexture::createImage(uint32 width, uint32 height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                                 VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -95,12 +97,12 @@ namespace Vu {
         vkBindImageMemory(ctx::device, image, imageMemory, 0);
     }
 
-    void VuTexture::CreateImageView() {
+    void VuTexture::createImageView(VkFormat f) {
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = textureImage;
         viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+        viewInfo.format = f;
         viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         viewInfo.subresourceRange.baseMipLevel = 0;
         viewInfo.subresourceRange.levelCount = 1;
@@ -110,9 +112,9 @@ namespace Vu {
         VkCheck(vkCreateImageView(ctx::device, &viewInfo, nullptr, &textureImageView));
     }
 
-    void VuTexture::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
-        VkCommandBuffer commandBuffer = ctx::BeginSingleTimeCommands();
+    void VuTexture::TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout) {
 
+        VkCommandBuffer commandBuffer = ctx::BeginSingleTimeCommands();
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout = oldLayout;

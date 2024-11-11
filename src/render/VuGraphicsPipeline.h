@@ -32,7 +32,7 @@ namespace Vu {
                 .pName = "main",
             };
 
-            auto shaderStages = array{vertShaderStageInfo, fragShaderStageInfo};
+            auto shaderStages = std::array{vertShaderStageInfo, fragShaderStageInfo};
 
 
             VkPipelineVertexInputStateCreateInfo vertexInputInfo{

@@ -30,7 +30,7 @@ namespace Vu {
         BeginRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
     }
 
-    void VuRenderer::BeginRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex) {
+    void VuRenderer::BeginRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex) {
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -51,9 +51,11 @@ namespace Vu {
         scissor.extent = swapChain.swapChainExtent;
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
+        bindGlobalSet(commandBuffer);
+
     }
 
-    void VuRenderer::EndRecordCommandBuffer(VkCommandBuffer commandBuffer, uint32 imageIndex) {
+    void VuRenderer::EndRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex) {
         swapChain.EndRenderPass(commandBuffer);
         VkCheck(vkEndCommandBuffer(commandBuffer));
 
@@ -64,12 +66,12 @@ namespace Vu {
 
         std::array vertexBuffers = {
             mesh.vertexBuffer.buffer,
-            mesh.normalBuffer.buffer,
-            mesh.tangentBuffer.buffer,
-            mesh.uvBuffer.buffer
+            mesh.vertexBuffer.buffer,
+            mesh.vertexBuffer.buffer,
+            mesh.vertexBuffer.buffer
         };
 
-        std::array<VkDeviceSize, 4> offsets = {0, 0, 0, 0};
+        std::array<VkDeviceSize, 4> offsets = {0, mesh.getNormalOffsetAsByte(), mesh.getTangentOffsetAsByte(), mesh.getUV_OffsetAsByte()};
         vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), offsets.data());
 
         vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
@@ -77,9 +79,9 @@ namespace Vu {
 
     void VuRenderer::BindMaterial(const VuMaterial& material, VuPushConstant pushConstant) {
         auto commandBuffer = commandBuffers[currentFrame];
-        material.bindFrameConstants(commandBuffer, currentFrame);
-        material.pushConstants(commandBuffer, pushConstant);
+        //material.bindFrameConstants(commandBuffer, currentFrame);
         material.bindPipeline(commandBuffer);
+        material.pushConstants(commandBuffer, pushConstant);
     }
 
     void VuRenderer::DrawIndexed(uint32 indexCount) {
@@ -140,11 +142,14 @@ namespace Vu {
             throw std::runtime_error("failed to present swap chain image!");
         }
 
-        currentFrame = (currentFrame + 1) % ctx::MAX_FRAMES_IN_FLIGHT;
+        currentFrame = (currentFrame + 1) % config::MAX_FRAMES_IN_FLIGHT;
     }
 
 
     void VuRenderer::UpdateUniformBuffer(VuFrameConst ubo) {
+
+
+
         uniformBuffers[currentFrame].SetData(&ubo, sizeof(ubo));
     }
 
