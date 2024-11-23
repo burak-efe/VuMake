@@ -39,18 +39,18 @@ namespace Vu {
 
         SetupImGui();
 
-        VuGlobalSetManager::init(config::STORAGE_COUNT,config::IMAGE_COUNT,config::SAMPLER_COUNT);
+        VuGlobalSetManager::init(config::STORAGE_COUNT, config::IMAGE_COUNT, config::SAMPLER_COUNT);
         disposeStack.push([&] { VuGlobalSetManager::uninit(); });
 
         ctx::materialDataPool.init();
         disposeStack.push([&] { ctx::materialDataPool.dispose(); });
 
         //debug resources
-        debugTexture.init(std::filesystem::path("assets/textures/error.png"), VK_FORMAT_R8G8B8A8_UNORM);
+        debugTexture.init({std::filesystem::path("assets/textures/error.png"), VK_FORMAT_R8G8B8A8_UNORM});
         disposeStack.push([&] { debugTexture.uninit(); });
 
-        uint32 dbgTex = VuGlobalSetManager::registerTexture(debugTexture);
-        assert(dbgTex == 0);
+        //uint32 dbgTex = VuGlobalSetManager::registerTexture(debugTexture);
+        //assert(dbgTex == 0);
         //VuTexture::allTextures.push_back(debugTexture);
 
 
@@ -459,7 +459,9 @@ namespace Vu {
         ImGui::CreateContext();
         disposeStack.push([] { ImGui::DestroyContext(); });
         ImGuiIO& io = ImGui::GetIO();
-        (void) io;
+        //(void) io;
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        //io.ConfigFlags |= 1 << 7;
         //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
         //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -487,6 +489,10 @@ namespace Vu {
         ImGui_ImplVulkan_CreateFontsTexture();
         disposeStack.push([] { ImGui_ImplVulkan_DestroyFontsTexture(); });
 
+    }
+
+    void VuRenderer::reloadShaders() {
+        //TODO:
     }
 
     void VuRenderer::Dispose() {

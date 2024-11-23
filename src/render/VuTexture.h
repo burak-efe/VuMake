@@ -8,11 +8,11 @@ namespace std::filesystem {
 
 namespace Vu {
 
-    // struct VuTextureCreateInfo {
-    //     uint32 width;
-    //     uint32 height = ;
-    //     VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
-    // };
+    struct VuTextureCreateInfo {
+        std::filesystem::path path;
+        VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
+    };
+
     struct VuTexture {
     private:
         void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
@@ -21,13 +21,13 @@ namespace Vu {
         void createImageView(VkFormat format);
 
     public:
-       // inline static std::vector<VuTexture> allTextures;
+        // inline static std::vector<VuTexture> allTextures;
 
         VkImage textureImage;
         VkDeviceMemory textureImageMemory;
         VkImageView textureImageView;
 
-        void init(std::filesystem::path path, VkFormat format);
+        void init(VuTextureCreateInfo createInfo);
 
         void uninit();
 

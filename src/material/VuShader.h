@@ -8,6 +8,8 @@
 #include "VuUtils.h"
 
 namespace Vu {
+
+
     struct VuShader {
         VkShaderModule vertexShaderModule;
         VkShaderModule fragmentShaderModule;

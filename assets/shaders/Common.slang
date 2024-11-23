@@ -18,6 +18,9 @@ struct PushConsts
     uint64_t materialDataPtr;
 };
 
+[[vk::push_constant]]
+PushConsts pc;
+
 struct PBRMaterialData {
     uint32_t texture0;
     uint32_t texture1;
@@ -35,8 +38,7 @@ SamplerState globalSamplers[];
 [[vk::binding(3, 0)]]
 Texture2D globalTextures[];
 
-[[vk::push_constant]]
-PushConsts pc;
+
 
 struct VSOutput
 {

@@ -17,6 +17,7 @@
 #include "VuSampler.h"
 #include "VuTexture.h"
 #include "VuConfig.h"
+#include "VuHandle.h"
 #include "SDL3/SDL_vulkan.h"
 
 namespace Vu {
@@ -50,7 +51,7 @@ constexpr bool enableValidationLayers = false;
         uint32 currentFrame = 0;
         uint32 currentFrameImageIndex = 0;
 
-        VuTexture debugTexture;
+        VuTextureHandle debugTexture;
         VuSampler debugSampler;
 
         VuMaterialDataPool materialDataPool;
@@ -130,6 +131,8 @@ constexpr bool enableValidationLayers = false;
         void CreateUniformBuffers();
 
         void SetupImGui();
+
+        void reloadShaders();
 
 
         static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,

@@ -10,8 +10,8 @@
 #include "VuUtils.h"
 
 namespace Vu {
-    void VuTexture::init(std::filesystem::path path,VkFormat format) {
-
+    void VuTexture::init(VuTextureCreateInfo createInfo) {
+        std::cout << "VuTexture::init()" << std::endl;
         //Image
         int texWidth;
         int texHeight;
@@ -19,7 +19,7 @@ namespace Vu {
 
 
 
-        stbi_uc* pixels = stbi_load(path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        stbi_uc* pixels = stbi_load(createInfo.path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
         const auto imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
 
         if (pixels == nullptr) {
@@ -38,7 +38,7 @@ namespace Vu {
 
         stbi_image_free(pixels);
 
-        createImage(texWidth, texHeight, format, VK_IMAGE_TILING_OPTIMAL,
+        createImage(texWidth, texHeight, createInfo.format, VK_IMAGE_TILING_OPTIMAL,
                     VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     textureImage,
@@ -55,7 +55,7 @@ namespace Vu {
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-        createImageView(format);
+        createImageView(createInfo.format);
 
         staging.Dispose();
 
@@ -183,6 +183,7 @@ namespace Vu {
     }
 
     void VuTexture::uninit() {
+        std::cout << "VuTexture::uninit()" << std::endl;
         vkDestroyImage(ctx::device, textureImage, nullptr);
         vkFreeMemory(ctx::device, textureImageMemory, nullptr);
         vkDestroyImageView(ctx::device, textureImageView, nullptr);

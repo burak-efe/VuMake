@@ -4,8 +4,12 @@
 #include "VuBuffer.h"
 #include "VuConfig.h"
 #include "VuSampler.h"
+#include "VuShader.h"
 #include "VuTexture.h"
+
 namespace Vu {
+
+
 
     struct VuResourceSlotAllocator {
 
@@ -31,23 +35,35 @@ namespace Vu {
         std::vector<VkBool32> occupyList;
     };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     struct VuGlobalSetManager {
 
-        static void init(uint32 storageCount , uint32 imageCount , uint32 samplerCount) {
-            bufferOfBufferPointers.Alloc({storageCount,sizeof(uint64)});
+        inline static std::vector<VuTexture> allTextures;
+        inline static std::vector<uint32> textureRefCounts;
+
+
+
+        inline static VuBuffer bufferOfBufferPointers;
+
+        inline static VuResourceSlotAllocator bufferSlotAllocator;
+        inline static VuResourceSlotAllocator samplerSlotAllocator;
+        inline static VuResourceSlotAllocator textureSlotAllocator;
+
+        static void init(uint32 storageCount, uint32 imageCount, uint32 samplerCount) {
+            bufferOfBufferPointers.Alloc({storageCount, sizeof(uint64)});
             bufferSlotAllocator.init(storageCount);
             textureSlotAllocator.init(imageCount);
             samplerSlotAllocator.init(samplerCount);
-
             allTextures.resize(imageCount);
+            textureRefCounts.resize(imageCount);
         }
-
         static void uninit() {
             bufferOfBufferPointers.Dispose();
         }
 
-        //register to global buffer and get index
+
+        //buffer
         static uint32 registerBuffer(const VuBuffer& buffer) {
             auto index = bufferSlotAllocator.reserve();
             writeBuffer(index, buffer);
@@ -59,18 +75,26 @@ namespace Vu {
         }
 
         //Texture
-        static uint32 registerTexture(const VuTexture& texture) {
-            auto index = textureSlotAllocator.reserve();
-            writeTexture(index, texture);
+        static uint32 createTexture(VuTextureCreateInfo createInfo) {
+            uint32 index = textureSlotAllocator.reserve();
+            //VuTexture texture;
+            allTextures[index].init(createInfo);
+            writeTexture(index, allTextures[index]);
+            textureRefCounts[index] = 1;
             return index;
         }
 
-        static void unregisterTexture(uint32 index) {
-            textureSlotAllocator.free(index);
+        static void increaseTextureRefCount(uint32 textureIndex) {
+            textureRefCounts[textureIndex]++;
         }
 
-        static uint32 resverveTextureSlot() {
+        static void decreaseTextureRefCount(uint32 textureIndex) {
 
+            textureRefCounts[textureIndex]--;
+
+            if (textureRefCounts[textureIndex] <= 0) {
+                allTextures[textureIndex].uninit();
+            }
         }
 
 
@@ -85,18 +109,7 @@ namespace Vu {
             samplerSlotAllocator.free(index);
         }
 
-
-
-
     private:
-        inline static std::vector<VuTexture> allTextures;
-        inline static VuBuffer bufferOfBufferPointers;
-
-        inline static VuResourceSlotAllocator bufferSlotAllocator;
-        inline static VuResourceSlotAllocator samplerSlotAllocator;
-        inline static VuResourceSlotAllocator textureSlotAllocator;
-
-
         static void writeBuffer(uint32 writeIndex, const VuBuffer& buffer) {
             auto address = buffer.getDeviceAddress();
             bufferOfBufferPointers.SetDataWithOffset(&address, writeIndex * sizeof(VkDeviceAddress), sizeof(VkDeviceAddress));
@@ -142,5 +155,20 @@ namespace Vu {
             }
         }
 
+        static uint32 registerTexture(const VuTexture& texture) {
+            uint32 index = textureSlotAllocator.reserve();
+            writeTexture(index, texture);
+            return index;
+        }
+
+        static void unregisterTexture(uint32 index) {
+            textureSlotAllocator.free(index);
+        }
+
     };
+
+
+
+
+
 }

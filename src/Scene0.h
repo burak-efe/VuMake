@@ -37,8 +37,7 @@ struct Scene0 {
         uint32 mat0 = shader.CreateMaterial();
 
         PBRMaterialData* data = shader.materials[mat0].pbrMaterialData;
-        VuAssetLoader::LoadGltf(gnomePath, mesh,*data);
-
+        VuAssetLoader::LoadGltf(gnomePath, mesh, *data);
 
 
         // VuTexture floorColorTex;
@@ -96,11 +95,22 @@ struct Scene0 {
                 //UI
                 {
                     vuRenderer.BeginImgui();
+                    // Create the main docking space
+                    ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode, nullptr);
+
+                    ImGui::Begin("Values");
                     ImGui::Text(std::format("Frame Per Second: {0:.0f}", (1.0f / ctx::deltaAsSecond)).c_str());
                     ImGui::Text(std::format("Frame Time as miliSec: {0:.4}", ctx::deltaAsSecond * 1000).c_str());
                     spinUI.run();
                     camUI.run();
                     trsUI.run();
+                    ImGui::End();
+                    ImGui::Begin("Rendering");
+                    bool b = ImGui::Button("RealoadShader", { 1, 1 });
+                    if (b) {
+                        vuRenderer.reloadShaders();
+                    }
+                    ImGui::End();
                     vuRenderer.EndImgui();
                 }
 
@@ -110,6 +120,9 @@ struct Scene0 {
 
         //Mission complete
         vuRenderer.WaitIdle();
+
+        VuGlobalSetManager::decreaseTextureRefCount(shader.materials[mat0].pbrMaterialData->texture0);
+        VuGlobalSetManager::decreaseTextureRefCount(shader.materials[mat0].pbrMaterialData->texture1);
         shader.Dispose();
         //floorColorTex.Dispose();
         //floorNormalTex.Dispose();
