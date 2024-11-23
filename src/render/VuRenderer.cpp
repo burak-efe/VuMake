@@ -1,5 +1,7 @@
 #include "VuRenderer.h"
 
+
+
 namespace Vu {
     bool VuRenderer::ShouldWindowClose() {
         return ctx::sdlEvent.type == SDL_EVENT_QUIT;
@@ -77,11 +79,11 @@ namespace Vu {
         vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
-    void VuRenderer::BindMaterial(const VuMaterial& material, VuPushConstant pushConstant) {
+    void VuRenderer::BindMaterial(const VuMaterial& material ) {
         auto commandBuffer = commandBuffers[currentFrame];
         //material.bindFrameConstants(commandBuffer, currentFrame);
         material.bindPipeline(commandBuffer);
-        material.pushConstants(commandBuffer, pushConstant);
+        //material.pushConstants(commandBuffer, pushConstant);
     }
 
     void VuRenderer::DrawIndexed(uint32 indexCount) {

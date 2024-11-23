@@ -5,6 +5,7 @@
 
 
 #include "Common.h"
+#include "VuShader.h"
 #include "VuCtx.h"
 #include "VuMath.h"
 #include "Camera.h"
@@ -19,10 +20,9 @@ namespace Vu {
                 .each([](Transform& trs, const MeshRenderer& meshRenderer) {
 
                     auto mat = meshRenderer.vuShader->materials[meshRenderer.materialIndex];
-                    //auto ptr = reinterpret_cast<void*>(mat.pbrMaterialData);
-                    //std::cout << reinterpret_cast<uint64>(ptr) << std::endl;
                     auto adr = ctx::materialDataPool.mapAddressToBufferDeviceAddress(mat.pbrMaterialData);
-                    ctx::vuRenderer->BindMaterial(mat, {trs.ToTRS(), adr});
+                    ctx::vuRenderer->BindMaterial(mat);
+                    ctx::vuRenderer->pushConstants({trs.ToTRS(), adr});
                     ctx::vuRenderer->BindMesh(*meshRenderer.mesh);
                     ctx::vuRenderer->DrawIndexed(meshRenderer.mesh->indexBuffer.lenght);
                 });

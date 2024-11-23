@@ -5,7 +5,6 @@
 #include "VuConfig.h"
 #include "VuSampler.h"
 #include "VuTexture.h"
-
 namespace Vu {
 
     struct VuResourceSlotAllocator {
@@ -32,52 +31,57 @@ namespace Vu {
         std::vector<VkBool32> occupyList;
     };
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     struct VuGlobalSetManager {
 
-        void init(uint32 storageCount , uint32 imageCount , uint32 samplerCount) {
+        static void init(uint32 storageCount , uint32 imageCount , uint32 samplerCount) {
             bufferOfBufferPointers.Alloc({storageCount,sizeof(uint64)});
             bufferSlotAllocator.init(storageCount);
             textureSlotAllocator.init(imageCount);
             samplerSlotAllocator.init(samplerCount);
+
+            allTextures.resize(imageCount);
         }
 
-        void dispose() {
+        static void uninit() {
             bufferOfBufferPointers.Dispose();
         }
 
-
-
         //register to global buffer and get index
-        uint32 registerBuffer(const VuBuffer& buffer) {
+        static uint32 registerBuffer(const VuBuffer& buffer) {
             auto index = bufferSlotAllocator.reserve();
             writeBuffer(index, buffer);
             return index;
         }
 
-        void unregisterBuffer(uint32 index) {
+        static void unregisterBuffer(uint32 index) {
             bufferSlotAllocator.free(index);
         }
 
         //Texture
-        uint32 registerTexture(const VuTexture& texture) {
+        static uint32 registerTexture(const VuTexture& texture) {
             auto index = textureSlotAllocator.reserve();
             writeTexture(index, texture);
             return index;
         }
 
-        void unregisterTexture(uint32 index) {
+        static void unregisterTexture(uint32 index) {
             textureSlotAllocator.free(index);
         }
 
+        static uint32 resverveTextureSlot() {
+
+        }
+
+
         //Sampler
-        uint32 registerSampler(const VuSampler& sampler) {
+        static uint32 registerSampler(const VuSampler& sampler) {
             auto index = samplerSlotAllocator.reserve();
             writeSampler(index, sampler.vkSampler);
             return index;
         }
 
-        void unregisterSampler(uint32 index) {
+        static void unregisterSampler(uint32 index) {
             samplerSlotAllocator.free(index);
         }
 
@@ -85,18 +89,20 @@ namespace Vu {
 
 
     private:
-        VuResourceSlotAllocator bufferSlotAllocator;
-        VuResourceSlotAllocator samplerSlotAllocator;
-        VuResourceSlotAllocator textureSlotAllocator;
+        inline static std::vector<VuTexture> allTextures;
+        inline static VuBuffer bufferOfBufferPointers;
 
-        VuBuffer bufferOfBufferPointers;
+        inline static VuResourceSlotAllocator bufferSlotAllocator;
+        inline static VuResourceSlotAllocator samplerSlotAllocator;
+        inline static VuResourceSlotAllocator textureSlotAllocator;
 
-        void writeBuffer(uint32 writeIndex, const VuBuffer& buffer) {
+
+        static void writeBuffer(uint32 writeIndex, const VuBuffer& buffer) {
             auto address = buffer.getDeviceAddress();
             bufferOfBufferPointers.SetDataWithOffset(&address, writeIndex * sizeof(VkDeviceAddress), sizeof(VkDeviceAddress));
         }
 
-        void writeTexture(uint32 writeIndex, const VuTexture& texture) {
+        static void writeTexture(uint32 writeIndex, const VuTexture& texture) {
 
             VkDescriptorImageInfo imageInfo{
                 .sampler = VK_NULL_HANDLE,
@@ -117,7 +123,7 @@ namespace Vu {
             }
         }
 
-        void writeSampler(uint32 writeIndex, const VkSampler& sampler) {
+        static void writeSampler(uint32 writeIndex, const VkSampler& sampler) {
 
             VkDescriptorImageInfo imageInfo{
                 .sampler = sampler,

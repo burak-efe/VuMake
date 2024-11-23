@@ -10,7 +10,7 @@
 #include "VuUtils.h"
 
 namespace Vu {
-    void VuTexture::alloc(std::filesystem::path path,VkFormat format) {
+    void VuTexture::init(std::filesystem::path path,VkFormat format) {
 
         //Image
         int texWidth;
@@ -182,7 +182,7 @@ namespace Vu {
         ctx::EndSingleTimeCommands(commandBuffer);
     }
 
-    void VuTexture::Dispose() {
+    void VuTexture::uninit() {
         vkDestroyImage(ctx::device, textureImage, nullptr);
         vkFreeMemory(ctx::device, textureImageMemory, nullptr);
         vkDestroyImageView(ctx::device, textureImageView, nullptr);

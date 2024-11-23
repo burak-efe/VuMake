@@ -36,18 +36,13 @@ namespace Vu {
             );
 
             pbrMaterialData = ctx::materialDataPool.allocMaterialData();
-
-
         }
 
         void bindPipeline(const VkCommandBuffer& commandBuffer) const {
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vuPipeline.pipeline);
         }
 
-        void pushConstants(VkCommandBuffer& commandBuffer, VuPushConstant pushConstant) const {
-            vkCmdPushConstants(commandBuffer, ctx::globalPipelineLayout, VK_SHADER_STAGE_ALL,
-                               0, sizeof(VuPushConstant), &pushConstant);
-        }
+
     private:
 
     };

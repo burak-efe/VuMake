@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Common.h"
-#include "VuShader.h"
-
-class Mesh;
 
 namespace Vu {
+    struct VuMesh;
+    struct VuShader;
+
     struct MeshRenderer {
         VuMesh* mesh;
         VuShader* vuShader;

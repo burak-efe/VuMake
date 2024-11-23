@@ -28,30 +28,31 @@ struct Scene0 {
         auto helmetPath = "D:\\Dev\\Vulkan\\glTF-Sample-Assets\\Models\\DamagedHelmet\\glTF\\DamagedHelmet.gltf";
         auto gnomePath = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
 
-
-        VuAssetLoader::LoadGltf(helmetPath, mesh);
-
         VuShader shader;
         shader.CreateShader(
             "assets/shaders/vert.spv",
             "assets/shaders/frag.spv",
             vuRenderer.swapChain.renderPass.renderPass
         );
-        uint32 monkeMat0 = shader.CreateMaterial();
+        uint32 mat0 = shader.CreateMaterial();
+
+        PBRMaterialData* data = shader.materials[mat0].pbrMaterialData;
+        VuAssetLoader::LoadGltf(gnomePath, mesh,*data);
 
 
-        VuTexture floorColorTex;
-        floorColorTex.alloc("assets/textures/cat.png", VK_FORMAT_R8G8B8A8_SRGB);
 
-        VuTexture floorNormalTex;
-        floorNormalTex.alloc("assets/textures/cat_n.png", VK_FORMAT_R8G8B8A8_UNORM);
-
-
-        auto t0 = vuRenderer.globalSetManager.registerTexture(floorColorTex);
-        auto t1 = vuRenderer.globalSetManager.registerTexture(floorNormalTex);
-
-        shader.materials[monkeMat0].pbrMaterialData->texture0 = t0;
-        shader.materials[monkeMat0].pbrMaterialData->texture1 = t1;
+        // VuTexture floorColorTex;
+        // floorColorTex.alloc("assets/textures/cat.png", VK_FORMAT_R8G8B8A8_SRGB);
+        //
+        // VuTexture floorNormalTex;
+        // floorNormalTex.alloc("assets/textures/cat_n.png", VK_FORMAT_R8G8B8A8_UNORM);
+        //
+        //
+        // auto t0 = vuRenderer.globalSetManager.registerTexture(floorColorTex);
+        // auto t1 = vuRenderer.globalSetManager.registerTexture(floorNormalTex);
+        //
+        // shader.materials[monkeMat0].pbrMaterialData->texture0 = t0;
+        // shader.materials[monkeMat0].pbrMaterialData->texture1 = t1;
 
         // uint32 monkeMat1 = shader.createMaterial(&floorTex);
 
@@ -70,7 +71,7 @@ struct Scene0 {
         //Add Entities
         world.entity("Obj1").set(Transform{
             .Position = float3(0, 0, 0), .Rotation = glm::quat(glm::vec3{0, 0, 0}), .Scale = {1, 1, 1}
-        }).set(MeshRenderer{&mesh, &shader, monkeMat0}).set(Spinn{});
+        }).set(MeshRenderer{&mesh, &shader, mat0}).set(Spinn{});
 
 
         world.entity("Cam").set(
@@ -110,8 +111,8 @@ struct Scene0 {
         //Mission complete
         vuRenderer.WaitIdle();
         shader.Dispose();
-        floorColorTex.Dispose();
-        floorNormalTex.Dispose();
+        //floorColorTex.Dispose();
+        //floorNormalTex.Dispose();
         mesh.Dispose();
         vuRenderer.Dispose();
         //system("pause");

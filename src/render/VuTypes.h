@@ -7,11 +7,13 @@
 
 namespace Vu {
 
+
+
+
     struct PBRMaterialData {
         uint32 texture0;
         uint32 texture1;
     };
-
 
     struct VuPushConstant {
         float4x4 trs;

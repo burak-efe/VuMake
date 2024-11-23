@@ -4,6 +4,7 @@
 
 #include "VkBootstrap.h"
 #include "vk_mem_alloc.h"
+#include "VuGlobalSetManager.h"
 
 #include "VuPipelineLayout.h"
 
@@ -38,17 +39,17 @@ namespace Vu {
 
         SetupImGui();
 
-        globalSetManager.init(config::STORAGE_COUNT,config::IMAGE_COUNT,config::SAMPLER_COUNT);
-        disposeStack.push([&] { globalSetManager.dispose(); });
+        VuGlobalSetManager::init(config::STORAGE_COUNT,config::IMAGE_COUNT,config::SAMPLER_COUNT);
+        disposeStack.push([&] { VuGlobalSetManager::uninit(); });
 
         ctx::materialDataPool.init();
         disposeStack.push([&] { ctx::materialDataPool.dispose(); });
 
         //debug resources
-        debugTexture.alloc(std::filesystem::path("assets/textures/error.png"), VK_FORMAT_R8G8B8A8_UNORM);
-        disposeStack.push([&] { debugTexture.Dispose(); });
+        debugTexture.init(std::filesystem::path("assets/textures/error.png"), VK_FORMAT_R8G8B8A8_UNORM);
+        disposeStack.push([&] { debugTexture.uninit(); });
 
-        uint32 dbgTex = globalSetManager.registerTexture(debugTexture);
+        uint32 dbgTex = VuGlobalSetManager::registerTexture(debugTexture);
         assert(dbgTex == 0);
         //VuTexture::allTextures.push_back(debugTexture);
 
@@ -56,7 +57,7 @@ namespace Vu {
         debugSampler.createImageSampler();
         disposeStack.push([&] { debugSampler.Dispose(); });
 
-        uint32 dbgSmp = globalSetManager.registerSampler(debugSampler);
+        uint32 dbgSmp = VuGlobalSetManager::registerSampler(debugSampler);
         assert(dbgSmp == 0);
 
     }

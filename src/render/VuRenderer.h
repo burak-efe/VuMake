@@ -12,10 +12,11 @@
 #include "VuMesh.h"
 #include "VuSwapChain.h"
 #include "VuBuffer.h"
-#include "VuGlobalSetManager.h"
+//#include "VuGlobalSetManager.h"
 #include "VuMaterial.h"
 #include "VuSampler.h"
 #include "VuTexture.h"
+#include "VuConfig.h"
 #include "SDL3/SDL_vulkan.h"
 
 namespace Vu {
@@ -61,7 +62,7 @@ constexpr bool enableValidationLayers = false;
 
         std::stack<std::function<void()> > disposeStack;
 
-        VuGlobalSetManager globalSetManager;
+        //VuGlobalSetManager globalSetManager;
 
 
         // void WriteTexture(uint32 writeIndex, VuTexture& texture);
@@ -83,9 +84,14 @@ constexpr bool enableValidationLayers = false;
 
         void BindMesh(const VuMesh& mesh);
 
-        void BindMaterial(const VuMaterial& material, VuPushConstant pushConstant);
+        void BindMaterial(const VuMaterial& material);
 
         void DrawIndexed(uint32 indexCount);
+
+        void pushConstants(const VuPushConstant& pushConstant) {
+            auto commandBuffer = commandBuffers[currentFrame];
+            vkCmdPushConstants(commandBuffer, ctx::globalPipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(VuPushConstant), &pushConstant);
+        }
 
         void BeginImgui();
 

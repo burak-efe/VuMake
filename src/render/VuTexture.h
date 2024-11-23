@@ -27,9 +27,9 @@ namespace Vu {
         VkDeviceMemory textureImageMemory;
         VkImageView textureImageView;
 
-        void alloc(std::filesystem::path path, VkFormat format);
+        void init(std::filesystem::path path, VkFormat format);
 
-        void Dispose();
+        void uninit();
 
         void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
 
