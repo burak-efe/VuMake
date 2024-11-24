@@ -3,7 +3,7 @@
 #include "VuUtils.h"
 
 namespace Vu {
-    void VuBuffer::Alloc(VuBufferAllocInfo allocInfo) {
+    void VuBuffer::init(VuBufferCreateInfo allocInfo) {
 
         stride = allocInfo.strideInBytes;
         lenght = allocInfo.lenght;
@@ -31,7 +31,7 @@ namespace Vu {
         vmaUnmapMemory(ctx::vma, allocation);
     }
 
-    void VuBuffer::Dispose() {
+    void VuBuffer::uninit() {
         vmaDestroyBuffer(ctx::vma, buffer, allocation);
     }
 
@@ -49,7 +49,7 @@ namespace Vu {
         return vmaCopyMemoryToAllocation(ctx::vma, data, allocation, 0, byteSize);
     }
 
-    VkResult VuBuffer::SetDataWithOffset(void* data, VkDeviceSize offset, VkDeviceSize byteSize) {
+    VkResult VuBuffer::setDataWithOffset(void* data, VkDeviceSize offset, VkDeviceSize byteSize) {
         return vmaCopyMemoryToAllocation(ctx::vma, data, allocation, offset, byteSize);
     }
 

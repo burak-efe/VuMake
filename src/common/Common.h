@@ -7,6 +7,8 @@
 
 #include "volk.h"
 
+#include "tracy/Tracy.hpp"
+
 
 namespace Vu {
     using uint8 = uint8_t;

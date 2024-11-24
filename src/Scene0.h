@@ -11,75 +11,28 @@
 #include "Systems.h"
 #include "Transform.h"
 #include "VuAssetLoader.h"
-#include "VuGlobalSetManager.h"
+#include "VuResourceManager.h"
 #include "VuRenderer.h"
+
+#include "tracy/Tracy.hpp"
 
 using namespace Vu;
 
 struct Scene0 {
 
-    void Run() {
+    flecs::system spinningSystem;
+    flecs::system flyCameraSystem;
+    flecs::system drawMeshSystem;
+    flecs::system spinUI;
+    flecs::system trsUI;
+    flecs::system camUI;
 
-        VuRenderer vuRenderer;
-        vuRenderer.Init();
-        ctx::vuRenderer = &vuRenderer;
-        VuMesh mesh{};
+    VuRenderer vuRenderer;
 
-        auto helmetPath = "D:\\Dev\\Vulkan\\glTF-Sample-Assets\\Models\\DamagedHelmet\\glTF\\DamagedHelmet.gltf";
-        auto gnomePath = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
-
-        VuShader shader;
-        shader.CreateShader(
-            "assets/shaders/vert.spv",
-            "assets/shaders/frag.spv",
-            vuRenderer.swapChain.renderPass.renderPass
-        );
-        uint32 mat0 = shader.CreateMaterial();
-
-        PBRMaterialData* data = shader.materials[mat0].pbrMaterialData;
-        VuAssetLoader::LoadGltf(gnomePath, mesh, *data);
-
-
-        // VuTexture floorColorTex;
-        // floorColorTex.alloc("assets/textures/cat.png", VK_FORMAT_R8G8B8A8_SRGB);
-        //
-        // VuTexture floorNormalTex;
-        // floorNormalTex.alloc("assets/textures/cat_n.png", VK_FORMAT_R8G8B8A8_UNORM);
-        //
-        //
-        // auto t0 = vuRenderer.globalSetManager.registerTexture(floorColorTex);
-        // auto t1 = vuRenderer.globalSetManager.registerTexture(floorNormalTex);
-        //
-        // shader.materials[monkeMat0].pbrMaterialData->texture0 = t0;
-        // shader.materials[monkeMat0].pbrMaterialData->texture1 = t1;
-
-        // uint32 monkeMat1 = shader.createMaterial(&floorTex);
-
-
-        flecs::world world;
-
-        //Add Systems
-        auto spinningSystem = AddSpinningSystem(world);
-        auto flyCameraSystem = AddFlyCameraSystem(world);
-        auto drawMeshSystem = AddRenderingSystem(world);
-        auto spinUI = AddSpinUISystem(world);
-        auto trsUI = AddTransformUISystem(world);
-        auto camUI = AddCameraUISystem(world);
-
-
-        //Add Entities
-        world.entity("Obj1").set(Transform{
-            .Position = float3(0, 0, 0), .Rotation = glm::quat(glm::vec3{0, 0, 0}), .Scale = {1, 1, 1}
-        }).set(MeshRenderer{&mesh, &shader, mat0}).set(Spinn{});
-
-
-        world.entity("Cam").set(
-            Transform(float3(0, 0, 3.5f), float3(0, 0, 0), float3(1, 1, 1))
-        ).set(Camera{});
-
-
+    void UpdateLoop() {
+        ZoneScoped;
         //Update Loop
-        while (!vuRenderer.ShouldWindowClose()) {
+        while (!vuRenderer.shouldWindowClose()) {
             ctx::PreUpdate();
             ctx::UpdateInput();
 
@@ -89,7 +42,7 @@ struct Scene0 {
 
             //Rendering
             {
-                vuRenderer.BeginFrame();
+                vuRenderer.beginFrame();
                 drawMeshSystem.run();
 
                 //UI
@@ -106,7 +59,7 @@ struct Scene0 {
                     trsUI.run();
                     ImGui::End();
                     ImGui::Begin("Rendering");
-                    bool b = ImGui::Button("RealoadShader", { 1, 1 });
+                    bool b = ImGui::Button("RealoadShader", {1, 1});
                     if (b) {
                         vuRenderer.reloadShaders();
                     }
@@ -114,20 +67,59 @@ struct Scene0 {
                     vuRenderer.EndImgui();
                 }
 
-                vuRenderer.EndFrame();
+                vuRenderer.endFrame();
             }
         }
+    }
 
-        //Mission complete
-        vuRenderer.WaitIdle();
+    void Run() {
+        ZoneScoped;
+        vuRenderer.init();
+        ctx::vuRenderer = &vuRenderer;
+        VuMesh mesh{};
+        auto helmetPath = "D:\\Dev\\Vulkan\\glTF-Sample-Assets\\Models\\DamagedHelmet\\glTF\\DamagedHelmet.gltf";
+        auto gnomePath = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
+        VuShader shader;
+        shader.init(
+            {
+                "assets/shaders/vert.spv",
+                "assets/shaders/frag.spv",
+                vuRenderer.swapChain.renderPass.renderPass
+            }
+        );
+        uint32 mat0 = shader.creatematerial();
 
-        VuGlobalSetManager::decreaseTextureRefCount(shader.materials[mat0].pbrMaterialData->texture0);
-        VuGlobalSetManager::decreaseTextureRefCount(shader.materials[mat0].pbrMaterialData->texture1);
-        shader.Dispose();
-        //floorColorTex.Dispose();
-        //floorNormalTex.Dispose();
+        PBRMaterialData* data = shader.materials[mat0].pbrMaterialData;
+        VuAssetLoader::LoadGltf(gnomePath, mesh, *data);
+        //
+        {
+            ZoneScopedN("flecs");
+            flecs::world world;
+            //Add Systems
+            spinningSystem = AddSpinningSystem(world);
+            flyCameraSystem = AddFlyCameraSystem(world);
+            drawMeshSystem = AddRenderingSystem(world);
+            spinUI = AddSpinUISystem(world);
+            trsUI = AddTransformUISystem(world);
+            camUI = AddCameraUISystem(world);
+
+            //Add Entities
+            world.entity("Obj1").set(Transform{
+                .Position = float3(0, 0, 0), .Rotation = glm::quat(glm::vec3{0, 0, 0}), .Scale = {1, 1, 1}
+            }).set(MeshRenderer{&mesh, &shader, mat0}).set(Spinn{});
+
+            world.entity("Cam").set(
+                Transform(float3(0, 0, 3.5f), float3(0, 0, 0), float3(1, 1, 1))
+            ).set(Camera{});
+
+            UpdateLoop();
+
+        }
+        vuRenderer.waitIdle();
+        VuResourceManager::decreaseTextureRefCount(shader.materials[mat0].pbrMaterialData->texture0);
+        VuResourceManager::decreaseTextureRefCount(shader.materials[mat0].pbrMaterialData->texture1);
+        shader.uninit();
         mesh.Dispose();
-        vuRenderer.Dispose();
-        //system("pause");
+        vuRenderer.uninit();
     }
 };

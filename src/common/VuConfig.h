@@ -10,9 +10,12 @@ namespace Vu::config {
     constexpr uint32 IMAGE_BINDING = 3;
 
     constexpr uint32 UNIFORM_COUNT = 1;
-    constexpr uint32 STORAGE_COUNT = 1;
-    constexpr uint32 SAMPLER_COUNT = 16;
-    constexpr uint32 IMAGE_COUNT = 256;
+    constexpr uint32 STORAGE_COUNT = 65536;
+    constexpr uint32 SAMPLER_COUNT = 65536;
+    constexpr uint32 IMAGE_COUNT = 65536;
+    constexpr uint32 SHADER_COUNT = 256;
+    constexpr uint32 MATERIAL_COUNT = 1024;
+
 }
 
 

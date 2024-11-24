@@ -7,43 +7,39 @@
 #include "VuMaterialDataPool.h"
 
 
-
 namespace Vu {
+    struct VuMaterialCreateInfo {
+        VkShaderModule& vertexShaderModule;
+        VkShaderModule& fragmentShaderModule;
+        VkRenderPass& renderPass;
+    };
+
     struct VuMaterial {
         VuGraphicsPipeline vuPipeline;
         PBRMaterialData* pbrMaterialData;
 
-
-        void dispose() {
-            vuPipeline.Dispose();
-            ctx::materialDataPool.freeMaterialData(pbrMaterialData);
-        }
-
-        void init(
-            const VkShaderModule& vertexShaderModule,
-            const VkShaderModule& fragmentShaderModule,
-            const VkRenderPass& renderPass
-        ) {
+        void init(const VuMaterialCreateInfo& createInfo) {
             auto bindings = VuMesh::getBindingDescription();
             auto attribs = VuMesh::getAttributeDescriptions();
             vuPipeline.CreateGraphicsPipeline(
                 ctx::globalPipelineLayout,
-                vertexShaderModule,
-                fragmentShaderModule,
+                createInfo.vertexShaderModule,
+                createInfo.fragmentShaderModule,
                 bindings,
                 attribs,
-                renderPass
+                createInfo.renderPass
             );
 
             pbrMaterialData = ctx::materialDataPool.allocMaterialData();
         }
 
+        void uninit() {
+            vuPipeline.Dispose();
+            ctx::materialDataPool.freeMaterialData(pbrMaterialData);
+        }
+
         void bindPipeline(const VkCommandBuffer& commandBuffer) const {
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vuPipeline.pipeline);
         }
-
-
-    private:
-
     };
 }

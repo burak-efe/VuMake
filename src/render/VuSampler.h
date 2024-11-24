@@ -3,13 +3,18 @@
 #include "VuCtx.h"
 
 namespace Vu {
+
+    struct VuSamplerCreateInfo {
+
+    };
+
     struct VuSampler {
         VkSampler vkSampler;
 
-        void createImageSampler() {
+        void init(VuSamplerCreateInfo createInfo) {
+
             VkPhysicalDeviceProperties properties{};
             vkGetPhysicalDeviceProperties(ctx::physicalDevice, &properties);
-
 
             VkSamplerCreateInfo samplerInfo{};
             samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -32,7 +37,7 @@ namespace Vu {
             VkCheck(vkCreateSampler(ctx::device, &samplerInfo, nullptr, &vkSampler));
         }
 
-        void Dispose() {
+        void uninit() {
             vkDestroySampler(ctx::device, vkSampler, nullptr);
         }
     };

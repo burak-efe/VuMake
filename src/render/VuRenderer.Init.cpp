@@ -1,16 +1,19 @@
 #include "VuRenderer.h"
 
 #include <filesystem>
+#include <tracy/Tracy.hpp>
 
 #include "VkBootstrap.h"
 #include "vk_mem_alloc.h"
-#include "VuGlobalSetManager.h"
+#include "VuResourceManager.h"
 
 #include "VuPipelineLayout.h"
 
 namespace Vu {
 
-    void VuRenderer::Init() {
+    void VuRenderer::init() {
+        ZoneScoped;
+
         InitWindow();
 
         InitVulkanDevice();
@@ -21,7 +24,6 @@ namespace Vu {
 
         CreateSwapChain();
         CreateCommandPool();
-
 
         CreateUniformBuffers();
 
@@ -39,8 +41,13 @@ namespace Vu {
 
         SetupImGui();
 
-        VuGlobalSetManager::init(config::STORAGE_COUNT, config::IMAGE_COUNT, config::SAMPLER_COUNT);
-        disposeStack.push([&] { VuGlobalSetManager::uninit(); });
+        VuResourceManager::init(config::STORAGE_COUNT,
+                                config::IMAGE_COUNT,
+                                config::SAMPLER_COUNT,
+                                config::SHADER_COUNT,
+                                config::MATERIAL_COUNT);
+
+        disposeStack.push([&] { VuResourceManager::uninit(); });
 
         ctx::materialDataPool.init();
         disposeStack.push([&] { ctx::materialDataPool.dispose(); });
@@ -49,21 +56,13 @@ namespace Vu {
         debugTexture.init({std::filesystem::path("assets/textures/error.png"), VK_FORMAT_R8G8B8A8_UNORM});
         disposeStack.push([&] { debugTexture.uninit(); });
 
-        //uint32 dbgTex = VuGlobalSetManager::registerTexture(debugTexture);
-        //assert(dbgTex == 0);
-        //VuTexture::allTextures.push_back(debugTexture);
-
-
-        debugSampler.createImageSampler();
-        disposeStack.push([&] { debugSampler.Dispose(); });
-
-        uint32 dbgSmp = VuGlobalSetManager::registerSampler(debugSampler);
-        assert(dbgSmp == 0);
-
+        debugSampler.init({});
+        disposeStack.push([&] { debugSampler.uninit(); });
     }
 
 
     void VuRenderer::InitWindow() {
+        ZoneScoped;
         assert(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) == true);
         disposeStack.push([] { SDL_Quit(); });
 
@@ -72,121 +71,147 @@ namespace Vu {
     }
 
     void VuRenderer::InitVulkanDevice() {
+        ZoneScoped;
+        vkb::Instance vkb_instance;
+        vkb::PhysicalDevice vkb_physicalDevice;
+        vkb::Device vkb_device;
+
         //volk
-        VkCheck(volkInitialize());
-        disposeStack.push([] { volkFinalize(); });
+        {
+            ZoneScopedN("Volk");
+            VkCheck(volkInitialize());
+            disposeStack.push([] { volkFinalize(); });
+        }
 
         // Vulkan Instance
-        vkb::InstanceBuilder builder;
-        auto inst_ret = builder
-                .set_app_name("VuMake")
-                .request_validation_layers(enableValidationLayers)
-                .use_default_debug_messenger()
-                .require_api_version(1, 1)
-                .build();
-        if (!inst_ret) {
-            std::cerr << "Failed to create Vulkan instance. Error: " << inst_ret.error().message() << "\n";
-        }
-        vkb::Instance vkb_inst = inst_ret.value();
-        ctx::instance = vkb_inst.instance;
-        disposeStack.push([&] { vkDestroyInstance(ctx::instance, nullptr); });
-        debugMessenger = vkb_inst.debug_messenger;
+        {
+            ZoneScopedN("Instance");
+            vkb::InstanceBuilder builder;
+            auto inst_ret = builder
+                    .set_app_name("VuMake")
+                    .request_validation_layers(ENABLE_VALIDATION_LAYERS_LAYERS)
+                    .use_default_debug_messenger()
+                    .require_api_version(1, 1)
+                    .build();
 
-        auto f = [&] {
-            if (enableValidationLayers) {
-                DestroyDebugUtilsMessengerEXT(ctx::instance, debugMessenger, nullptr);
+            std::cout << "Validation Layers: " << ENABLE_VALIDATION_LAYERS_LAYERS << std::endl;
+            if (!inst_ret) {
+                std::cerr << "Failed to create Vulkan instance. Error: " << inst_ret.error().message() << "\n";
             }
-        };
-        disposeStack.push(f);
+            vkb_instance = inst_ret.value();
+            ctx::instance = vkb_instance.instance;
+            disposeStack.push([&] { vkDestroyInstance(ctx::instance, nullptr); });
 
-        volkLoadInstance(vkb_inst);
+            debugMessenger = vkb_instance.debug_messenger;
+            disposeStack.push([&] { DestroyDebugUtilsMessengerEXT(ctx::instance, debugMessenger, nullptr); });
+
+        }
+
+        //volkLoadInstance
+        {
+            ZoneScopedN("VolkLoadInstance");
+            volkLoadInstance(vkb_instance);
+        }
 
         //Surface
         CreateSurface();
 
-
         //PhysicalDevice
-        vkb::PhysicalDeviceSelector selector{vkb_inst};
-        vkb::Result<vkb::PhysicalDevice> phys_ret = selector
-                .set_surface(surface)
-                .set_minimum_version(1, 1)
-                .require_dedicated_transfer_queue()
-                .add_required_extension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
-                .add_required_extension(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
-                .select();
-        if (!phys_ret) {
-            std::cerr << "Failed to select Vulkan Physical Device. Error: " << phys_ret.error().message() << "\n";
+        {
+            ZoneScopedN("Physical Device");
+            vkb::PhysicalDeviceSelector selector{vkb_instance};
+            vkb::Result<vkb::PhysicalDevice> phys_ret = selector
+                    .set_surface(surface)
+                    .set_minimum_version(1, 1)
+                    .require_dedicated_transfer_queue()
+                    .add_required_extension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
+                    .add_required_extension(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
+                    .select();
+            if (!phys_ret) {
+                std::cerr << "Failed to select Vulkan Physical Device. Error: " << phys_ret.error().message() << "\n";
+            }
+
+            vkb_physicalDevice = phys_ret.value();
+            ctx::physicalDevice = phys_ret.value().physical_device;
+        }
+        //Device
+        {
+            ZoneScopedN("Device");
+
+            VkPhysicalDeviceFeatures deviceFeatures{};
+            deviceFeatures.samplerAnisotropy = VK_TRUE;
+            deviceFeatures.shaderInt64 = VK_TRUE;
+
+            VkPhysicalDeviceFeatures2 deviceFeatures2{
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+                .features = deviceFeatures,
+            };
+
+            VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeatures = {
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
+                .bufferDeviceAddress = VK_TRUE,
+            };
+
+            VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures = {
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
+                .shaderInputAttachmentArrayDynamicIndexing = VK_TRUE,
+                .shaderUniformTexelBufferArrayDynamicIndexing = VK_TRUE,
+                .shaderStorageTexelBufferArrayDynamicIndexing = VK_TRUE,
+                .shaderUniformBufferArrayNonUniformIndexing = VK_TRUE,
+                .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
+                .shaderStorageBufferArrayNonUniformIndexing = VK_TRUE,
+                .shaderStorageImageArrayNonUniformIndexing = VK_TRUE,
+                .shaderInputAttachmentArrayNonUniformIndexing = VK_TRUE,
+                .shaderUniformTexelBufferArrayNonUniformIndexing = VK_TRUE,
+                .shaderStorageTexelBufferArrayNonUniformIndexing = VK_TRUE,
+                .descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE,
+                .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
+                .descriptorBindingStorageImageUpdateAfterBind = VK_TRUE,
+                .descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE,
+                .descriptorBindingUniformTexelBufferUpdateAfterBind = VK_TRUE,
+                .descriptorBindingStorageTexelBufferUpdateAfterBind = VK_TRUE,
+                .descriptorBindingUpdateUnusedWhilePending = VK_TRUE,
+                .descriptorBindingPartiallyBound = VK_TRUE,
+                .descriptorBindingVariableDescriptorCount = VK_TRUE,
+                .runtimeDescriptorArray = VK_TRUE,
+            };
+
+            vkb::DeviceBuilder device_builder{vkb_physicalDevice};
+
+            vkb::Result<vkb::Device> dev_ret = device_builder
+                    .add_pNext(&deviceFeatures2)
+                    .add_pNext(&bufferDeviceAddressFeatures)
+                    .add_pNext(&descriptorIndexingFeatures)
+                    .build();
+
+
+            if (!dev_ret) {
+                std::cerr << "Failed to create Vulkan device. Error: " << dev_ret.error().message() << "\n";
+            }
+            vkb_device = dev_ret.value();
+            ctx::device = vkb_device.device;
+            disposeStack.push([] { vkDestroyDevice(ctx::device, nullptr); });
+
         }
 
-        ctx::physicalDevice = phys_ret.value().physical_device;
-
-        VkPhysicalDeviceFeatures deviceFeatures{};
-        deviceFeatures.samplerAnisotropy = VK_TRUE;
-        deviceFeatures.shaderInt64 = VK_TRUE;
-
-
-        VkPhysicalDeviceFeatures2 deviceFeatures2{
-            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-            .features = deviceFeatures,
-        };
-
-        VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeatures = {
-            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
-            .bufferDeviceAddress = VK_TRUE,
-        };
-
-        VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures = {
-            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
-            .shaderInputAttachmentArrayDynamicIndexing = VK_TRUE,
-            .shaderUniformTexelBufferArrayDynamicIndexing = VK_TRUE,
-            .shaderStorageTexelBufferArrayDynamicIndexing = VK_TRUE,
-            .shaderUniformBufferArrayNonUniformIndexing = VK_TRUE,
-            .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
-            .shaderStorageBufferArrayNonUniformIndexing = VK_TRUE,
-            .shaderStorageImageArrayNonUniformIndexing = VK_TRUE,
-            .shaderInputAttachmentArrayNonUniformIndexing = VK_TRUE,
-            .shaderUniformTexelBufferArrayNonUniformIndexing = VK_TRUE,
-            .shaderStorageTexelBufferArrayNonUniformIndexing = VK_TRUE,
-            .descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE,
-            .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
-            .descriptorBindingStorageImageUpdateAfterBind = VK_TRUE,
-            .descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE,
-            .descriptorBindingUniformTexelBufferUpdateAfterBind = VK_TRUE,
-            .descriptorBindingStorageTexelBufferUpdateAfterBind = VK_TRUE,
-            .descriptorBindingUpdateUnusedWhilePending = VK_TRUE,
-            .descriptorBindingPartiallyBound = VK_TRUE,
-            .descriptorBindingVariableDescriptorCount = VK_TRUE,
-            .runtimeDescriptorArray = VK_TRUE,
-        };
-
-        // Device
-        vkb::DeviceBuilder device_builder{phys_ret.value()};
-        auto dev_ret = device_builder
-                .add_pNext(&deviceFeatures2)
-                .add_pNext(&bufferDeviceAddressFeatures)
-                .add_pNext(&descriptorIndexingFeatures)
-                .build();
-
-        if (!dev_ret) {
-            std::cerr << "Failed to create Vulkan device. Error: " << dev_ret.error().message() << "\n";
+        //queue
+        {
+            ZoneScopedN("Queue");
+            auto graphics_queue_ret = vkb_device.get_queue(vkb::QueueType::graphics);
+            if (!graphics_queue_ret) {
+                std::cerr << "Failed to get graphics queue. Error: " << graphics_queue_ret.error().message() << "\n";
+            }
+            ctx::graphicsQueue = graphics_queue_ret.value();
+            auto presentQueueRet = vkb_device.get_queue(vkb::QueueType::present);
+            if (!presentQueueRet) {
+                std::cerr << "Failed to get present queue. Error: " << presentQueueRet.error().message() << "\n";
+            }
+            ctx::presentQueue = presentQueueRet.value();
         }
-        vkb::Device vkb_device = dev_ret.value();
-        ctx::device = vkb_device.device;
-        disposeStack.push([] { vkDestroyDevice(ctx::device, nullptr); });
-
-        auto graphics_queue_ret = vkb_device.get_queue(vkb::QueueType::graphics);
-        if (!graphics_queue_ret) {
-            std::cerr << "Failed to get graphics queue. Error: " << graphics_queue_ret.error().message() << "\n";
-        }
-        ctx::graphicsQueue = graphics_queue_ret.value();
-        auto presentQueueRet = vkb_device.get_queue(vkb::QueueType::present);
-        if (!presentQueueRet) {
-            std::cerr << "Failed to get present queue. Error: " << presentQueueRet.error().message() << "\n";
-        }
-        ctx::presentQueue = presentQueueRet.value();
     }
 
     void VuRenderer::CreateVulkanMemoryAllocator() {
+        ZoneScoped;
 
         VmaVulkanFunctions vma_vulkan_func{
             .vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties,
@@ -221,18 +246,21 @@ namespace Vu {
     }
 
     void VuRenderer::CreateSurface() {
+        ZoneScoped;
 
         SDL_Vulkan_CreateSurface(ctx::window, ctx::instance, nullptr, &surface);
         disposeStack.push([&] { SDL_Vulkan_DestroySurface(ctx::instance, surface, nullptr); });
     }
 
     void VuRenderer::CreateSwapChain() {
+        ZoneScoped;
         swapChain = VuSwapChain{};
         swapChain.InitSwapChain(surface);
         disposeStack.push([&] { swapChain.Dispose(); });
     }
 
     void VuRenderer::CreateCommandPool() {
+        ZoneScoped;
         QueueFamilyIndices queueFamilyIndices = QueueFamilyIndices::FindQueueFamilies(ctx::physicalDevice, surface);
 
         VkCommandPoolCreateInfo poolInfo{};
@@ -245,6 +273,7 @@ namespace Vu {
     }
 
     void VuRenderer::CreateCommandBuffers() {
+        ZoneScoped;
         commandBuffers.resize(config::MAX_FRAMES_IN_FLIGHT);
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -255,6 +284,7 @@ namespace Vu {
     }
 
     void VuRenderer::CreateSyncObjects() {
+        ZoneScoped;
         imageAvailableSemaphores.resize(config::MAX_FRAMES_IN_FLIGHT);
         renderFinishedSemaphores.resize(config::MAX_FRAMES_IN_FLIGHT);
         inFlightFences.resize(config::MAX_FRAMES_IN_FLIGHT);
@@ -286,13 +316,14 @@ namespace Vu {
     }
 
     void VuRenderer::CreateUniformBuffers() {
+        ZoneScoped;
 
         uniformBuffers.resize(config::MAX_FRAMES_IN_FLIGHT);
         for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
             VkDeviceSize bufferSize = sizeof(VuFrameConst);
 
             uniformBuffers[i] = VuBuffer();
-            uniformBuffers[i].Alloc({
+            uniformBuffers[i].init({
                 .lenght = 1,
                 .strideInBytes = bufferSize,
                 .vkUsageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -305,12 +336,13 @@ namespace Vu {
             for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
 
                 auto v = vr.uniformBuffers;
-                v[i].Dispose();
+                v[i].uninit();
             }
         });
     }
 
     void VuRenderer::CreateDescriptorSetLayout() {
+        ZoneScoped;
         //Global Set
         VkDescriptorSetLayoutBinding globalUniform{
             .binding = config::UBO_BINDING,
@@ -376,6 +408,7 @@ namespace Vu {
     }
 
     void VuRenderer::CreateDescriptorPool() {
+        ZoneScoped;
         std::array<VkDescriptorPoolSize, 4> poolSizes{};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = config::UNIFORM_COUNT;
@@ -402,7 +435,7 @@ namespace Vu {
     }
 
     void VuRenderer::CreateDescriptorSets() {
-
+        ZoneScoped;
         //global sets
         std::vector globalLayouts(config::MAX_FRAMES_IN_FLIGHT, ctx::globalDescriptorSetLayout);
 
@@ -438,7 +471,7 @@ namespace Vu {
     }
 
     void VuRenderer::SetupImGui() {
-
+        ZoneScoped;
         VkDescriptorPoolSize pool_sizes[] =
         {
             {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
@@ -495,7 +528,20 @@ namespace Vu {
         //TODO:
     }
 
-    void VuRenderer::Dispose() {
+    void VuRenderer::bindGlobalSet(const VkCommandBuffer& commandBuffer) {
+        vkCmdBindDescriptorSets(
+            commandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            ctx::globalPipelineLayout,
+            0,
+            1,
+            &ctx::globalDescriptorSets[currentFrame],
+            0,
+            nullptr
+        );
+    }
+
+    void VuRenderer::uninit() {
         vkDeviceWaitIdle(ctx::device);
         while (!disposeStack.empty()) {
             std::function<void()> disposeFunc = disposeStack.top();

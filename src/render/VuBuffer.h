@@ -4,7 +4,7 @@
 //#include "VuCtx.h"
 
 namespace Vu {
-    struct VuBufferAllocInfo {
+    struct VuBufferCreateInfo {
         VkDeviceSize lenght = 1;
         VkDeviceSize strideInBytes = 4;
         VkBufferUsageFlags vkUsageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -23,19 +23,19 @@ namespace Vu {
         void* mapPtr;
 
 
-        void Alloc(VuBufferAllocInfo allocInfo);
+        void init(VuBufferCreateInfo allocInfo);
 
         void Map();
 
         void Unmap();
 
-        void Dispose();
+        void uninit();
 
         VkDeviceAddress getDeviceAddress() const;
 
         VkResult SetData(void* data, VkDeviceSize byteSize);
 
-        VkResult SetDataWithOffset(void* data, VkDeviceSize offset, VkDeviceSize byteSize);
+        VkResult setDataWithOffset(void* data, VkDeviceSize offset, VkDeviceSize byteSize);
 
         VkDeviceSize GetSizeInBytes();
 

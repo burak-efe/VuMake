@@ -11,6 +11,7 @@ namespace Vu {
             const std::span<VkDescriptorSetLayout>& descriptorSetLayouts,
             uint32 pushConstantSizeAsByte,
             VkPipelineLayout& pipelineLayout) {
+            ZoneScoped;
 
             //push constants
             VkPushConstantRange push_constant;

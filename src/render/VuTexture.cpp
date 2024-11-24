@@ -1,7 +1,6 @@
 #include "VuTexture.h"
 
 #include <filesystem>
-
 #include <stb_image.h>
 
 #include "Common.h"
@@ -10,26 +9,32 @@
 #include "VuUtils.h"
 
 namespace Vu {
+
+    void VuTexture::loadImageFile(VuTextureCreateInfo createInfo, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& pixels) {
+        ZoneScoped;
+        pixels = stbi_load(createInfo.path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    }
+
     void VuTexture::init(VuTextureCreateInfo createInfo) {
+        ZoneScoped;
         std::cout << "VuTexture::init()" << std::endl;
         //Image
         int texWidth;
         int texHeight;
         int texChannels;
 
-
-
-        stbi_uc* pixels = stbi_load(createInfo.path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        stbi_uc* pixels;
+        loadImageFile(createInfo, texWidth, texHeight, texChannels, pixels);
         const auto imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
 
         if (pixels == nullptr) {
             throw std::runtime_error("failed to load texture image!");
         }
 
-
+        ZoneNamedN(zone2, "staging", true);
         VuBuffer staging{};
         VkDeviceSize size = texWidth * texHeight;
-        staging.Alloc({
+        staging.init({
             .lenght = size,
             .strideInBytes = 4,
             .vkUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
@@ -37,6 +42,7 @@ namespace Vu {
         staging.SetData(pixels, imageSize);
 
         stbi_image_free(pixels);
+
 
         createImage(texWidth, texHeight, createInfo.format, VK_IMAGE_TILING_OPTIMAL,
                     VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -57,7 +63,7 @@ namespace Vu {
 
         createImageView(createInfo.format);
 
-        staging.Dispose();
+        staging.uninit();
 
     }
 

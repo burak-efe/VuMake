@@ -175,8 +175,8 @@ namespace Vu {
     }
 
     void VuMesh::Dispose() {
-        vertexBuffer.Dispose();
-        indexBuffer.Dispose();
+        vertexBuffer.uninit();
+        indexBuffer.uninit();
         //normalBuffer.Dispose();
         //tangentBuffer.Dispose();
         //uvBuffer.Dispose();

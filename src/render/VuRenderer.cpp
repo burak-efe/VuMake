@@ -1,21 +1,22 @@
 #include "VuRenderer.h"
 
+#include <tracy/Tracy.hpp>
 
 
 namespace Vu {
-    bool VuRenderer::ShouldWindowClose() {
+    bool VuRenderer::shouldWindowClose() {
         return ctx::sdlEvent.type == SDL_EVENT_QUIT;
     }
 
-    void VuRenderer::WaitIdle() {
+    void VuRenderer::waitIdle() {
+        ZoneScoped;
         vkDeviceWaitIdle(ctx::device);
     }
 
-    void VuRenderer::BeginFrame() {
+    void VuRenderer::beginFrame() {
+        ZoneScoped;
         SDL_PollEvent(&ctx::sdlEvent);
-
-        vkWaitForFences(ctx::device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-
+        waitForFences();
         VkResult result = vkAcquireNextImageKHR(
             ctx::device, swapChain.swapChain, UINT64_MAX,
             imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &currentFrameImageIndex);
@@ -32,7 +33,13 @@ namespace Vu {
         BeginRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
     }
 
+    void VuRenderer::waitForFences() {
+        ZoneScoped;
+        vkWaitForFences(ctx::device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    }
+
     void VuRenderer::BeginRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex) {
+        ZoneScoped;
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -58,14 +65,15 @@ namespace Vu {
     }
 
     void VuRenderer::EndRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex) {
+        ZoneScoped;
         swapChain.EndRenderPass(commandBuffer);
         VkCheck(vkEndCommandBuffer(commandBuffer));
 
     }
 
     void VuRenderer::BindMesh(const VuMesh& mesh) {
+        ZoneScoped;
         auto commandBuffer = commandBuffers[currentFrame];
-
         std::array vertexBuffers = {
             mesh.vertexBuffer.buffer,
             mesh.vertexBuffer.buffer,
@@ -80,6 +88,7 @@ namespace Vu {
     }
 
     void VuRenderer::BindMaterial(const VuMaterial& material ) {
+        ZoneScoped;
         auto commandBuffer = commandBuffers[currentFrame];
         //material.bindFrameConstants(commandBuffer, currentFrame);
         material.bindPipeline(commandBuffer);
@@ -91,7 +100,13 @@ namespace Vu {
         vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
     }
 
+    void VuRenderer::pushConstants(const VuPushConstant& pushConstant) {
+        auto commandBuffer = commandBuffers[currentFrame];
+        vkCmdPushConstants(commandBuffer, ctx::globalPipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(VuPushConstant), &pushConstant);
+    }
+
     void VuRenderer::BeginImgui() {
+        ZoneScoped;
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui_ImplSDL3_ProcessEvent(&ctx::sdlEvent);
@@ -99,12 +114,14 @@ namespace Vu {
     }
 
     void VuRenderer::EndImgui() {
+        ZoneScoped;
         auto commandBuffer = commandBuffers[currentFrame];
         ImGui::Render();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
     }
 
-    void VuRenderer::EndFrame() {
+    void VuRenderer::endFrame() {
+        ZoneScoped;
         EndRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -145,13 +162,13 @@ namespace Vu {
         }
 
         currentFrame = (currentFrame + 1) % config::MAX_FRAMES_IN_FLIGHT;
+
+        FrameMark;
     }
 
 
     void VuRenderer::UpdateUniformBuffer(VuFrameConst ubo) {
-
-
-
+        ZoneScoped;
         uniformBuffers[currentFrame].SetData(&ubo, sizeof(ubo));
     }
 
@@ -160,6 +177,7 @@ namespace Vu {
     // }
 
     void VuRenderer::ResetSwapChain() {
+        ZoneScoped;
         SDL_Event event;
 
         int width = 0;

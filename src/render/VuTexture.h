@@ -20,12 +20,15 @@ namespace Vu {
 
         void createImageView(VkFormat format);
 
+
     public:
         // inline static std::vector<VuTexture> allTextures;
 
         VkImage textureImage;
         VkDeviceMemory textureImageMemory;
         VkImageView textureImageView;
+
+        void loadImageFile(VuTextureCreateInfo createInfo, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& pixels);
 
         void init(VuTextureCreateInfo createInfo);
 

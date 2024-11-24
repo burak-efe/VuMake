@@ -1,54 +1,55 @@
 #pragma once
-
 #include <vector>
 #include "Common.h"
-#include "VuGraphicsPipeline.h"
 #include "VuMaterial.h"
-
 #include "VuUtils.h"
 
 namespace Vu {
 
+    struct VuShaderCreateInfo {
+        std::string vertexShaderPath;
+        std::string fragmentShaderPath;
+        VkRenderPass& renderPass;
+    };
 
     struct VuShader {
         VkShaderModule vertexShaderModule;
         VkShaderModule fragmentShaderModule;
-
         VkRenderPass renderPass;
-
         std::vector<VuMaterial> materials;
 
-        void Dispose() {
+
+        void init(const  VuShaderCreateInfo& createInfo) {
+            ZoneScoped;
+            this->renderPass = createInfo.renderPass;
+            materials.resize(0);
+
+            const auto vertShaderCode = Vu::ReadFile(createInfo.vertexShaderPath);
+            const auto fragShaderCode = Vu::ReadFile(createInfo.fragmentShaderPath);
+
+            vertexShaderModule = createShaderModule(vertShaderCode);
+            fragmentShaderModule = createShaderModule(fragShaderCode);
+        }
+
+        void uninit() {
             vkDestroyShaderModule(ctx::device, vertexShaderModule, nullptr);
             vkDestroyShaderModule(ctx::device, fragmentShaderModule, nullptr);
 
             for (auto& material: materials) {
-                material.dispose();
+                material.uninit();
             }
         }
 
-        void CreateShader(const std::string& vertexShaderPath, const std::string& fragmentShaderPath, VkRenderPass renderPass) {
-            this->renderPass = renderPass;
-            materials.resize(0);
-
-            const auto vertShaderCode = Vu::ReadFile(vertexShaderPath);
-            const auto fragShaderCode = Vu::ReadFile(fragmentShaderPath);
-
-            vertexShaderModule = CreateShaderModule(vertShaderCode);
-            fragmentShaderModule = CreateShaderModule(fragShaderCode);
-        }
-
         //returns material Index
-        uint32 CreateMaterial() {
-
+        uint32 creatematerial() {
             VuMaterial material;
-            material.init(vertexShaderModule, fragmentShaderModule, renderPass);
+            material.init({vertexShaderModule, fragmentShaderModule, renderPass});
             materials.push_back(material);
             return materials.capacity() - 1;
         }
 
 
-        static VkShaderModule CreateShaderModule(const std::vector<char>& code) {
+        static VkShaderModule createShaderModule(const std::vector<char>& code) {
 
             VkShaderModuleCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

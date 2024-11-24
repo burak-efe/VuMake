@@ -19,8 +19,9 @@ namespace Vu {
         buddy* buddy;
 
         void init() {
+            ZoneScoped;
 
-            materialDataBuffer.Alloc({
+            materialDataBuffer.init({
                 .lenght = BLOCK_COUNT,
                 .strideInBytes = MINIMUM_BLOCK_SIZE,
                 .vkUsageFlags = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -72,7 +73,7 @@ namespace Vu {
 
         void dispose() {
             materialDataBuffer.Unmap();
-            materialDataBuffer.Dispose();
+            materialDataBuffer.uninit();
             free(buddy_metadata);
         }
     };

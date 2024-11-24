@@ -12,7 +12,6 @@
 #include "VuMesh.h"
 #include "VuSwapChain.h"
 #include "VuBuffer.h"
-//#include "VuGlobalSetManager.h"
 #include "VuMaterial.h"
 #include "VuSampler.h"
 #include "VuTexture.h"
@@ -20,17 +19,17 @@
 #include "VuHandle.h"
 #include "SDL3/SDL_vulkan.h"
 
+
 namespace Vu {
 
     constexpr uint32 WIDTH = 1280;
     constexpr uint32 HEIGHT = 720;
 
 
-
 #ifdef NDEBUG
-constexpr bool enableValidationLayers = false;
+constexpr bool ENABLE_VALIDATION_LAYERS_LAYERS = false;
 #else
-    constexpr bool enableValidationLayers = true;
+    constexpr bool ENABLE_VALIDATION_LAYERS_LAYERS = true;
 #endif
 
 
@@ -52,36 +51,25 @@ constexpr bool enableValidationLayers = false;
         uint32 currentFrameImageIndex = 0;
 
         VuTextureHandle debugTexture;
-        VuSampler debugSampler;
+        VuSamplerHandle debugSampler;
 
         VuMaterialDataPool materialDataPool;
 
-
-        uint32 lastImageResource;
-        uint32 lastSamplerResource;
-        uint32 lastStorageResource;
-
         std::stack<std::function<void()> > disposeStack;
 
-        //VuGlobalSetManager globalSetManager;
+        void init();
 
+        void uninit();
 
-        // void WriteTexture(uint32 writeIndex, VuTexture& texture);
-        //
-        // void WriteSampler(uint32 writeIndex, VkSampler& sampler);
+        bool shouldWindowClose();
 
+        void waitIdle();
 
-        void Init();
+        void beginFrame();
 
-        void Dispose();
+        void waitForFences();
 
-        bool ShouldWindowClose();
-
-        void WaitIdle();
-
-        void BeginFrame();
-
-        void EndFrame();
+        void endFrame();
 
         void BindMesh(const VuMesh& mesh);
 
@@ -89,10 +77,7 @@ constexpr bool enableValidationLayers = false;
 
         void DrawIndexed(uint32 indexCount);
 
-        void pushConstants(const VuPushConstant& pushConstant) {
-            auto commandBuffer = commandBuffers[currentFrame];
-            vkCmdPushConstants(commandBuffer, ctx::globalPipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(VuPushConstant), &pushConstant);
-        }
+        void pushConstants(const VuPushConstant& pushConstant);
 
         void BeginImgui();
 
@@ -107,6 +92,8 @@ constexpr bool enableValidationLayers = false;
         void InitWindow();
 
         void InitVulkanDevice();
+
+        void SetupImGui();
 
         void CreateVulkanMemoryAllocator();
 
@@ -130,10 +117,9 @@ constexpr bool enableValidationLayers = false;
 
         void CreateUniformBuffers();
 
-        void SetupImGui();
-
         void reloadShaders();
 
+        void bindGlobalSet(const VkCommandBuffer& commandBuffer);
 
         static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
                                                   const VkAllocationCallbacks* pAllocator) {
@@ -145,17 +131,5 @@ constexpr bool enableValidationLayers = false;
             }
         }
 
-        void bindGlobalSet(const VkCommandBuffer& commandBuffer) {
-            vkCmdBindDescriptorSets(
-                commandBuffer,
-                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                ctx::globalPipelineLayout,
-                0,
-                1,
-                &ctx::globalDescriptorSets[currentFrame],
-                0,
-                nullptr
-            );
-        }
     };
 }
