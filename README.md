@@ -5,26 +5,27 @@ It's a CMAKE project with C++ 23 required.
 (c++ 23 requreid because I used println twice 💀)
 
 ### Capabilites
-- ✅ Render one object as unlit
-- ✅ Imgui 
-- ✅ Depth Buffer 
-- ✅ Push Constants 
-- 👷‍♂️ ECS
+- ✅ Bindless Resources (via Descriptor indexing)
+- ✅ Imgui (docking branch)
+- ✅ Textures
+- ✅ Push Constants
+- ✅ PBR (blinn-phong)
+- ✅ ECS (via flecs)
+- ✅ Normals / Tangents
+- ✅ Normal - Bump Mappping
+- ✅ Frame Profiling (via Tracy)
 
 <details> 
   <summary>
   Incapabilities (there is only few)
   </summary>
   
+- ❌ Deffered Rendering
 - ❌ Vulkan Sync Abstraction
-- ❌ Textures
-- ❌ Normals / Tangents
-- ❌ Normal - Bump Mappping
 - ❌ Directional Ligths
 - ❌ Point Ligths
 - ❌ Spot Ligths
 - ❌ Area Ligths
-- ❌ PBR
 - ❌ Scene-Level Representation
 - ❌ Ray Traced GI
 - ❌ Path Traced Gi
@@ -38,12 +39,10 @@ It's a CMAKE project with C++ 23 required.
 - ❌ Radiance Cascades GI
 - ❌ Skinned Geometry
 - ❌ Animations
-- ❌ Deffered Rendering
 - ❌ Tiled Forward Rendering
 - ❌ FXAA - TAA - SMAA - MSAA
 - ❌ FSR - DLSS - XESS
 - ❌ PSO Cache System
-- ❌ Bindless Rendering
 - ❌ Ligth Map Baking
 - ❌ Compute Shaders
 - ❌ Subdivison Surfaces
@@ -97,13 +96,17 @@ It's a CMAKE project with C++ 23 required.
 - Vulkan Memory Allocator
 - IMGUI
 - FastGLTF
-- GLFW
+- SDL3
 - GLM
 - flecs
 - Vk-Bootstrap
+- SLang
+- Tracy
+- Volk
 
 ### Vulkan Notes
-- It uses Dynamic Rendering so there is no Render Pass (It's a good thing)
+- TODO
+
 
 ### How to build and run
 - have vulkan sdk
