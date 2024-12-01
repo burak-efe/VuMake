@@ -16,9 +16,22 @@ namespace Vu::config {
     constexpr uint32 SHADER_COUNT = 256;
     constexpr uint32 MATERIAL_COUNT = 1024;
 
+#ifdef NDEBUG
+    constexpr bool ENABLE_VALIDATION_LAYERS_LAYERS = false;
+#else
+    constexpr bool ENABLE_VALIDATION_LAYERS_LAYERS = true;
+#endif
+
+    const std::vector<const char *> VALIDATION_LAYERS = {
+        "VK_LAYER_KHRONOS_validation"
+    };
+
+    constexpr char SHADER_COMPILER_PATH[] = "bin\\slang\\slangc.exe";
+
+    constexpr std::array DEVICE_EXTENSIONS = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+        VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+    };
+
 }
-
-
-
-
-

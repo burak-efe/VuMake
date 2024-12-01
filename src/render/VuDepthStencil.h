@@ -12,6 +12,7 @@ namespace Vu {
         VkFormat depthFormat;
 
         void Init(VkExtent2D extent2D) {
+            ZoneScoped;
             //depth image size will match the window
             VkExtent3D depthImageExtent = {
                 extent2D.width,
@@ -42,7 +43,7 @@ namespace Vu {
             VkCheck(vkCreateImageView(ctx::device, &dview_info, nullptr, &imageView));
         }
 
-        void Dispose() {
+        void uninit() {
             vkDestroyImageView(ctx::device, imageView, nullptr);
             vmaDestroyImage(ctx::vma, image, allocation);
         }

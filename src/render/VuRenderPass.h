@@ -7,11 +7,12 @@ namespace Vu {
 
         VkRenderPass renderPass;
 
-        void Dispose() {
+        void uninit() {
             vkDestroyRenderPass(ctx::device, renderPass, nullptr);
         }
 
         void Init(VkFormat colorFormat, VkFormat depthFormat) {
+            ZoneScoped;
             VkAttachmentDescription colorAttachment{};
             colorAttachment.format = colorFormat;
             colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;

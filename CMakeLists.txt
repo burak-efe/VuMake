@@ -111,19 +111,23 @@ target_sources(${PROJECT_NAME} PUBLIC ${fetch_spirv_reflect_SOURCE_DIR}/spirv_re
 target_sources(${PROJECT_NAME} PUBLIC ${fetch_spirv_reflect_SOURCE_DIR}/spirv_reflect.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${fetch_spirv_reflect_SOURCE_DIR})
 ####################################################################################################
-FetchContent_Declare(
-        fetch_vk_bootstrap
-        GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
-        GIT_TAG v1.3.296)
-FetchContent_MakeAvailable(fetch_vk_bootstrap)
-target_link_libraries(${PROJECT_NAME} PUBLIC vk-bootstrap::vk-bootstrap)
+#FetchContent_Declare(
+#        fetch_vk_bootstrap
+#        GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
+#        GIT_TAG v1.3.296)
+#FetchContent_MakeAvailable(fetch_vk_bootstrap)
+#target_link_libraries(${PROJECT_NAME} PUBLIC vk-bootstrap::vk-bootstrap)
 ####################################################################################################
+set(SDL_STATIC TRUE CACHE BOOL "Build a SDL static library (if available)")
+set(SDL_JOYSTICK OFF)
+set(SDL_HAPTIC OFF)
+set(SDL_CAMERA OFF)
 FetchContent_Declare(
         fetch_SDL
         GIT_REPOSITORY https://github.com/libsdl-org/SDL
         GIT_TAG preview-3.1.3)
 FetchContent_MakeAvailable(fetch_SDL)
-target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3-shared)
+target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3)
 ####################################################################################################
 FetchContent_Declare(
         fetch_fastgltf
@@ -169,8 +173,30 @@ FetchContent_Declare (
 )
 FetchContent_MakeAvailable(fetch_tracy)
 option (TRACY_ENABLE "" ON)
-#option (TRACY_STATIC "" ON)
+option (TRACY_STATIC "" ON)
 target_link_libraries(${PROJECT_NAME} PUBLIC TracyClient)
+####################################################################################################
+FetchContent_Declare (
+        fetch_asyncplusplus
+        GIT_REPOSITORY https://github.com/Amanieu/asyncplusplus
+        GIT_TAG v1.2
+)
+FetchContent_MakeAvailable(fetch_asyncplusplus)
+target_link_libraries(${PROJECT_NAME} PUBLIC Async++)
+####################################################################################################
+#set(SLANG_ENABLE_SLANGD OFF)
+#set(SLANG_ENABLE_SLANGC OFF)
+#set(SLANG_ENABLE_TESTS OFF)
+#set(SLANG_ENABLE_EXAMPLES OFF)
+#set(SLANG_ENABLE_SLANG_RHI OFF)
+
+FetchContent_Declare (
+        fetch_slang
+        GIT_REPOSITORY https://github.com/shader-slang/slang
+        GIT_TAG v2024.14.6
+)
+FetchContent_MakeAvailable(fetch_slang)
+target_link_libraries(${PROJECT_NAME} PUBLIC slang)
 
 
 # Get the linked libraries
@@ -182,6 +208,9 @@ if(linked_libs)
 else()
     message("No libraries linked to my_library.")
 endif()
+
+#target_compile_definitions(${PROJECT_NAME} PUBLIC VK_NO_PROTOTYPES)
+#target_compile_definitions(${PROJECT_NAME} PUBLIC VOLK_IMPLEMENTATION)
 
 
 #Copy asset files to build directory
@@ -197,3 +226,6 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E create_symlink
         ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets)
 
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+        ${CMAKE_SOURCE_DIR}/bin $<TARGET_FILE_DIR:${PROJECT_NAME}>/bin)

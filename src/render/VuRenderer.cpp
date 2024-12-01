@@ -44,7 +44,7 @@ namespace Vu {
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
         VkCheck(vkBeginCommandBuffer(commandBuffer, &beginInfo));
-        swapChain.BeginRenderPass(commandBuffer, imageIndex);
+        swapChain.beginRenderPass(commandBuffer, imageIndex);
 
         VkViewport viewport{};
         viewport.x = 0.0f;
@@ -66,7 +66,7 @@ namespace Vu {
 
     void VuRenderer::EndRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex) {
         ZoneScoped;
-        swapChain.EndRenderPass(commandBuffer);
+        swapChain.endRenderPass(commandBuffer);
         VkCheck(vkEndCommandBuffer(commandBuffer));
 
     }
@@ -116,6 +116,7 @@ namespace Vu {
     void VuRenderer::EndImgui() {
         ZoneScoped;
         auto commandBuffer = commandBuffers[currentFrame];
+
         ImGui::Render();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
     }
@@ -191,6 +192,6 @@ namespace Vu {
             SDL_WaitEvent(&event);
         }
         vkDeviceWaitIdle(ctx::device);
-        swapChain.ResetSwapChain(surface);
+        swapChain.resetSwapChain(surface);
     }
 }

@@ -33,6 +33,22 @@ namespace Vu {
             pbrMaterialData = ctx::materialDataPool.allocMaterialData();
         }
 
+        void recompile(const VuMaterialCreateInfo& createInfo) {
+            vuPipeline.Dispose();
+
+            auto bindings = VuMesh::getBindingDescription();
+            auto attribs = VuMesh::getAttributeDescriptions();
+            vuPipeline.CreateGraphicsPipeline(
+                ctx::globalPipelineLayout,
+                createInfo.vertexShaderModule,
+                createInfo.fragmentShaderModule,
+                bindings,
+                attribs,
+                createInfo.renderPass
+            );
+
+        }
+
         void uninit() {
             vuPipeline.Dispose();
             ctx::materialDataPool.freeMaterialData(pbrMaterialData);

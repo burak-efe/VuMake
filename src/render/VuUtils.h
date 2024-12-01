@@ -8,8 +8,8 @@
 namespace Vu {
 
 
-    inline std::vector<char> ReadFile(const std::string& filename) {
-        std::ifstream file(filename, std::ios::ate | std::ios::binary);
+    inline std::vector<char> ReadFile(const std::filesystem::path& path) {
+        std::ifstream file(path, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()) {
             throw std::runtime_error("failed to open file!");

@@ -3,32 +3,72 @@
 #include "Common.h"
 #include "VuMaterial.h"
 #include "VuUtils.h"
+#include "VuConfig.h"
 
 namespace Vu {
 
     struct VuShaderCreateInfo {
-        std::string vertexShaderPath;
-        std::string fragmentShaderPath;
-        VkRenderPass& renderPass;
+        std::filesystem::path vertexShaderPath;
+        std::filesystem::path fragmentShaderPath;
+        VkRenderPass renderPass;
     };
 
     struct VuShader {
+        VuShaderCreateInfo lastCreateInfo;
+
         VkShaderModule vertexShaderModule;
         VkShaderModule fragmentShaderModule;
         VkRenderPass renderPass;
         std::vector<VuMaterial> materials;
 
+        time_t lastModifiedTime = 0;
 
-        void init(const  VuShaderCreateInfo& createInfo) {
+        time_t getlastModifiedTime(const std::filesystem::path& path) {
+            const auto fileTime = std::filesystem::last_write_time(path);
+            const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(fileTime);
+            const auto time = std::chrono::system_clock::to_time_t(systemTime);
+            return time;
+        }
+
+
+        void init(const VuShaderCreateInfo& createInfo) {
             ZoneScoped;
+            this->lastCreateInfo = createInfo;
             this->renderPass = createInfo.renderPass;
-            materials.resize(0);
 
             const auto vertShaderCode = Vu::ReadFile(createInfo.vertexShaderPath);
             const auto fragShaderCode = Vu::ReadFile(createInfo.fragmentShaderPath);
 
-            vertexShaderModule = createShaderModule(vertShaderCode);
-            fragmentShaderModule = createShaderModule(fragShaderCode);
+            lastModifiedTime = std::max(getlastModifiedTime(createInfo.vertexShaderPath),
+                                        getlastModifiedTime(createInfo.fragmentShaderPath));
+
+
+            auto vertName = createInfo.vertexShaderPath;
+            vertName.replace_extension("spv");
+            auto fragName = createInfo.fragmentShaderPath;
+            fragName.replace_extension("spv");
+
+            std::string vertCmd = std::format("{0} {1} -target spirv  -o {2}",
+                                              config::SHADER_COMPILER_PATH,
+                                              createInfo.vertexShaderPath.generic_string(),
+                                              vertName.generic_string());
+            auto fragCmd = std::format("{0} {1} -target spirv  -o {2}",
+                                       config::SHADER_COMPILER_PATH,
+                                       createInfo.fragmentShaderPath.generic_string(),
+                                       fragName.generic_string());
+
+            uint32 vRes = system(vertCmd.c_str());
+            uint32 fRes = system(fragCmd.c_str());
+            assert(vRes == 0);
+            assert(fRes == 0);
+
+
+            const auto vertSpv = Vu::ReadFile(vertName);
+            const auto fragSpv = Vu::ReadFile(fragName);
+
+
+            vertexShaderModule = createShaderModule(vertSpv);
+            fragmentShaderModule = createShaderModule(fragSpv);
         }
 
         void uninit() {
@@ -40,8 +80,27 @@ namespace Vu {
             }
         }
 
+        void tryRecompile() {
+
+            auto maxTime = std::max(getlastModifiedTime(lastCreateInfo.vertexShaderPath),
+                                        getlastModifiedTime(lastCreateInfo.fragmentShaderPath));
+            if (maxTime <= lastModifiedTime) {
+                return;
+            }
+
+            vkDeviceWaitIdle(ctx::device);
+            vkDestroyShaderModule(ctx::device, vertexShaderModule, nullptr);
+            vkDestroyShaderModule(ctx::device, fragmentShaderModule, nullptr);
+
+            init(lastCreateInfo);
+
+            for (auto& material: materials) {
+                material.recompile({vertexShaderModule, fragmentShaderModule, renderPass});
+            }
+        }
+
         //returns material Index
-        uint32 creatematerial() {
+        uint32 createMaterial() {
             VuMaterial material;
             material.init({vertexShaderModule, fragmentShaderModule, renderPass});
             materials.push_back(material);

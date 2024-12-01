@@ -7,6 +7,7 @@
 
 #include "Camera.h"
 #include "Components.h"
+#include "imgui_internal.h"
 #include "VuMesh.h"
 #include "Systems.h"
 #include "Transform.h"
@@ -15,10 +16,16 @@
 #include "VuRenderer.h"
 
 #include "tracy/Tracy.hpp"
+#include "async++.h"
 
 using namespace Vu;
 
 struct Scene0 {
+
+    std::filesystem::path helmetPath = "D:\\Dev\\Vulkan\\glTF-Sample-Assets\\Models\\DamagedHelmet\\glTF\\DamagedHelmet.gltf";
+    std::filesystem::path gnomePath = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
+
+    VuShader shader;
 
     flecs::system spinningSystem;
     flecs::system flyCameraSystem;
@@ -42,28 +49,53 @@ struct Scene0 {
 
             //Rendering
             {
+                shader.tryRecompile();
+
                 vuRenderer.beginFrame();
                 drawMeshSystem.run();
 
                 //UI
                 {
                     vuRenderer.BeginImgui();
-                    // Create the main docking space
-                    ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode, nullptr);
 
-                    ImGui::Begin("Values");
-                    ImGui::Text(std::format("Frame Per Second: {0:.0f}", (1.0f / ctx::deltaAsSecond)).c_str());
-                    ImGui::Text(std::format("Frame Time as miliSec: {0:.4}", ctx::deltaAsSecond * 1000).c_str());
-                    spinUI.run();
-                    camUI.run();
-                    trsUI.run();
+                    uint32 dockspace_flags = 0;
+                    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+                    //ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+                    ImGui::DockSpaceOverViewport(dockspace_id, nullptr, ImGuiDockNodeFlags_PassthruCentralNode, nullptr);
+
+                    ImGui::Begin("Entites");
                     ImGui::End();
-                    ImGui::Begin("Rendering");
-                    bool b = ImGui::Button("RealoadShader", {1, 1});
-                    if (b) {
-                        vuRenderer.reloadShaders();
+
+                    ImGui::Begin("Shaders");
+                    ImGui::End();
+
+                    ImGui::Begin("Meshes");
+                    ImGui::End();
+
+                    ImGui::Begin("Textures");
+                    ImGui::End();
+
+                    static auto first_time = true;
+                    if (first_time) {
+                        first_time = false;
+
+                        ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
+                        ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
+                        ImGui::DockBuilderSetNodeSize(dockspace_id, {
+                                                          static_cast<float>(vuRenderer.swapChain.swapChainExtent.width),
+                                                          static_cast<float>(vuRenderer.swapChain.swapChainExtent.height)
+                                                      });
+
+                        auto mainR = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.25f, nullptr, &dockspace_id);
+                        auto mainL = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.33f, nullptr, &dockspace_id);
+                        ImGui::DockBuilderDockWindow("Entites", mainR);
+                        ImGui::DockBuilderDockWindow("Meshes", mainL);
+                        ImGui::DockBuilderDockWindow("Shaders", mainL);
+
+                        ImGui::DockBuilderFinish(dockspace_id);
                     }
-                    ImGui::End();
+
+
                     vuRenderer.EndImgui();
                 }
 
@@ -77,17 +109,17 @@ struct Scene0 {
         vuRenderer.init();
         ctx::vuRenderer = &vuRenderer;
         VuMesh mesh{};
-        auto helmetPath = "D:\\Dev\\Vulkan\\glTF-Sample-Assets\\Models\\DamagedHelmet\\glTF\\DamagedHelmet.gltf";
-        auto gnomePath = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
-        VuShader shader;
+
+
         shader.init(
             {
-                "assets/shaders/vert.spv",
-                "assets/shaders/frag.spv",
+                "assets\\shaders\\vert.slang",
+                "assets\\shaders\\frag.slang",
                 vuRenderer.swapChain.renderPass.renderPass
             }
         );
-        uint32 mat0 = shader.creatematerial();
+
+        uint32 mat0 = shader.createMaterial();
 
         PBRMaterialData* data = shader.materials[mat0].pbrMaterialData;
         VuAssetLoader::LoadGltf(gnomePath, mesh, *data);
@@ -104,14 +136,14 @@ struct Scene0 {
             camUI = AddCameraUISystem(world);
 
             //Add Entities
-            world.entity("Obj1").set(Transform{
+            auto ent = world.entity("Obj1").set(Transform{
                 .Position = float3(0, 0, 0), .Rotation = glm::quat(glm::vec3{0, 0, 0}), .Scale = {1, 1, 1}
             }).set(MeshRenderer{&mesh, &shader, mat0}).set(Spinn{});
 
             world.entity("Cam").set(
                 Transform(float3(0, 0, 3.5f), float3(0, 0, 0), float3(1, 1, 1))
             ).set(Camera{});
-
+            
             UpdateLoop();
 
         }

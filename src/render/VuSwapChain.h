@@ -7,11 +7,11 @@
 namespace Vu {
     struct VuSwapChain {
     private:
-        void CreateSwapChain(VkSurfaceKHR surfaceKHR);
+        void createSwapChain(VkSurfaceKHR surfaceKHR);
 
-        void CreateImageViews(VkDevice device);
+        void createImageViews(VkDevice device);
 
-        void CreateFramebuffers();
+        void createFramebuffers();
 
     public:
         VkSwapchainKHR swapChain;
@@ -31,23 +31,23 @@ namespace Vu {
 
         void InitSwapChain(VkSurfaceKHR surface);
 
-        void Dispose();
+        void uninit();
 
-        void ResetSwapChain(VkSurfaceKHR surface);
+        void resetSwapChain(VkSurfaceKHR surface);
 
-        void BeginRenderPass(VkCommandBuffer commandBuffer, uint32 frameIndex);
+        void beginRenderPass(VkCommandBuffer commandBuffer, uint32 frameIndex);
 
-        void EndRenderPass(VkCommandBuffer commandBuffer);
+        void endRenderPass(VkCommandBuffer commandBuffer);
 
-        static SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
+        static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 
-        static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+        static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 
-        static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+        static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 
-        static VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+        static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
-        static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
+        static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
 
     };
 }

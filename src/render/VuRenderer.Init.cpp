@@ -3,21 +3,35 @@
 #include <filesystem>
 #include <tracy/Tracy.hpp>
 
-#include "VkBootstrap.h"
 #include "vk_mem_alloc.h"
+#include "VuInitializers.h"
 #include "VuResourceManager.h"
 
 #include "VuPipelineLayout.h"
+
+#include "async++.h"
 
 namespace Vu {
 
     void VuRenderer::init() {
         ZoneScoped;
 
-        InitWindow();
+        initSDL();
+        initWindow();
+        initVulkanInstance();
 
-        InitVulkanDevice();
+
+        auto task = async::spawn([&] {
+        });
+        task.wait();
+
+
+        initSurface();
+        initVulkanPhysicalDevice();
+        initVulkanDevice();
+
         CreateVulkanMemoryAllocator();
+
 
         materialDataPool.init();
         disposeStack.push([&] { materialDataPool.dispose(); });
@@ -61,158 +75,99 @@ namespace Vu {
     }
 
 
-    void VuRenderer::InitWindow() {
+    void VuRenderer::initWindow() {
+        ZoneScoped;
+        ctx::window = SDL_CreateWindow("VuRenderer", WIDTH, HEIGHT,SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+        disposeStack.push([] { SDL_DestroyWindow(ctx::window); });
+
+    }
+
+    void VuRenderer::initSDL() {
         ZoneScoped;
         assert(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) == true);
         disposeStack.push([] { SDL_Quit(); });
 
-        ctx::window = SDL_CreateWindow("VuRenderer", WIDTH, HEIGHT,SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
-        disposeStack.push([] { SDL_DestroyWindow(ctx::window); });
+
     }
 
-    void VuRenderer::InitVulkanDevice() {
+    void VuRenderer::initVulkanDevice() {
         ZoneScoped;
-        vkb::Instance vkb_instance;
-        vkb::PhysicalDevice vkb_physicalDevice;
-        vkb::Device vkb_device;
+        VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeatures = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
+            .bufferDeviceAddress = VK_TRUE,
+        };
 
+        VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
+            .pNext = &bufferDeviceAddressFeatures,
+            .shaderInputAttachmentArrayDynamicIndexing = VK_TRUE,
+            .shaderUniformTexelBufferArrayDynamicIndexing = VK_TRUE,
+            .shaderStorageTexelBufferArrayDynamicIndexing = VK_TRUE,
+            .shaderUniformBufferArrayNonUniformIndexing = VK_TRUE,
+            .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
+            .shaderStorageBufferArrayNonUniformIndexing = VK_TRUE,
+            .shaderStorageImageArrayNonUniformIndexing = VK_TRUE,
+            .shaderInputAttachmentArrayNonUniformIndexing = VK_TRUE,
+            .shaderUniformTexelBufferArrayNonUniformIndexing = VK_TRUE,
+            .shaderStorageTexelBufferArrayNonUniformIndexing = VK_TRUE,
+            .descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE,
+            .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
+            .descriptorBindingStorageImageUpdateAfterBind = VK_TRUE,
+            .descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE,
+            .descriptorBindingUniformTexelBufferUpdateAfterBind = VK_TRUE,
+            .descriptorBindingStorageTexelBufferUpdateAfterBind = VK_TRUE,
+            .descriptorBindingUpdateUnusedWhilePending = VK_TRUE,
+            .descriptorBindingPartiallyBound = VK_TRUE,
+            .descriptorBindingVariableDescriptorCount = VK_TRUE,
+            .runtimeDescriptorArray = VK_TRUE,
+        };
+
+        VkPhysicalDeviceFeatures deviceFeatures{};
+        deviceFeatures.samplerAnisotropy = VK_TRUE;
+        deviceFeatures.shaderInt64 = VK_TRUE;
+
+        VkPhysicalDeviceFeatures2 deviceFeatures2{
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+            .pNext = &descriptorIndexingFeatures,
+            .features = deviceFeatures,
+        };
+
+        Initializers::createDevice(deviceFeatures2, queueFamilies, ctx::physicalDevice, ctx::device, ctx::graphicsQueue,
+                                   ctx::presentQueue);
+        disposeStack.push([] { vkDestroyDevice(ctx::device, nullptr); });
+    }
+
+    void VuRenderer::initVulkanPhysicalDevice() {
+        ZoneScoped;
+        Initializers::createPhysicalDevice(ctx::instance, surface, ctx::physicalDevice);
+        queueFamilies = QueueFamilyIndices::findQueueFamilies(ctx::physicalDevice, surface);
+    }
+
+    void VuRenderer::initVulkanInstance() {
+        ZoneScoped;
         //volk
         {
             ZoneScopedN("Volk");
             VkCheck(volkInitialize());
             disposeStack.push([] { volkFinalize(); });
         }
-
         // Vulkan Instance
         {
             ZoneScopedN("Instance");
-            vkb::InstanceBuilder builder;
-            auto inst_ret = builder
-                    .set_app_name("VuMake")
-                    .request_validation_layers(ENABLE_VALIDATION_LAYERS_LAYERS)
-                    .use_default_debug_messenger()
-                    .require_api_version(1, 1)
-                    .build();
-
-            std::cout << "Validation Layers: " << ENABLE_VALIDATION_LAYERS_LAYERS << std::endl;
-            if (!inst_ret) {
-                std::cerr << "Failed to create Vulkan instance. Error: " << inst_ret.error().message() << "\n";
-            }
-            vkb_instance = inst_ret.value();
-            ctx::instance = vkb_instance.instance;
+            Initializers::createInstance(ctx::instance);
+            Initializers::createDebugMessenger(ctx::instance, debugMessenger);
             disposeStack.push([&] { vkDestroyInstance(ctx::instance, nullptr); });
-
-            debugMessenger = vkb_instance.debug_messenger;
             disposeStack.push([&] { DestroyDebugUtilsMessengerEXT(ctx::instance, debugMessenger, nullptr); });
-
         }
-
         //volkLoadInstance
         {
             ZoneScopedN("VolkLoadInstance");
-            volkLoadInstance(vkb_instance);
-        }
-
-        //Surface
-        CreateSurface();
-
-        //PhysicalDevice
-        {
-            ZoneScopedN("Physical Device");
-            vkb::PhysicalDeviceSelector selector{vkb_instance};
-            vkb::Result<vkb::PhysicalDevice> phys_ret = selector
-                    .set_surface(surface)
-                    .set_minimum_version(1, 1)
-                    .require_dedicated_transfer_queue()
-                    .add_required_extension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
-                    .add_required_extension(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
-                    .select();
-            if (!phys_ret) {
-                std::cerr << "Failed to select Vulkan Physical Device. Error: " << phys_ret.error().message() << "\n";
-            }
-
-            vkb_physicalDevice = phys_ret.value();
-            ctx::physicalDevice = phys_ret.value().physical_device;
-        }
-        //Device
-        {
-            ZoneScopedN("Device");
-
-            VkPhysicalDeviceFeatures deviceFeatures{};
-            deviceFeatures.samplerAnisotropy = VK_TRUE;
-            deviceFeatures.shaderInt64 = VK_TRUE;
-
-            VkPhysicalDeviceFeatures2 deviceFeatures2{
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-                .features = deviceFeatures,
-            };
-
-            VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeatures = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
-                .bufferDeviceAddress = VK_TRUE,
-            };
-
-            VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
-                .shaderInputAttachmentArrayDynamicIndexing = VK_TRUE,
-                .shaderUniformTexelBufferArrayDynamicIndexing = VK_TRUE,
-                .shaderStorageTexelBufferArrayDynamicIndexing = VK_TRUE,
-                .shaderUniformBufferArrayNonUniformIndexing = VK_TRUE,
-                .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
-                .shaderStorageBufferArrayNonUniformIndexing = VK_TRUE,
-                .shaderStorageImageArrayNonUniformIndexing = VK_TRUE,
-                .shaderInputAttachmentArrayNonUniformIndexing = VK_TRUE,
-                .shaderUniformTexelBufferArrayNonUniformIndexing = VK_TRUE,
-                .shaderStorageTexelBufferArrayNonUniformIndexing = VK_TRUE,
-                .descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE,
-                .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
-                .descriptorBindingStorageImageUpdateAfterBind = VK_TRUE,
-                .descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE,
-                .descriptorBindingUniformTexelBufferUpdateAfterBind = VK_TRUE,
-                .descriptorBindingStorageTexelBufferUpdateAfterBind = VK_TRUE,
-                .descriptorBindingUpdateUnusedWhilePending = VK_TRUE,
-                .descriptorBindingPartiallyBound = VK_TRUE,
-                .descriptorBindingVariableDescriptorCount = VK_TRUE,
-                .runtimeDescriptorArray = VK_TRUE,
-            };
-
-            vkb::DeviceBuilder device_builder{vkb_physicalDevice};
-
-            vkb::Result<vkb::Device> dev_ret = device_builder
-                    .add_pNext(&deviceFeatures2)
-                    .add_pNext(&bufferDeviceAddressFeatures)
-                    .add_pNext(&descriptorIndexingFeatures)
-                    .build();
-
-
-            if (!dev_ret) {
-                std::cerr << "Failed to create Vulkan device. Error: " << dev_ret.error().message() << "\n";
-            }
-            vkb_device = dev_ret.value();
-            ctx::device = vkb_device.device;
-            disposeStack.push([] { vkDestroyDevice(ctx::device, nullptr); });
-
-        }
-
-        //queue
-        {
-            ZoneScopedN("Queue");
-            auto graphics_queue_ret = vkb_device.get_queue(vkb::QueueType::graphics);
-            if (!graphics_queue_ret) {
-                std::cerr << "Failed to get graphics queue. Error: " << graphics_queue_ret.error().message() << "\n";
-            }
-            ctx::graphicsQueue = graphics_queue_ret.value();
-            auto presentQueueRet = vkb_device.get_queue(vkb::QueueType::present);
-            if (!presentQueueRet) {
-                std::cerr << "Failed to get present queue. Error: " << presentQueueRet.error().message() << "\n";
-            }
-            ctx::presentQueue = presentQueueRet.value();
+            volkLoadInstance(ctx::instance);
         }
     }
 
     void VuRenderer::CreateVulkanMemoryAllocator() {
         ZoneScoped;
-
         VmaVulkanFunctions vma_vulkan_func{
             .vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties,
             .vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties,
@@ -245,9 +200,8 @@ namespace Vu {
         disposeStack.push([] { vmaDestroyAllocator(ctx::vma); });
     }
 
-    void VuRenderer::CreateSurface() {
+    void VuRenderer::initSurface() {
         ZoneScoped;
-
         SDL_Vulkan_CreateSurface(ctx::window, ctx::instance, nullptr, &surface);
         disposeStack.push([&] { SDL_Vulkan_DestroySurface(ctx::instance, surface, nullptr); });
     }
@@ -256,12 +210,12 @@ namespace Vu {
         ZoneScoped;
         swapChain = VuSwapChain{};
         swapChain.InitSwapChain(surface);
-        disposeStack.push([&] { swapChain.Dispose(); });
+        disposeStack.push([&] { swapChain.uninit(); });
     }
 
     void VuRenderer::CreateCommandPool() {
         ZoneScoped;
-        QueueFamilyIndices queueFamilyIndices = QueueFamilyIndices::FindQueueFamilies(ctx::physicalDevice, surface);
+        QueueFamilyIndices queueFamilyIndices = QueueFamilyIndices::findQueueFamilies(ctx::physicalDevice, surface);
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -508,7 +462,7 @@ namespace Vu {
         init_info.Instance = ctx::instance;
         init_info.PhysicalDevice = ctx::physicalDevice;
         init_info.Device = ctx::device;
-        init_info.QueueFamily = VuSwapChain::FindQueueFamilies(ctx::physicalDevice, surface).graphicsFamily.value();
+        init_info.QueueFamily = VuSwapChain::findQueueFamilies(ctx::physicalDevice, surface).graphicsFamily.value();
         init_info.Queue = ctx::graphicsQueue;
         init_info.DescriptorPool = ctx::uiDescriptorPool;
         init_info.MinImageCount = 2;

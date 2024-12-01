@@ -34,11 +34,12 @@ namespace Vu {
         std::optional<uint32> graphicsFamily;
         std::optional<uint32> presentFamily;
 
-        bool IsComplete() {
+        bool isComplete() {
             return graphicsFamily.has_value() && presentFamily.has_value();
         }
 
-        static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
+        static QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& device, const VkSurfaceKHR& surface) {
+            ZoneScoped;
             //Logic to find graphics queue family
             QueueFamilyIndices indices;
 
@@ -62,7 +63,7 @@ namespace Vu {
                     indices.presentFamily = i;
                 }
 
-                if (indices.IsComplete()) {
+                if (indices.isComplete()) {
                     break;
                 }
 

@@ -12,7 +12,6 @@ float4 main(VSOutput i) :SV_Target
 {
     float3 lightPos = ubo.cameraPos;
 
-    //PBRMaterialData data = vk::RawBufferLoad<PBRMaterialData>(pc.materialDataPtr);
     Ptr<PBRMaterialData> ptr = (Ptr<PBRMaterialData>) pc.materialDataPtr;
     PBRMaterialData data = ptr[0];
 
@@ -46,35 +45,6 @@ float4 main(VSOutput i) :SV_Target
     // Final color
     float3 color = (ambient + diffuse + specular);
 
-    //output.Color0 = float4(viewDir, 1.0); // Debug: Output view direction
-    //output.Color0 = float4(lightDir, 1.0); // Debug: Output light direction
-    //output.Color0 = float4(normal, 1);
-
-    return float4(color.xyz,1);
-
-    // [branch]
-    // if(ubo.debugIndex == 1)
-    // {
-    //     return float4(color, 1);
-    // }
-    // else if(ubo.debugIndex == 2)
-    // {
-    //     return float4(i.Normal, 1);
-    // }
-    // else if(ubo.debugIndex == 3)
-    // {
-    //     return float4(i.Tangent, 1);
-    // }
-    // else if(ubo.debugIndex == 4)
-    // {
-    //     return float4(uv ,0, 1);
-    // }
-    // else if(ubo.debugIndex == 5)
-    // {
-    //     return float4(normalSample, 1);
-    // }
-    // else {
-    //     return float4(1,0,1, 1);
-    // }
+    return float4(normalWS.xyz,1);
 
 }

@@ -26,11 +26,6 @@ namespace Vu {
     constexpr uint32 HEIGHT = 720;
 
 
-#ifdef NDEBUG
-constexpr bool ENABLE_VALIDATION_LAYERS_LAYERS = false;
-#else
-    constexpr bool ENABLE_VALIDATION_LAYERS_LAYERS = true;
-#endif
 
 
     struct VuRenderer {
@@ -57,7 +52,12 @@ constexpr bool ENABLE_VALIDATION_LAYERS_LAYERS = false;
 
         std::stack<std::function<void()> > disposeStack;
 
+        QueueFamilyIndices queueFamilies;
+        VkPhysicalDeviceLimits deviceLimits;
+
         void init();
+
+        void initWindow();
 
         void uninit();
 
@@ -89,15 +89,19 @@ constexpr bool ENABLE_VALIDATION_LAYERS_LAYERS = false;
 
         void EndRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex);
 
-        void InitWindow();
+        void initSDL();
 
-        void InitVulkanDevice();
+        void initVulkanDevice();
+
+        void initVulkanPhysicalDevice();
+
+        void initVulkanInstance();
 
         void SetupImGui();
 
         void CreateVulkanMemoryAllocator();
 
-        void CreateSurface();
+        void initSurface();
 
         void CreateSwapChain();
 

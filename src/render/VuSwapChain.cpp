@@ -5,14 +5,15 @@
 namespace Vu {
 
     void VuSwapChain::InitSwapChain(VkSurfaceKHR surface) {
-        CreateSwapChain(surface);
-        CreateImageViews(ctx::device);
+        ZoneScoped;
+        createSwapChain(surface);
+        createImageViews(ctx::device);
         depthStencil.Init(swapChainExtent);
         renderPass.Init(swapChainImageFormat, depthStencil.depthFormat);
-        CreateFramebuffers();
+        createFramebuffers();
     }
 
-    void VuSwapChain::Dispose() {
+    void VuSwapChain::uninit() {
         for (auto imageView: swapChainImageViews) {
             vkDestroyImageView(ctx::device, imageView, nullptr);
         }
@@ -20,13 +21,14 @@ namespace Vu {
             vkDestroyFramebuffer(ctx::device, framebuffer, nullptr);
         }
 
-        renderPass.Dispose();
+        renderPass.uninit();
 
-        depthStencil.Dispose();
+        depthStencil.uninit();
         vkDestroySwapchainKHR(ctx::device, swapChain, nullptr);
     }
 
-    SwapChainSupportDetails VuSwapChain::QuerySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
+    SwapChainSupportDetails VuSwapChain::querySwapChainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
+        ZoneScoped;
         SwapChainSupportDetails details;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
 
@@ -51,7 +53,8 @@ namespace Vu {
         return details;
     }
 
-    VkSurfaceFormatKHR VuSwapChain::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
+    VkSurfaceFormatKHR VuSwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
+        ZoneScoped;
         for (const auto& availableFormat: availableFormats) {
             if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB
                 && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
@@ -62,7 +65,8 @@ namespace Vu {
         return availableFormats[0];
     }
 
-    VkPresentModeKHR VuSwapChain::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
+    VkPresentModeKHR VuSwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
+        ZoneScoped;
         for (const auto& availablePresentMode: availablePresentModes) {
             if (availablePresentMode == VK_PRESENT_MODE_FIFO_KHR) {
                 return availablePresentMode;
@@ -72,7 +76,8 @@ namespace Vu {
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    VkExtent2D VuSwapChain::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
+    VkExtent2D VuSwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
+        ZoneScoped;
         if (capabilities.currentExtent.width != std::numeric_limits<uint32>::max()) {
             return capabilities.currentExtent;
         }
@@ -94,7 +99,8 @@ namespace Vu {
         return actualExtent;
     }
 
-    QueueFamilyIndices VuSwapChain::FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
+    QueueFamilyIndices VuSwapChain::findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
+        ZoneScoped;
         //Logic to find graphics queue family
         QueueFamilyIndices indices;
 
@@ -116,7 +122,7 @@ namespace Vu {
             if (presentSupport) {
                 indices.presentFamily = i;
             }
-            if (indices.IsComplete()) {
+            if (indices.isComplete()) {
                 break;
             }
             i++;
@@ -125,23 +131,23 @@ namespace Vu {
         return indices;
     }
 
-    void VuSwapChain::ResetSwapChain(VkSurfaceKHR surface) {
+    void VuSwapChain::resetSwapChain(VkSurfaceKHR surface) {
         for (auto imageView: swapChainImageViews) {
             vkDestroyImageView(ctx::device, imageView, nullptr);
         }
         for (auto framebuffer: framebuffers) {
             vkDestroyFramebuffer(ctx::device, framebuffer, nullptr);
         }
-        depthStencil.Dispose();
+        depthStencil.uninit();
         vkDestroySwapchainKHR(ctx::device, swapChain, nullptr);
 
-        CreateSwapChain(surface);
-        CreateImageViews(ctx::device);
+        createSwapChain(surface);
+        createImageViews(ctx::device);
         depthStencil.Init(swapChainExtent);
-        CreateFramebuffers();
+        createFramebuffers();
     }
 
-    void VuSwapChain::BeginRenderPass(VkCommandBuffer commandBuffer, uint32 frameIndex) {
+    void VuSwapChain::beginRenderPass(VkCommandBuffer commandBuffer, uint32 frameIndex) {
 
         std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = {{0.02f, 0.02f, 0.02f, 1.0f}};
@@ -159,17 +165,18 @@ namespace Vu {
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     }
 
-    void VuSwapChain::EndRenderPass(VkCommandBuffer commandBuffer) {
+    void VuSwapChain::endRenderPass(VkCommandBuffer commandBuffer) {
         vkCmdEndRenderPass(commandBuffer);
     }
 
-    void VuSwapChain::CreateSwapChain(VkSurfaceKHR surfaceKHR) {
+    void VuSwapChain::createSwapChain(VkSurfaceKHR surfaceKHR) {
+        ZoneScoped;
         //Surface = surfaceKHR;
-        SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(ctx::physicalDevice, surfaceKHR);
-        VkExtent2D extend = ChooseSwapExtent(swapChainSupport.capabilities);
+        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(ctx::physicalDevice, surfaceKHR);
+        VkExtent2D extend = chooseSwapExtent(swapChainSupport.capabilities);
 
-        VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
-        VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
+        VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+        VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
 
         uint32 imageCount = swapChainSupport.capabilities.minImageCount + 1;
 
@@ -188,7 +195,7 @@ namespace Vu {
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        QueueFamilyIndices indices = FindQueueFamilies(ctx::physicalDevice, surfaceKHR);
+        QueueFamilyIndices indices = findQueueFamilies(ctx::physicalDevice, surfaceKHR);
         uint32 queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
         if (indices.graphicsFamily != indices.presentFamily) {
@@ -204,18 +211,26 @@ namespace Vu {
         createInfo.presentMode = presentMode;
         createInfo.clipped = VK_TRUE;
         createInfo.oldSwapchain = VK_NULL_HANDLE;
+        //
+        {
+            ZoneScopedN("Create Swapchain Call");
+            VkCheck(vkCreateSwapchainKHR(ctx::device, &createInfo, nullptr, &swapChain));
+        }
 
-        VkCheck(vkCreateSwapchainKHR(ctx::device, &createInfo, nullptr, &swapChain));
-
-        vkGetSwapchainImagesKHR(ctx::device, swapChain, &imageCount, nullptr);
-        swapChainImages.resize(imageCount);
-        vkGetSwapchainImagesKHR(ctx::device, swapChain, &imageCount, swapChainImages.data());
+        //
+        {
+            ZoneScopedN("Get Swapcahin Images Call");
+            vkGetSwapchainImagesKHR(ctx::device, swapChain, &imageCount, nullptr);
+            swapChainImages.resize(imageCount);
+            vkGetSwapchainImagesKHR(ctx::device, swapChain, &imageCount, swapChainImages.data());
+        }
 
         swapChainImageFormat = surfaceFormat.format;
         swapChainExtent = extend;
     }
 
-    void VuSwapChain::CreateImageViews(VkDevice device) {
+    void VuSwapChain::createImageViews(VkDevice device) {
+        ZoneScoped;
         swapChainImageViews.resize(swapChainImages.size());
 
         for (size_t i = 0; i < swapChainImages.size(); i++) {
@@ -243,14 +258,14 @@ namespace Vu {
     }
 
 
-    void VuSwapChain::CreateFramebuffers() {
+    void VuSwapChain::createFramebuffers() {
+        ZoneScoped;
         framebuffers.resize(swapChainImageViews.size());
 
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
             std::array attachments = {
                 swapChainImageViews[i],
                 depthStencil.imageView
-
             };
 
             VkFramebufferCreateInfo framebufferInfo{};
