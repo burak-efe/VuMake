@@ -7,18 +7,16 @@
 namespace Vu {
 
     struct VuMaterialDataPool {
-
     private:
-        const VkDeviceSize MINIMUM_BLOCK_SIZE = 64;
-        const VkDeviceSize BLOCK_COUNT = 1024;
-        VuBuffer materialDataBuffer;
-        VkDeviceAddress deviceAddress;
+        static constexpr VkDeviceSize MINIMUM_BLOCK_SIZE = 64;
+        static constexpr VkDeviceSize BLOCK_COUNT = 1024;
+        inline static VuBuffer materialDataBuffer;
+        inline static VkDeviceAddress deviceAddress;
+        inline static void* buddy_metadata;
+        inline static buddy* buddy;
 
     public:
-        void* buddy_metadata;
-        buddy* buddy;
-
-        void init() {
+        static void init() {
             ZoneScoped;
 
             materialDataBuffer.init({
@@ -44,17 +42,17 @@ namespace Vu {
                 MINIMUM_BLOCK_SIZE);
         }
 
-        VkDeviceAddress mapAddressToBufferDeviceAddress(PBRMaterialData* ptr) {
-            uint32 offset = (uint64)materialDataBuffer.mapPtr -  (uint64)ptr;
+        static VkDeviceAddress mapAddressToBufferDeviceAddress(PBRMaterialData* ptr) {
+            uint32 offset = (uint64) materialDataBuffer.mapPtr - (uint64) ptr;
             return deviceAddress + offset;
         }
 
-        PBRMaterialData* allocMaterialData() {
+        static PBRMaterialData* allocMaterialData() {
             void* ptr = buddy_malloc(buddy, sizeof(PBRMaterialData));
             return static_cast<PBRMaterialData *>(ptr);
         }
 
-        void freeMaterialData(PBRMaterialData* ptr) {
+        static void freeMaterialData(PBRMaterialData* ptr) {
             buddy_free(buddy, reinterpret_cast<void *>(ptr));
         }
 
@@ -71,7 +69,7 @@ namespace Vu {
         //     buddy_free(buddy, reinterpret_cast<void *>(ptr));
         // }
 
-        void dispose() {
+        static void uninit() {
             materialDataBuffer.Unmap();
             materialDataBuffer.uninit();
             free(buddy_metadata);

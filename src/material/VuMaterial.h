@@ -30,7 +30,7 @@ namespace Vu {
                 createInfo.renderPass
             );
 
-            pbrMaterialData = ctx::materialDataPool.allocMaterialData();
+            pbrMaterialData = VuMaterialDataPool::allocMaterialData();
         }
 
         void recompile(const VuMaterialCreateInfo& createInfo) {
@@ -51,7 +51,7 @@ namespace Vu {
 
         void uninit() {
             vuPipeline.Dispose();
-            ctx::materialDataPool.freeMaterialData(pbrMaterialData);
+            VuMaterialDataPool::freeMaterialData(pbrMaterialData);
         }
 
         void bindPipeline(const VkCommandBuffer& commandBuffer) const {

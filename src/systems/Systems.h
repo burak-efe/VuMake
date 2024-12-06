@@ -20,7 +20,7 @@ namespace Vu {
                 .each([](Transform& trs, const MeshRenderer& meshRenderer) {
 
                     auto mat = meshRenderer.vuShader->materials[meshRenderer.materialIndex];
-                    auto adr = ctx::materialDataPool.mapAddressToBufferDeviceAddress(mat.pbrMaterialData);
+                    auto adr = VuMaterialDataPool::mapAddressToBufferDeviceAddress(mat.pbrMaterialData);
                     ctx::vuRenderer->BindMaterial(mat);
                     ctx::vuRenderer->pushConstants({trs.ToTRS(), adr});
                     ctx::vuRenderer->BindMesh(*meshRenderer.mesh);

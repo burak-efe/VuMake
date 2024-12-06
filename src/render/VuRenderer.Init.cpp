@@ -30,23 +30,19 @@ namespace Vu {
         initVulkanPhysicalDevice();
         initVulkanDevice();
 
-        CreateVulkanMemoryAllocator();
+        initVMA();
 
+        initSwapchain();
+        initCommandPool();
 
-        materialDataPool.init();
-        disposeStack.push([&] { materialDataPool.dispose(); });
-
-        CreateSwapChain();
-        CreateCommandPool();
-
-        CreateUniformBuffers();
+        initUniformBuffers();
 
         CreateDescriptorSetLayout();
         CreateDescriptorPool();
         CreateDescriptorSets();
 
         std::array descSetLayouts{ctx::globalDescriptorSetLayout};
-        Vu::Initializers::CreatePipelineLayout(descSetLayouts, sizeof(VuPushConstant), ctx::globalPipelineLayout);
+        Vu::Initializers::createPipelineLayout(descSetLayouts, sizeof(VuPushConstant), ctx::globalPipelineLayout);
         disposeStack.push([&] { vkDestroyPipelineLayout(ctx::device, ctx::globalPipelineLayout, nullptr); });
 
         CreateCommandBuffers();
@@ -63,8 +59,8 @@ namespace Vu {
 
         disposeStack.push([&] { VuResourceManager::uninit(); });
 
-        ctx::materialDataPool.init();
-        disposeStack.push([&] { ctx::materialDataPool.dispose(); });
+        VuMaterialDataPool::init();
+        disposeStack.push([&] {VuMaterialDataPool::uninit(); });
 
         //debug resources
         debugTexture.init({std::filesystem::path("assets/textures/error.png"), VK_FORMAT_R8G8B8A8_UNORM});
@@ -166,7 +162,7 @@ namespace Vu {
         }
     }
 
-    void VuRenderer::CreateVulkanMemoryAllocator() {
+    void VuRenderer::initVMA() {
         ZoneScoped;
         VmaVulkanFunctions vma_vulkan_func{
             .vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties,
@@ -206,14 +202,14 @@ namespace Vu {
         disposeStack.push([&] { SDL_Vulkan_DestroySurface(ctx::instance, surface, nullptr); });
     }
 
-    void VuRenderer::CreateSwapChain() {
+    void VuRenderer::initSwapchain() {
         ZoneScoped;
         swapChain = VuSwapChain{};
         swapChain.InitSwapChain(surface);
         disposeStack.push([&] { swapChain.uninit(); });
     }
 
-    void VuRenderer::CreateCommandPool() {
+    void VuRenderer::initCommandPool() {
         ZoneScoped;
         QueueFamilyIndices queueFamilyIndices = QueueFamilyIndices::findQueueFamilies(ctx::physicalDevice, surface);
 
@@ -269,7 +265,7 @@ namespace Vu {
 
     }
 
-    void VuRenderer::CreateUniformBuffers() {
+    void VuRenderer::initUniformBuffers() {
         ZoneScoped;
 
         uniformBuffers.resize(config::MAX_FRAMES_IN_FLIGHT);

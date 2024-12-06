@@ -6,11 +6,9 @@
 
 namespace Vu {
     namespace Initializers {
-
-        inline void CreatePipelineLayout(
-            const std::span<VkDescriptorSetLayout>& descriptorSetLayouts,
-            uint32 pushConstantSizeAsByte,
-            VkPipelineLayout& pipelineLayout) {
+        inline void createPipelineLayout(const std::span<VkDescriptorSetLayout>& descriptorSetLayouts,
+                                         const uint32 pushConstantSizeAsByte,
+                                         VkPipelineLayout& outPipelineLayout) {
             ZoneScoped;
 
             //push constants
@@ -27,7 +25,8 @@ namespace Vu {
             pipelineLayoutInfo.pushConstantRangeCount = 1;
             pipelineLayoutInfo.pPushConstantRanges = &push_constant;
 
-            VkCheck(vkCreatePipelineLayout(ctx::device, &pipelineLayoutInfo, nullptr, &pipelineLayout));
+            VkCheck(vkCreatePipelineLayout(ctx::device, &pipelineLayoutInfo, nullptr, &outPipelineLayout));
         }
+
     }
 }

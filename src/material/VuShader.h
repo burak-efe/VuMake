@@ -4,6 +4,8 @@
 #include "VuMaterial.h"
 #include "VuUtils.h"
 #include "VuConfig.h"
+#include "slang.h"
+#include "slang-com-ptr.h"
 
 namespace Vu {
 
@@ -14,6 +16,9 @@ namespace Vu {
     };
 
     struct VuShader {
+
+        inline static Slang::ComPtr<slang::IGlobalSession> globalSession;
+
         VuShaderCreateInfo lastCreateInfo;
 
         VkShaderModule vertexShaderModule;
@@ -23,7 +28,16 @@ namespace Vu {
 
         time_t lastModifiedTime = 0;
 
-        time_t getlastModifiedTime(const std::filesystem::path& path) {
+        static void initSystem() {
+            slang::createGlobalSession(globalSession.writeRef());
+
+        }
+
+        static void uninitSystem() {
+            slang::shutdown();
+        }
+
+        static time_t getlastModifiedTime(const std::filesystem::path& path) {
             const auto fileTime = std::filesystem::last_write_time(path);
             const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(fileTime);
             const auto time = std::chrono::system_clock::to_time_t(systemTime);
@@ -43,19 +57,28 @@ namespace Vu {
                                         getlastModifiedTime(createInfo.fragmentShaderPath));
 
 
-            auto vertName = createInfo.vertexShaderPath;
-            vertName.replace_extension("spv");
-            auto fragName = createInfo.fragmentShaderPath;
-            fragName.replace_extension("spv");
+            auto vertOutPath = createInfo.vertexShaderPath;
+            vertOutPath.replace_extension("spv");
+            auto fragOutPath = createInfo.fragmentShaderPath;
+            fragOutPath.replace_extension("spv");
+
+
+            slang::SessionDesc sessionDesc;
+            Slang::ComPtr<slang::ISession> session;
+            globalSession->createSession(sessionDesc, session.writeRef());
+
+            slang::IModule* module = session->loadModule("MyShaders");
+AAA
+
 
             std::string vertCmd = std::format("{0} {1} -target spirv  -o {2}",
                                               config::SHADER_COMPILER_PATH,
                                               createInfo.vertexShaderPath.generic_string(),
-                                              vertName.generic_string());
+                                              vertOutPath.generic_string());
             auto fragCmd = std::format("{0} {1} -target spirv  -o {2}",
                                        config::SHADER_COMPILER_PATH,
                                        createInfo.fragmentShaderPath.generic_string(),
-                                       fragName.generic_string());
+                                       fragOutPath.generic_string());
 
             uint32 vRes = system(vertCmd.c_str());
             uint32 fRes = system(fragCmd.c_str());
@@ -63,8 +86,8 @@ namespace Vu {
             assert(fRes == 0);
 
 
-            const auto vertSpv = Vu::ReadFile(vertName);
-            const auto fragSpv = Vu::ReadFile(fragName);
+            const auto vertSpv = Vu::ReadFile(vertOutPath);
+            const auto fragSpv = Vu::ReadFile(fragOutPath);
 
 
             vertexShaderModule = createShaderModule(vertSpv);
@@ -83,7 +106,7 @@ namespace Vu {
         void tryRecompile() {
 
             auto maxTime = std::max(getlastModifiedTime(lastCreateInfo.vertexShaderPath),
-                                        getlastModifiedTime(lastCreateInfo.fragmentShaderPath));
+                                    getlastModifiedTime(lastCreateInfo.fragmentShaderPath));
             if (maxTime <= lastModifiedTime) {
                 return;
             }

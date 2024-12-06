@@ -8,6 +8,79 @@
 #include "VuTexture.h"
 
 namespace Vu {
+
+    // template<typename T>
+    // struct IInit {
+    //     virtual void init(T& createInfo);
+    //     virtual void uninit();
+    // };
+
+    template<typename T>
+    struct VuPool {
+        inline static std::vector<T> data;
+        inline static std::stack<uint32> freeList;
+        inline static std::vector<uint32> refCounts;
+
+        static uint32 create() {
+            if (!freeList.empty()) {
+                auto i = freeList.top();
+                freeList.pop();
+                return i;
+            }
+            data.push_back(T{0});
+            refCounts.push_back(1);
+            return data.size() - 1;
+        }
+
+        static void increaseRefCount(uint32 index) {
+            data.at(index) += 1;
+        }
+
+        static VkBool32 decreaseRefCount(uint32 index) {
+            data.at(index) -= 1;
+            if (data.at(index) == 0) {
+                //delete
+                data[index] = {0};
+                freeList.push(index);
+                return VK_TRUE;
+            }
+            if (data.at(index) < 0) {
+                std::cerr << "Referance count of object below zero" << std::endl;
+            }
+            return VK_FALSE;
+        }
+    };
+
+    template<typename T>
+    struct Handle {
+        uint32 index;
+
+        //alloc a slot from pool and return the unitialized object
+        T& createHandle() {
+            index =  VuPool<T>::create();
+            return getByRef();
+        }
+
+        //return true if reference count drops == 0, which meand you need to uninit the object
+        VkBool32 destroyHandle() {
+            return VuPool<T>::decreaseTextureRefCount(index);
+        }
+
+        // void increaseRefCount() {
+        //     VuPool<T>::increaseTextureRefCount(index);
+        // }
+        //
+        // //return true if reference count drops below 1, which meany you need to uninit the object
+        // VkBool32 decreaseRefCount() {
+        //     return VuPool<T>::decreaseTextureRefCount(index);
+        // }
+
+        T& getByRef() {
+            return &VuPool<T>::data.at(index);
+        }
+    };
+
+
     struct VuSlotAllocator {
     private:
         std::vector<VkBool32> occupiedSlots;
@@ -64,6 +137,7 @@ namespace Vu {
         static void uninit() {
             bufferOfBufferPointers.uninit();
         }
+
         //////////////////////////////////////////////Material///////////////////////////////////////////////////////////
         inline static std::vector<VuMaterial> allMaterials;
         inline static std::vector<uint32> materialRefCounts;
@@ -88,6 +162,7 @@ namespace Vu {
                 materialSlotAllocator.free(materialIndex);
             }
         }
+
         //////////////////////////////////////////////Shader///////////////////////////////////////////////////////////
         inline static std::vector<VuShader> allShaders;
         inline static std::vector<uint32> shaderRefCounts;
@@ -142,6 +217,7 @@ namespace Vu {
                 textureSlotAllocator.free(textureIndex);
             }
         }
+
         ////////////////////////////////////////////////////Sampler/////////////////////////////////////////////////////
         inline static std::vector<VuSampler> allSamplers;
         inline static std::vector<uint32> samplerRefCounts;
@@ -167,6 +243,7 @@ namespace Vu {
                 samplerSlotAllocator.free(samplerIndex);
             }
         }
+
         ////////////////////////////////////////////////Buffer//////////////////////////////////////////////////////////
         inline static std::vector<VuBuffer> allBuffers;
         inline static std::vector<uint32> bufferRefCounts;
@@ -199,7 +276,7 @@ namespace Vu {
         static void writeBuffer(uint32 writeIndex, const VuBuffer& buffer) {
             auto address = buffer.getDeviceAddress();
             bufferOfBufferPointers.setDataWithOffset(&address, writeIndex * sizeof(VkDeviceAddress),
-                sizeof(VkDeviceAddress));
+                                                     sizeof(VkDeviceAddress));
         }
 
         static void writeTexture(uint32 writeIndex, const VuTexture& texture) {

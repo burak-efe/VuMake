@@ -151,7 +151,7 @@ struct Scene0 {
         VuResourceManager::decreaseTextureRefCount(shader.materials[mat0].pbrMaterialData->texture0);
         VuResourceManager::decreaseTextureRefCount(shader.materials[mat0].pbrMaterialData->texture1);
         shader.uninit();
-        mesh.Dispose();
+        mesh.uninit();
         vuRenderer.uninit();
     }
 };

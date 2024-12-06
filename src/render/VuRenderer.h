@@ -99,13 +99,13 @@ namespace Vu {
 
         void SetupImGui();
 
-        void CreateVulkanMemoryAllocator();
+        void initVMA();
 
         void initSurface();
 
-        void CreateSwapChain();
+        void initSwapchain();
 
-        void CreateCommandPool();
+        void initCommandPool();
 
         void CreateCommandBuffers();
 
@@ -119,7 +119,7 @@ namespace Vu {
 
         void CreateDescriptorSetLayout();
 
-        void CreateUniformBuffers();
+        void initUniformBuffers();
 
         void reloadShaders();
 

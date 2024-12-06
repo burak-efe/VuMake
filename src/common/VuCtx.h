@@ -9,7 +9,7 @@
 //#include "VuGlobalSetManager.h"
 #include "VuTypes.h"
 
-#include "VuMaterialDataPool.h"
+//#include "VuMaterialDataPool.h"
 
 namespace Vu {
 
@@ -35,7 +35,7 @@ struct VuRenderer;
         inline VkDescriptorSetLayout globalDescriptorSetLayout;
         inline std::vector<VkDescriptorSet> globalDescriptorSets;
         inline VkPipelineLayout globalPipelineLayout;
-        inline VuMaterialDataPool materialDataPool;
+        //inline VuMaterialDataPool materialDataPool;
 
 
         //inline VuGlobalSetManager globalSetManager;
