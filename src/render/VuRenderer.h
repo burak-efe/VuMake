@@ -45,8 +45,8 @@ namespace Vu {
         uint32 currentFrame = 0;
         uint32 currentFrameImageIndex = 0;
 
-        VuTextureHandle debugTexture;
-        VuSamplerHandle debugSampler;
+        VuHandle<VuTexture> debugTexture;
+        VuHandle<VuSampler> debugSampler;
 
         VuMaterialDataPool materialDataPool;
 

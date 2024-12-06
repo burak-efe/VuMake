@@ -63,12 +63,12 @@ namespace Vu {
             fragOutPath.replace_extension("spv");
 
 
-            slang::SessionDesc sessionDesc;
-            Slang::ComPtr<slang::ISession> session;
-            globalSession->createSession(sessionDesc, session.writeRef());
+            // slang::SessionDesc sessionDesc;
+            // Slang::ComPtr<slang::ISession> session;
+            // globalSession->createSession(sessionDesc, session.writeRef());
+            //
+            // slang::IModule* module = session->loadModule("MyShaders");
 
-            slang::IModule* module = session->loadModule("MyShaders");
-AAA
 
 
             std::string vertCmd = std::format("{0} {1} -target spirv  -o {2}",

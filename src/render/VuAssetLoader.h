@@ -44,19 +44,19 @@ namespace Vu {
             fastgltf::Image& colorImage = asset->images[colorTexInfo.textureIndex];
             fastgltf::sources::URI colorPath = std::get<fastgltf::sources::URI>(colorImage.data);
             auto colorTexPath = parentPath / colorPath.uri.string();
-            VuTextureHandle colorTexture;
-            colorTexture.init({colorTexPath, VK_FORMAT_R8G8B8A8_SRGB});
-            //colorTexture.init({colorTexPath,VK_FORMAT_R8G8B8A8_SRGB});
-            dstMaterialData.texture0 = colorTexture.index;
+
+            // Handle<VuTexture> colorTexture; //TODO: leak
+            // colorTexture.createHandle().init({colorTexPath, VK_FORMAT_R8G8B8A8_SRGB});
+            // dstMaterialData.texture0 = colorTexture.index;
 
 
-            fastgltf::TextureInfo& normalTexInfo = material.normalTexture.value();
-            fastgltf::Image& normalImage = asset->images[normalTexInfo.textureIndex];
-            fastgltf::sources::URI normalPath = std::get<fastgltf::sources::URI>(normalImage.data);
-            auto normalAbsolutePath = parentPath / normalPath.uri.string();
-            VuTextureHandle normalTexture;
-            normalTexture.init({normalAbsolutePath, VK_FORMAT_R8G8B8A8_UNORM});
-            dstMaterialData.texture1 = normalTexture.index;
+            // fastgltf::TextureInfo& normalTexInfo = material.normalTexture.value();
+            // fastgltf::Image& normalImage = asset->images[normalTexInfo.textureIndex];
+            // fastgltf::sources::URI normalPath = std::get<fastgltf::sources::URI>(normalImage.data);
+            // auto normalAbsolutePath = parentPath / normalPath.uri.string();
+            // Handle<VuTexture> normalTexture;
+            // normalTexture.createHandle().init({normalAbsolutePath, VK_FORMAT_R8G8B8A8_UNORM});
+            // dstMaterialData.texture1 = normalTexture.index;
 
             //Indices
 

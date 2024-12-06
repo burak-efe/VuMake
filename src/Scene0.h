@@ -63,17 +63,20 @@ struct Scene0 {
                     //ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
                     ImGui::DockSpaceOverViewport(dockspace_id, nullptr, ImGuiDockNodeFlags_PassthruCentralNode, nullptr);
 
-                    ImGui::Begin("Entites");
+                    ImGui::Begin("Info");
+                    ImGui::Text("Texture Count: %u", VuPool<VuTexture>::getUsedSlotCount());
+                    ImGui::Text("Sampler Count: %u", VuPool<VuSampler>::getUsedSlotCount());
+                    ImGui::Text("Buffer Count: %u", VuPool<VuBuffer>::getUsedSlotCount());
                     ImGui::End();
 
-                    ImGui::Begin("Shaders");
-                    ImGui::End();
-
-                    ImGui::Begin("Meshes");
-                    ImGui::End();
-
-                    ImGui::Begin("Textures");
-                    ImGui::End();
+                    // ImGui::Begin("Shaders");
+                    // ImGui::End();
+                    //
+                    // ImGui::Begin("Meshes");
+                    // ImGui::End();
+                    //
+                    // ImGui::Begin("Textures");
+                    // ImGui::End();
 
                     static auto first_time = true;
                     if (first_time) {
@@ -88,9 +91,9 @@ struct Scene0 {
 
                         auto mainR = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.25f, nullptr, &dockspace_id);
                         auto mainL = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.33f, nullptr, &dockspace_id);
-                        ImGui::DockBuilderDockWindow("Entites", mainR);
-                        ImGui::DockBuilderDockWindow("Meshes", mainL);
-                        ImGui::DockBuilderDockWindow("Shaders", mainL);
+                        ImGui::DockBuilderDockWindow("Info", mainL);
+                        // ImGui::DockBuilderDockWindow("Meshes", mainL);
+                        // ImGui::DockBuilderDockWindow("Shaders", mainL);
 
                         ImGui::DockBuilderFinish(dockspace_id);
                     }
@@ -148,8 +151,8 @@ struct Scene0 {
 
         }
         vuRenderer.waitIdle();
-        VuResourceManager::decreaseTextureRefCount(shader.materials[mat0].pbrMaterialData->texture0);
-        VuResourceManager::decreaseTextureRefCount(shader.materials[mat0].pbrMaterialData->texture1);
+        //VuResourceManager::decreaseTextureRefCount(shader.materials[mat0].pbrMaterialData->texture0);
+        //VuResourceManager::decreaseTextureRefCount(shader.materials[mat0].pbrMaterialData->texture1);
         shader.uninit();
         mesh.uninit();
         vuRenderer.uninit();

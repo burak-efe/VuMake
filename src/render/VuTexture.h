@@ -134,6 +134,8 @@ namespace Vu {
             createImageView(createInfo.format);
 
             staging.uninit();
+
+
         }
 
         void uninit() {

@@ -60,14 +60,15 @@ namespace Vu {
         disposeStack.push([&] { VuResourceManager::uninit(); });
 
         VuMaterialDataPool::init();
-        disposeStack.push([&] {VuMaterialDataPool::uninit(); });
+        disposeStack.push([&] { VuMaterialDataPool::uninit(); });
 
         //debug resources
-        debugTexture.init({std::filesystem::path("assets/textures/error.png"), VK_FORMAT_R8G8B8A8_UNORM});
-        disposeStack.push([&] { debugTexture.uninit(); });
+        debugTexture.createHandle().init({std::filesystem::path("assets/textures/error.png"), VK_FORMAT_R8G8B8A8_UNORM});
+        VuResourceManager::writeTextureToGlovalPool(debugTexture.index, debugTexture.getByRef());
+        disposeStack.push([&] { debugTexture.destroyHandle(); });
 
-        debugSampler.init({});
-        disposeStack.push([&] { debugSampler.uninit(); });
+        debugSampler.createHandle().init({});
+        disposeStack.push([&] { debugSampler.destroyHandle(); });
     }
 
 
