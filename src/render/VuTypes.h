@@ -7,27 +7,49 @@
 
 namespace Vu {
 
-    struct PBRMaterialData {
+    struct GPU_Mesh {
+        uint32 vertexBufferHandle;
+        uint32 vertexCount;
+        uint32 meshFlags;
+    };
+
+    struct GPU_PBR_MaterialData {
         uint32 texture0;
         uint32 texture1;
     };
 
-    struct VuPushConstant {
+    struct GPU_PushConstant {
         float4x4 trs;
+        //TODO: use index
         uint64 materiealDataPtr;
+        //GPU_Mesh mesh;
     };
 
-    struct VuFrameConst {
+    struct GPU_FrameConst {
         float4x4 view;
         float4x4 proj;
         float3 cameraPos;
-        float pad0;
         float3 cameraDir;
-        float pad1;
         float time;
-        float3 pad2;
-        float debugIndex = 1;
-        float3 pad3;
+        float debugIndex;
+    };
+
+
+    struct VuDisposeStack {
+        std::stack<std::function<void()> > disposeStack;
+
+        void push(const std::function<void()>& func) {
+            disposeStack.push(func);
+        }
+
+        void disposeAll() {
+
+            while (!disposeStack.empty()) {
+                std::function<void()> disposeFunc = disposeStack.top();
+                disposeFunc();
+                disposeStack.pop();
+            }
+        }
     };
 
     struct QueueFamilyIndices {
@@ -38,7 +60,7 @@ namespace Vu {
             return graphicsFamily.has_value() && presentFamily.has_value();
         }
 
-        static QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& device, const VkSurfaceKHR& surface) {
+        static QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice device, const VkSurfaceKHR surface) {
             ZoneScoped;
             //Logic to find graphics queue family
             QueueFamilyIndices indices;
@@ -78,6 +100,58 @@ namespace Vu {
         VkSurfaceCapabilitiesKHR capabilities;
         std::vector<VkSurfaceFormatKHR> formats;
         std::vector<VkPresentModeKHR> presentModes;
+
+        static SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface) {
+            ZoneScoped;
+            SwapChainSupportDetails details;
+            vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
+
+            uint32 formatCount;
+            vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
+
+            if (formatCount != 0) {
+                details.formats.resize(formatCount);
+                vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, details.formats.data());
+            }
+
+            uint32 presentModeCount;
+            vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+
+            if (presentModeCount != 0) {
+                details.presentModes.resize(presentModeCount);
+                vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount,
+                                                          details.presentModes.data());
+            }
+
+            return details;
+        }
+    };
+
+    struct VuPipelineLayout {
+
+        static void createPipelineLayout(const VkDevice device,
+                                         const std::span<VkDescriptorSetLayout> descriptorSetLayouts,
+                                         const uint32 pushConstantSizeAsByte,
+                                         VkPipelineLayout& outPipelineLayout) {
+            ZoneScoped;
+
+            //push constants
+            VkPushConstantRange pcRange{
+                .stageFlags = VK_SHADER_STAGE_ALL,
+                .offset = 0,
+                .size = pushConstantSizeAsByte,
+            };
+
+            VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+            pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
+            pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+            pipelineLayoutInfo.pushConstantRangeCount = 1;
+            pipelineLayoutInfo.pPushConstantRanges = &pcRange;
+
+            VkCheck(vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &outPipelineLayout));
+        }
+
     };
 
 }

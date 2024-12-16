@@ -1,10 +1,11 @@
 ﻿#pragma once
 
-#include "Common.h"
-#include "VuCtx.h"
+#include "vk_mem_alloc.h"
 
+#include "Common.h"
 
 namespace Vu {
+
     struct VuBufferCreateInfo {
         VkDeviceSize lenght = 1;
         VkDeviceSize strideInBytes = 4;
@@ -14,8 +15,8 @@ namespace Vu {
                                                   | VMA_ALLOCATION_CREATE_MAPPED_BIT;
     };
 
-
     struct VuBuffer {
+        VuBufferCreateInfo createInfo;
         VkBuffer buffer;
         VmaAllocation allocation;
         VmaAllocationInfo allocationInfo;
@@ -24,84 +25,25 @@ namespace Vu {
         void* mapPtr;
 
 
-        void init(VuBufferCreateInfo allocInfo) {
+        void init(const VuBufferCreateInfo& info);
 
-            stride = allocInfo.strideInBytes;
-            lenght = allocInfo.lenght;
+        void uninit();
 
-            VkBufferCreateInfo createInfo{
-                .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-                .pNext = nullptr,
-                .flags = 0,
-                .size = static_cast<VkDeviceSize>(lenght * stride),
-                .usage = allocInfo.vkUsageFlags
-            };
+        void map();
 
-            VmaAllocationCreateInfo allocCreateInfo = {};
-            allocCreateInfo.usage = allocInfo.vmaMemoryUsage;
-            allocCreateInfo.flags = allocInfo.vmaCreateFlags;
+        void unmap();
 
-            VkCheck(vmaCreateBuffer(ctx::vma, &createInfo, &allocCreateInfo, &buffer, &allocation, &allocationInfo));
-        }
+        VkDeviceAddress getDeviceAddress() const;
 
-        void Map() {
-            vmaMapMemory(ctx::vma, allocation, &mapPtr);
-        }
+        VkResult setData(const void* data, VkDeviceSize byteSize,VkDeviceSize offset = 0);
 
-        void Unmap() {
-            vmaUnmapMemory(ctx::vma, allocation);
-        }
+        VkDeviceSize getSizeInBytes();
 
-        void uninit() {
-            vmaDestroyBuffer(ctx::vma, buffer, allocation) ;
-        }
+        std::span<uint8> getSpan(VkDeviceSize start, VkDeviceSize bytelenght);
 
-        VkDeviceAddress getDeviceAddress() const {
-            VkBufferDeviceAddressInfo deviceAdressInfo{};
-            deviceAdressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-            deviceAdressInfo.buffer = buffer;
+        static void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-            VkDeviceAddress address = vkGetBufferDeviceAddressKHR(ctx::device, &deviceAdressInfo);
-            return address;
-        }
-
-        VkResult SetData(void* data, VkDeviceSize byteSize) {
-            return vmaCopyMemoryToAllocation(ctx::vma, data, allocation, 0, byteSize);
-        }
-
-        VkResult setDataWithOffset(void* data, VkDeviceSize offset, VkDeviceSize byteSize) {
-            return vmaCopyMemoryToAllocation(ctx::vma, data, allocation, offset, byteSize);
-        }
-
-        VkDeviceSize GetSizeInBytes() {
-            return lenght * stride;
-        }
-
-        std::span<uint8> getSpan(VkDeviceSize start, VkDeviceSize bytelenght) {
-            uint8* ptr = static_cast<uint8 *>(mapPtr);
-            ptr += start;
-            std::span span(ptr, bytelenght);
-            return span;
-        }
-
-        static void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-            VkCommandBuffer commandBuffer = ctx::BeginSingleTimeCommands();
-
-            VkBufferCopy copyRegion{};
-            copyRegion.srcOffset = 0;
-            copyRegion.dstOffset = 0;
-            copyRegion.size = size;
-            vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-
-            ctx::EndSingleTimeCommands(commandBuffer);
-        }
-
-        static VkDeviceSize AlignedSize(VkDeviceSize value, VkDeviceSize alignment) {
-            return (value + alignment - 1) & ~(alignment - 1);
-        }
-
-
-
+        static VkDeviceSize alignedSize(VkDeviceSize value, VkDeviceSize alignment);
 
     };
 }

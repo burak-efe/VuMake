@@ -8,7 +8,7 @@ namespace Vu {
         VkRenderPass renderPass;
 
         void uninit() {
-            vkDestroyRenderPass(ctx::device, renderPass, nullptr);
+            vkDestroyRenderPass(ctx::vuDevice->device, renderPass, nullptr);
         }
 
         void Init(VkFormat colorFormat, VkFormat depthFormat) {
@@ -66,7 +66,7 @@ namespace Vu {
             renderPassInfo.dependencyCount = 1;
             renderPassInfo.pDependencies = &dependency;
 
-            VkCheck(vkCreateRenderPass(ctx::device, &renderPassInfo, nullptr, &renderPass));
+            VkCheck(vkCreateRenderPass(ctx::vuDevice->device, &renderPassInfo, nullptr, &renderPass));
         }
 
 

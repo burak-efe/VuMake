@@ -11,11 +11,32 @@
 #include <fastgltf/glm_element_traits.hpp>
 
 #include "VuResourceManager.h"
-#include "VuUtils.h"
 
 namespace Vu {
+
+    template<typename T>
+    struct VuAssetRef {
+        const char* path;
+        VkBool32 isLoaded;
+        VuHandle<T> handle;
+
+    };
+
+    
     struct VuAssetLoader {
-        static void LoadGltf(std::filesystem::path path, VuMesh& dstMesh, PBRMaterialData& dstMaterialData) {
+
+        //inline static std::vector<const char*>
+
+
+
+
+
+
+
+
+
+        //TODO
+        static void LoadGltf(std::filesystem::path path, VuMesh& dstMesh, GPU_PBR_MaterialData& dstMaterialData) {
             ZoneScoped;
 
             fastgltf::Parser parser;
@@ -58,6 +79,9 @@ namespace Vu {
             // normalTexture.createHandle().init({normalAbsolutePath, VK_FORMAT_R8G8B8A8_UNORM});
             // dstMaterialData.texture1 = normalTexture.index;
 
+            dstMesh.vertexBuffer.createHandle();
+            dstMesh.indexBuffer.createHandle();
+
             //Indices
 
             if (!primitive.indicesAccessor.has_value()) {
@@ -66,19 +90,19 @@ namespace Vu {
             }
             auto& indexAccesor = asset->accessors[primitive.indicesAccessor.value()];
             uint32 indexCount = indexAccesor.count;
-            dstMesh.indexBuffer.init({
+            dstMesh.indexBuffer.get().init({
                 .lenght = indexCount,
                 .strideInBytes = sizeof(uint32),
                 .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT
             });
-            dstMesh.indexBuffer.Map();
-            auto indexSpanByte = dstMesh.indexBuffer.getSpan(0, indexCount * sizeof(uint32));
+            dstMesh.indexBuffer.get().map();
+            auto indexSpanByte = dstMesh.indexBuffer.get().getSpan(0, indexCount * sizeof(uint32));
             std::span<uint32> indexSpan = std::span(reinterpret_cast<uint32 *>(indexSpanByte.data()), indexCount);
             fastgltf::iterateAccessorWithIndex<uint32>(
                 asset.get(), indexAccesor,
                 [&](uint32 index, std::size_t idx) { indexSpan[idx] = index; }
             );
-            dstMesh.indexBuffer.Unmap();
+            dstMesh.indexBuffer.get().unmap();
 
 
             //Position
@@ -86,25 +110,25 @@ namespace Vu {
             fastgltf::Accessor& positionAccessor = asset->accessors[positionIt->accessorIndex];
 
             dstMesh.vertexCount = positionAccessor.count;
-            dstMesh.vertexBuffer.init({
+            dstMesh.vertexBuffer.get().init({
                 .lenght = dstMesh.vertexCount * dstMesh.totalAttributesSizePerVertex(),
                 .strideInBytes = 1,
                 .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
             });
-            dstMesh.vertexBuffer.Map();
+            dstMesh.vertexBuffer.get().map();
 
-            std::span<uint8> vertexSpanByte = dstMesh.vertexBuffer.getSpan(0, sizeof(float3) * dstMesh.vertexCount);
+            std::span<uint8> vertexSpanByte = dstMesh.vertexBuffer.get().getSpan(0, sizeof(float3) * dstMesh.vertexCount);
             std::span<float3> vertexSpan = std::span(reinterpret_cast<float3 *>(vertexSpanByte.data()), dstMesh.vertexCount);
 
-            std::span<uint8> normalSpanByte = dstMesh.vertexBuffer.getSpan(dstMesh.getNormalOffsetAsByte(),
+            std::span<uint8> normalSpanByte = dstMesh.vertexBuffer.get().getSpan(dstMesh.getNormalOffsetAsByte(),
                                                                            sizeof(float3) * dstMesh.vertexCount);
             std::span<float3> normalSpan = std::span(reinterpret_cast<float3 *>(normalSpanByte.data()), dstMesh.vertexCount);
 
-            std::span<uint8> tangentSpanByte = dstMesh.vertexBuffer.getSpan(dstMesh.getTangentOffsetAsByte(),
+            std::span<uint8> tangentSpanByte = dstMesh.vertexBuffer.get().getSpan(dstMesh.getTangentOffsetAsByte(),
                                                                             sizeof(float4) * dstMesh.vertexCount);
             std::span<float4> tangentSpan = std::span(reinterpret_cast<float4 *>(tangentSpanByte.data()), dstMesh.vertexCount);
 
-            std::span<uint8> uvSpanByte = dstMesh.vertexBuffer.getSpan(dstMesh.getUV_OffsetAsByte(), sizeof(float2) * dstMesh.vertexCount);
+            std::span<uint8> uvSpanByte = dstMesh.vertexBuffer.get().getSpan(dstMesh.getUV_OffsetAsByte(), sizeof(float2) * dstMesh.vertexCount);
             std::span<float2> uvSpan = std::span(reinterpret_cast<float2 *>(uvSpanByte.data()), dstMesh.vertexCount);
 
             //pos
@@ -160,7 +184,7 @@ namespace Vu {
             }
 
 
-            dstMesh.vertexBuffer.Unmap();
+            dstMesh.vertexBuffer.get().unmap();
         }
     };
 }

@@ -3,7 +3,6 @@
 
 #include "flecs.h"
 
-
 #include "Common.h"
 #include "VuShader.h"
 #include "VuCtx.h"
@@ -19,12 +18,12 @@ namespace Vu {
         return world.system<Transform, const MeshRenderer>("Rendering")
                 .each([](Transform& trs, const MeshRenderer& meshRenderer) {
 
-                    auto mat = meshRenderer.vuShader->materials[meshRenderer.materialIndex];
+                    auto mat = meshRenderer.shader.get().materials[meshRenderer.materialIndex];
                     auto adr = VuMaterialDataPool::mapAddressToBufferDeviceAddress(mat.pbrMaterialData);
-                    ctx::vuRenderer->BindMaterial(mat);
+                    ctx::vuRenderer->bindMaterial(mat);
                     ctx::vuRenderer->pushConstants({trs.ToTRS(), adr});
-                    ctx::vuRenderer->BindMesh(*meshRenderer.mesh);
-                    ctx::vuRenderer->DrawIndexed(meshRenderer.mesh->indexBuffer.lenght);
+                    ctx::vuRenderer->bindMesh(*meshRenderer.mesh);
+                    ctx::vuRenderer->drawIndexed(meshRenderer.mesh->indexBuffer.get().lenght);
                 });
     }
 
@@ -190,38 +189,38 @@ namespace Vu {
                         cam.near,
                         cam.far);
 
-                    ctx::frameConst.cameraPos = trs.Position;
-                    ctx::frameConst.cameraDir = float3(cam.yaw, cam.pitch, cam.roll);
-                    ctx::frameConst.time = ctx::time();
+                    ctx::frameConst.cameraPos = glm::vec4(trs.Position, 0);
+                    ctx::frameConst.cameraDir = glm::vec4(float3(cam.yaw, cam.pitch, cam.roll),0);
+                    ctx::frameConst.time = glm::vec4(ctx::time(),0,0,0).x;
 
 
                     //const auto* state = SDL_GetKeyboardState(nullptr);
 
                     //ubo.debugIndex = 0;
-                    if (state[SDL_SCANCODE_F1]) {
-                        ctx::frameConst.debugIndex = 1;
-                    }
-                    if (state[SDL_SCANCODE_F2]) {
-                        ctx::frameConst.debugIndex = 2;
-                    }
-                    if (state[SDL_SCANCODE_F3]) {
-                        ctx::frameConst.debugIndex = 3;
-                    }
-                    if (state[SDL_SCANCODE_F4]) {
-                        ctx::frameConst.debugIndex = 4;
-                    }
-                    if (state[SDL_SCANCODE_F5]) {
-                        ctx::frameConst.debugIndex = 5;
-                    }
-                    if (state[SDL_SCANCODE_F6]) {
-                        ctx::frameConst.debugIndex = 6;
-                    }
-                    if (state[SDL_SCANCODE_F7]) {
-                        ctx::frameConst.debugIndex = 7;
-                    }
+                    // if (state[SDL_SCANCODE_F1]) {
+                    //     ctx::frameConst.debugIndex = 1;
+                    // }
+                    // if (state[SDL_SCANCODE_F2]) {
+                    //     ctx::frameConst.debugIndex = 2;
+                    // }
+                    // if (state[SDL_SCANCODE_F3]) {
+                    //     ctx::frameConst.debugIndex = 3;
+                    // }
+                    // if (state[SDL_SCANCODE_F4]) {
+                    //     ctx::frameConst.debugIndex = 4;
+                    // }
+                    // if (state[SDL_SCANCODE_F5]) {
+                    //     ctx::frameConst.debugIndex = 5;
+                    // }
+                    // if (state[SDL_SCANCODE_F6]) {
+                    //     ctx::frameConst.debugIndex = 6;
+                    // }
+                    // if (state[SDL_SCANCODE_F7]) {
+                    //     ctx::frameConst.debugIndex = 7;
+                    // }
 
 
-                    ctx::vuRenderer->UpdateUniformBuffer(ctx::frameConst);
+                    ctx::vuRenderer->updateFrameConstantBuffer(ctx::frameConst);
                 });
     }
 }

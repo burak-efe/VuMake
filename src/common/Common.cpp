@@ -8,6 +8,9 @@ namespace Vu {
     void VkCheck(VkResult res) {
         if (res != VK_SUCCESS) {
             auto st = std::stacktrace::current();
+            if (st.empty()) {
+                std::cout << "Vk error: Source unknown (Stack Trace cannot be captured)" << std::endl;
+            }
             auto msg = std::format("[ERROR] VkResult is {0} at {1} line {2}",
                                    string_VkResult(res),
                                    st[1].source_file(), st[1].source_line());

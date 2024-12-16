@@ -27,11 +27,8 @@ namespace Vu {
                 .vmaCreateFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
             });
 
-            materialDataBuffer.Map();
-
-            //VkDeviceAddress ptrAdrs = (VkDeviceAddress)materialDataBuffer.mapPtr;
+            materialDataBuffer.map();
             deviceAddress = materialDataBuffer.getDeviceAddress();
-
 
             size_t arena_size = MINIMUM_BLOCK_SIZE * BLOCK_COUNT;
             buddy_metadata = malloc(buddy_sizeof_alignment(arena_size, MINIMUM_BLOCK_SIZE));
@@ -42,17 +39,17 @@ namespace Vu {
                 MINIMUM_BLOCK_SIZE);
         }
 
-        static VkDeviceAddress mapAddressToBufferDeviceAddress(PBRMaterialData* ptr) {
+        static VkDeviceAddress mapAddressToBufferDeviceAddress(GPU_PBR_MaterialData* ptr) {
             uint32 offset = (uint64) materialDataBuffer.mapPtr - (uint64) ptr;
             return deviceAddress + offset;
         }
 
-        static PBRMaterialData* allocMaterialData() {
-            void* ptr = buddy_malloc(buddy, sizeof(PBRMaterialData));
-            return static_cast<PBRMaterialData *>(ptr);
+        static GPU_PBR_MaterialData* allocMaterialData() {
+            void* ptr = buddy_malloc(buddy, sizeof(GPU_PBR_MaterialData));
+            return static_cast<GPU_PBR_MaterialData *>(ptr);
         }
 
-        static void freeMaterialData(PBRMaterialData* ptr) {
+        static void freeMaterialData(GPU_PBR_MaterialData* ptr) {
             buddy_free(buddy, reinterpret_cast<void *>(ptr));
         }
 
@@ -70,7 +67,7 @@ namespace Vu {
         // }
 
         static void uninit() {
-            materialDataBuffer.Unmap();
+            materialDataBuffer.unmap();
             materialDataBuffer.uninit();
             free(buddy_metadata);
         }

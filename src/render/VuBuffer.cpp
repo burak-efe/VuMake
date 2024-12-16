@@ -1,39 +1,81 @@
-﻿// #include "VuBuffer.h"
-//
-// #include "VuUtils.h"
-//
-// namespace Vu {
-//     //
-//     // VkDeviceAddress VuBuffer::getDeviceAddress() const {
-//     //
-//     // }
-//     //
-//     //
-//     // VkResult VuBuffer::SetData(void* data, VkDeviceSize byteSize) {
-//     //
-//     // }
-//     //
-//     // VkResult VuBuffer::setDataWithOffset(void* data, VkDeviceSize offset, VkDeviceSize byteSize) {
-//     //     .
-//     // }
-//     //
-//     // void VuBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-//     //
-//     // }
-//     //
-//     // VkDeviceSize VuBuffer::GetSizeInBytes() {
-//     //
-//     // }
-//     //
-//     // VkDeviceSize VuBuffer::AlignedSize(VkDeviceSize value, VkDeviceSize alignment) {
-//     //
-//     // }
-//
-//     // VkDeviceAddress VuBuffer::GetDeviceAddress(VkDevice device, VkBuffer buffer) {
-//     //     VkBufferDeviceAddressInfo deviceAdressInfo{};
-//     //     deviceAdressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-//     //     deviceAdressInfo.buffer = buffer;
-//     //     VkDeviceAddress address = vkGetBufferDeviceAddress(device, &deviceAdressInfo);
-//     //     return address;
-//     // }
-// }
+#include "VuBuffer.h"
+
+#include "VuCtx.h"
+#include "VuDevice.h"
+
+namespace Vu{
+    void VuBuffer::init(const VuBufferCreateInfo& info) {
+
+        createInfo = info;
+        stride = info.strideInBytes;
+        lenght = info.lenght;
+
+        VkBufferCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .size = (lenght * stride),
+            .usage = info.vkUsageFlags
+        };
+
+        VmaAllocationCreateInfo allocCreateInfo = {};
+        allocCreateInfo.usage = info.vmaMemoryUsage;
+        allocCreateInfo.flags = info.vmaCreateFlags;
+
+        VkCheck(vmaCreateBuffer(ctx::vuDevice->vma, &createInfo, &allocCreateInfo, &buffer, &allocation, &allocationInfo));
+    }
+
+    void VuBuffer::uninit() {
+        if (mapPtr!= nullptr) {
+            unmap();
+        }
+        vmaDestroyBuffer(ctx::vuDevice->vma, buffer, allocation);
+    }
+
+    void VuBuffer::map() {
+        vmaMapMemory(ctx::vuDevice->vma, allocation, &mapPtr);
+    }
+
+    void VuBuffer::unmap() {
+        vmaUnmapMemory(ctx::vuDevice->vma, allocation);
+        mapPtr = nullptr;
+    }
+
+    VkDeviceAddress VuBuffer::getDeviceAddress() const {
+        VkBufferDeviceAddressInfo deviceAdressInfo{};
+        deviceAdressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        deviceAdressInfo.buffer = buffer;
+
+        VkDeviceAddress address = vkGetBufferDeviceAddressKHR(ctx::vuDevice->device, &deviceAdressInfo);
+        return address;
+    }
+
+    VkResult VuBuffer::setData(const void* data, VkDeviceSize byteSize, VkDeviceSize offset) {
+        return vmaCopyMemoryToAllocation(ctx::vuDevice->vma, data, allocation, offset, byteSize);
+    }
+
+    VkDeviceSize VuBuffer::getSizeInBytes() {
+        return lenght * stride;
+    }
+
+    std::span<uint8> VuBuffer::getSpan(VkDeviceSize start, VkDeviceSize bytelenght) {
+        auto* ptr = static_cast<uint8 *>(mapPtr);
+        ptr += start;
+        std::span span(ptr, bytelenght);
+        return span;
+    }
+
+    void VuBuffer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+        VkCommandBuffer commandBuffer = ctx::vuDevice->BeginSingleTimeCommands();
+        VkBufferCopy copyRegion{};
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = 0;
+        copyRegion.size = size;
+        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+        ctx::vuDevice->EndSingleTimeCommands(commandBuffer);
+    }
+
+    VkDeviceSize VuBuffer::alignedSize(VkDeviceSize value, VkDeviceSize alignment) {
+        return (value + alignment - 1) & ~(alignment - 1);
+    }
+}

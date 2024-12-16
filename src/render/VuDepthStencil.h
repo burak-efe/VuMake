@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Common.h"
-#include "VuCtx.h"
 #include "VuUtils.h"
+#include "VuCtx.h"
+#include "VuDevice.h"
 
 namespace Vu {
     struct VuDepthStencil {
@@ -11,45 +12,42 @@ namespace Vu {
         VmaAllocation allocation;
         VkFormat depthFormat;
 
-        void Init(VkExtent2D extent2D) {
+        void init(VkExtent2D extent2D, VkFormat format = VK_FORMAT_D32_SFLOAT_S8_UINT) {
             ZoneScoped;
-            //depth image size will match the window
             VkExtent3D depthImageExtent = {
                 extent2D.width,
                 extent2D.height,
                 1
             };
 
-            //hardcoding the depth format to 32 bit float
-            depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
-
-            //the depth image will be an image with the format we selected and Depth Attachment usage flag
-            VkImageCreateInfo dimg_info = Vu::CreateImageCreateInfo(depthFormat,
+            depthFormat = format;
+            VkImageCreateInfo imageCreateInfo = fillImageCreateInfo(depthFormat,
                                                                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                                                                     depthImageExtent);
 
             //for the depth image, we want to allocate it from GPU local memory
             VmaAllocationCreateInfo dimg_allocinfo = {};
             dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-            dimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            dimg_allocinfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
             //allocate and create the image
-            vmaCreateImage(ctx::vma, &dimg_info, &dimg_allocinfo, &image, &allocation, nullptr);
+            vmaCreateImage(ctx::vuDevice->vma, &imageCreateInfo, &dimg_allocinfo, &image, &allocation, nullptr);
 
             //build an image-view for the depth image to use for rendering
-            VkImageViewCreateInfo dview_info = Vu::CreateImageViewCreateInfo(depthFormat, image,
-                                                                             VK_IMAGE_ASPECT_DEPTH_BIT);
+            VkImageViewCreateInfo imageViewCreateInfo = fillImageViewCreateInfo(depthFormat, image,
+                                                                                VK_IMAGE_ASPECT_DEPTH_BIT);
 
-            VkCheck(vkCreateImageView(ctx::device, &dview_info, nullptr, &imageView));
+            VkCheck(vkCreateImageView(ctx::vuDevice->device, &imageViewCreateInfo, nullptr, &imageView));
         }
 
         void uninit() {
-            vkDestroyImageView(ctx::device, imageView, nullptr);
-            vmaDestroyImage(ctx::vma, image, allocation);
+            vkDestroyImageView(ctx::vuDevice->device, imageView, nullptr);
+            vmaDestroyImage(ctx::vuDevice->vma, image, allocation);
         }
 
-        static VkPipelineDepthStencilStateCreateInfo CreateDepthStencilCreateInfo(bool bDepthTest, bool bDepthWrite,
-                                                                                  VkCompareOp compareOp) {
+        static VkPipelineDepthStencilStateCreateInfo fillDepthStencilCreateInfo(bool bDepthTest,
+                                                                                bool bDepthWrite,
+                                                                                VkCompareOp compareOp) {
             VkPipelineDepthStencilStateCreateInfo info = {};
             info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
             info.depthTestEnable = bDepthTest ? VK_TRUE : VK_FALSE;

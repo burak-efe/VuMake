@@ -1,8 +1,14 @@
 # VuMake: A Terrible Vulkan Renderer
 
 This is a terrible vulkan renderer, barely functioning.
-It's a CMAKE project with C++ 23 required.
-(c++ 23 requreid because I used println twice 💀)
+This renderer is meant to be prototyping space for my purposes and I would not recommend to use on any project.
+
+Some non-optimal things in this project, that should be avioded in normal circumstances:
+- Only header files: to faster prorotyping
+- A lot of third party library usage: Im just experimenting with them
+- Excessive file count: because I like it
+- Global, static variables global context: to make prototyping faster
+- Unnecesary ECS: im just experimenting
 
 ### Capabilites
 - ✅ Bindless Resources (via Descriptor indexing)
@@ -99,14 +105,12 @@ It's a CMAKE project with C++ 23 required.
 - SDL3
 - GLM
 - flecs
-- Vk-Bootstrap
 - SLang
 - Tracy
 - Volk
 
 ### Vulkan Notes
 - TODO
-
 
 ### How to build and run
 - have vulkan sdk
@@ -115,11 +119,3 @@ It's a CMAKE project with C++ 23 required.
 - open the project as a CMAKE project
 - hit the build button
 - done
-
-### Hardest parts of this project in most to least  order
-- Adding Some Dependencies to CMAKE
-- Understanding Vulkan Descriptors
-- Initializing Vulkan
-- Loading GLTF
-- Adding Imgui
-- Using Vulkan Mem Allocator

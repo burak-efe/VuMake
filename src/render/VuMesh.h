@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "VuBuffer.h"
+#include "VuResourceManager.h"
 
 namespace std::filesystem {
     class path;
@@ -11,16 +12,16 @@ namespace Vu {
 
     struct VuMesh {
         uint32 vertexCount;
-        VuBuffer indexBuffer;
-        VuBuffer vertexBuffer;
+        VuHandle<VuBuffer> indexBuffer;
+        VuHandle<VuBuffer> vertexBuffer;
 
-        void init() {
-
-        }
+        // void init() {
+        //
+        // }
 
         void uninit() {
-            vertexBuffer.uninit();
-            indexBuffer.uninit();
+            vertexBuffer.destroyHandle();
+            indexBuffer.destroyHandle();
         }
 
         VkDeviceSize totalAttributesSizePerVertex() {

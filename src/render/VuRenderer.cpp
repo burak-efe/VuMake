@@ -2,6 +2,7 @@
 
 #include <tracy/Tracy.hpp>
 
+#include "VuConfig.h"
 
 namespace Vu {
     bool VuRenderer::shouldWindowClose() {
@@ -10,7 +11,7 @@ namespace Vu {
 
     void VuRenderer::waitIdle() {
         ZoneScoped;
-        vkDeviceWaitIdle(ctx::device);
+        vkDeviceWaitIdle(ctx::vuDevice->device);
     }
 
     void VuRenderer::beginFrame() {
@@ -18,27 +19,27 @@ namespace Vu {
         SDL_PollEvent(&ctx::sdlEvent);
         waitForFences();
         VkResult result = vkAcquireNextImageKHR(
-            ctx::device, swapChain.swapChain, UINT64_MAX,
+            ctx::vuDevice->device, swapChain.swapChain, UINT64_MAX,
             imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &currentFrameImageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            ResetSwapChain();
+            resetSwapChain();
             std::cerr << "[INFO]: SwapChain Recreated because of VK_ERROR_OUT_OF_DATE_KHR" << "\n";
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
             throw std::runtime_error("failed to acquire swap chain image!");
         }
 
-        vkResetFences(ctx::device, 1, &inFlightFences[currentFrame]);
+        vkResetFences(ctx::vuDevice->device, 1, &inFlightFences[currentFrame]);
         vkResetCommandBuffer(commandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
-        BeginRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
+        beginRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
     }
 
     void VuRenderer::waitForFences() {
         ZoneScoped;
-        vkWaitForFences(ctx::device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+        vkWaitForFences(ctx::vuDevice->device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
     }
 
-    void VuRenderer::BeginRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex) {
+    void VuRenderer::beginRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex) {
         ZoneScoped;
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -59,35 +60,32 @@ namespace Vu {
         scissor.offset = {0, 0};
         scissor.extent = swapChain.swapChainExtent;
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-        bindGlobalSet(commandBuffer);
-
+        bindGlobalBindlessSet(commandBuffer);
     }
 
-    void VuRenderer::EndRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex) {
+    void VuRenderer::endRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex) {
         ZoneScoped;
         swapChain.endRenderPass(commandBuffer);
         VkCheck(vkEndCommandBuffer(commandBuffer));
 
     }
 
-    void VuRenderer::BindMesh(const VuMesh& mesh) {
+    void VuRenderer::bindMesh(const VuMesh& mesh) {
         ZoneScoped;
         auto commandBuffer = commandBuffers[currentFrame];
         std::array vertexBuffers = {
-            mesh.vertexBuffer.buffer,
-            mesh.vertexBuffer.buffer,
-            mesh.vertexBuffer.buffer,
-            mesh.vertexBuffer.buffer
+            mesh.vertexBuffer.get().buffer,
+            mesh.vertexBuffer.get().buffer,
+            mesh.vertexBuffer.get().buffer,
+            mesh.vertexBuffer.get().buffer
         };
 
         std::array<VkDeviceSize, 4> offsets = {0, mesh.getNormalOffsetAsByte(), mesh.getTangentOffsetAsByte(), mesh.getUV_OffsetAsByte()};
         vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), offsets.data());
-
-        vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.get().buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
-    void VuRenderer::BindMaterial(const VuMaterial& material ) {
+    void VuRenderer::bindMaterial(const VuMaterial& material ) {
         ZoneScoped;
         auto commandBuffer = commandBuffers[currentFrame];
         //material.bindFrameConstants(commandBuffer, currentFrame);
@@ -95,17 +93,17 @@ namespace Vu {
         //material.pushConstants(commandBuffer, pushConstant);
     }
 
-    void VuRenderer::DrawIndexed(uint32 indexCount) {
+    void VuRenderer::drawIndexed(uint32 indexCount) {
         auto commandBuffer = commandBuffers[currentFrame];
         vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
     }
 
-    void VuRenderer::pushConstants(const VuPushConstant& pushConstant) {
+    void VuRenderer::pushConstants(const GPU_PushConstant& pushConstant) {
         auto commandBuffer = commandBuffers[currentFrame];
-        vkCmdPushConstants(commandBuffer, ctx::globalPipelineLayout, VK_SHADER_STAGE_ALL, 0, sizeof(VuPushConstant), &pushConstant);
+        vkCmdPushConstants(commandBuffer, ctx::vuDevice->globalPipelineLayout, VK_SHADER_STAGE_ALL, 0, config::PUSH_CONST_SIZE, &pushConstant);
     }
 
-    void VuRenderer::BeginImgui() {
+    void VuRenderer::beginImgui() {
         ZoneScoped;
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplSDL3_NewFrame();
@@ -113,7 +111,7 @@ namespace Vu {
         ImGui::NewFrame();
     }
 
-    void VuRenderer::EndImgui() {
+    void VuRenderer::endImgui() {
         ZoneScoped;
         auto commandBuffer = commandBuffers[currentFrame];
 
@@ -123,7 +121,7 @@ namespace Vu {
 
     void VuRenderer::endFrame() {
         ZoneScoped;
-        EndRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
+        endRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -140,7 +138,7 @@ namespace Vu {
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        VkCheck(vkQueueSubmit(ctx::graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]));
+        VkCheck(vkQueueSubmit(ctx::vuDevice->graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]));
 
         VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -154,30 +152,25 @@ namespace Vu {
 
         presentInfo.pImageIndices = &currentFrameImageIndex;
 
-        auto result = vkQueuePresentKHR(ctx::presentQueue, &presentInfo);
+        auto result = vkQueuePresentKHR(ctx::vuDevice->presentQueue, &presentInfo);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-            ResetSwapChain();
+            resetSwapChain();
         } else if (result != VK_SUCCESS) {
             throw std::runtime_error("failed to present swap chain image!");
         }
-
         currentFrame = (currentFrame + 1) % config::MAX_FRAMES_IN_FLIGHT;
-
         FrameMark;
     }
 
 
-    void VuRenderer::UpdateUniformBuffer(VuFrameConst ubo) {
+    void VuRenderer::updateFrameConstantBuffer(GPU_FrameConst ubo) {
         ZoneScoped;
-        uniformBuffers[currentFrame].SetData(&ubo, sizeof(ubo));
+        uniformBuffers[currentFrame].setData(&ubo, sizeof(ubo));
     }
 
-    // void VuRenderer::PushConstants(VkShaderStageFlags stage, uint32_t offset, uint32_t size, const void* pValues) {
-    //     vkCmdPushConstants(commandBuffers[currentFrame], debugPipeline.PipelineLayout, stage, offset, size, pValues);
-    // }
 
-    void VuRenderer::ResetSwapChain() {
+    void VuRenderer::resetSwapChain() {
         ZoneScoped;
         SDL_Event event;
 
@@ -191,7 +184,7 @@ namespace Vu {
             minimized = (SDL_GetWindowFlags(ctx::window) & SDL_WINDOW_MINIMIZED) == SDL_WINDOW_MINIMIZED;
             SDL_WaitEvent(&event);
         }
-        vkDeviceWaitIdle(ctx::device);
+        vkDeviceWaitIdle(ctx::vuDevice->device);
         swapChain.resetSwapChain(surface);
     }
 }

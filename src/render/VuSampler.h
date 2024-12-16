@@ -1,6 +1,7 @@
 #pragma once
 #include "Common.h"
 #include "VuCtx.h"
+#include "VuDevice.h"
 
 namespace Vu {
 
@@ -14,7 +15,7 @@ namespace Vu {
         void init(VuSamplerCreateInfo createInfo) {
 
             VkPhysicalDeviceProperties properties{};
-            vkGetPhysicalDeviceProperties(ctx::physicalDevice, &properties);
+            vkGetPhysicalDeviceProperties(ctx::vuDevice->physicalDevice, &properties);
 
             VkSamplerCreateInfo samplerInfo{};
             samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -34,11 +35,11 @@ namespace Vu {
             samplerInfo.minLod = 0.0f;
             samplerInfo.maxLod = 0.0f;
 
-            VkCheck(vkCreateSampler(ctx::device, &samplerInfo, nullptr, &vkSampler));
+            VkCheck(vkCreateSampler(ctx::vuDevice->device, &samplerInfo, nullptr, &vkSampler));
         }
 
         void uninit() {
-            vkDestroySampler(ctx::device, vkSampler, nullptr);
+            vkDestroySampler(ctx::vuDevice->device, vkSampler, nullptr);
         }
     };
 }

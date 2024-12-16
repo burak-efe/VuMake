@@ -3,39 +3,30 @@
 #include <functional>
 #include <stack>
 
-#include "Common.h"
+#include "SDL3/SDL_vulkan.h"
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_sdl3.h"
-#include "VuMaterialDataPool.h"
 
+#include "Common.h"
 #include "VuMesh.h"
 #include "VuSwapChain.h"
 #include "VuBuffer.h"
 #include "VuMaterial.h"
 #include "VuSampler.h"
 #include "VuTexture.h"
-#include "VuConfig.h"
-#include "VuHandle.h"
-#include "SDL3/SDL_vulkan.h"
-
+#include "VuResourceManager.h"
 
 namespace Vu {
-
     constexpr uint32 WIDTH = 1280;
     constexpr uint32 HEIGHT = 720;
 
-
-
-
     struct VuRenderer {
     public:
-        VkDebugUtilsMessengerEXT debugMessenger;
         std::vector<VkCommandBuffer> commandBuffers;
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;
         std::vector<VkFence> inFlightFences;
-
         std::vector<VuBuffer> uniformBuffers;
 
         VkSurfaceKHR surface;
@@ -48,12 +39,9 @@ namespace Vu {
         VuHandle<VuTexture> debugTexture;
         VuHandle<VuSampler> debugSampler;
 
-        VuMaterialDataPool materialDataPool;
+        //VuMaterialDataPool materialDataPool;
 
         std::stack<std::function<void()> > disposeStack;
-
-        QueueFamilyIndices queueFamilies;
-        VkPhysicalDeviceLimits deviceLimits;
 
         void init();
 
@@ -67,73 +55,52 @@ namespace Vu {
 
         void beginFrame();
 
-        void waitForFences();
-
         void endFrame();
 
-        void BindMesh(const VuMesh& mesh);
+        void bindMesh(const VuMesh& mesh);
 
-        void BindMaterial(const VuMaterial& material);
+        void bindMaterial(const VuMaterial& material);
 
-        void DrawIndexed(uint32 indexCount);
+        void drawIndexed(uint32 indexCount);
 
-        void pushConstants(const VuPushConstant& pushConstant);
+        void pushConstants(const GPU_PushConstant& pushConstant);
 
-        void BeginImgui();
+        void beginImgui();
 
-        void EndImgui();
+        void endImgui();
 
-        void UpdateUniformBuffer(VuFrameConst ubo);
+        void updateFrameConstantBuffer(GPU_FrameConst ubo);
 
-        void BeginRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex);
+        void reloadShaders();
 
-        void EndRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex);
+    private:
+        void waitForFences();
+
+        void beginRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex);
+
+        void endRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex);
 
         void initSDL();
 
         void initVulkanDevice();
 
-        void initVulkanPhysicalDevice();
-
         void initVulkanInstance();
 
-        void SetupImGui();
-
-        void initVMA();
+        void initImGui();
 
         void initSurface();
 
         void initSwapchain();
 
-        void initCommandPool();
+        void initCommandBuffers();
 
-        void CreateCommandBuffers();
+        void initSyncObjects();
 
-        void CreateSyncObjects();
-
-        void ResetSwapChain();
-
-        void CreateDescriptorPool();
-
-        void CreateDescriptorSets();
-
-        void CreateDescriptorSetLayout();
+        void resetSwapChain();
 
         void initUniformBuffers();
 
-        void reloadShaders();
-
-        void bindGlobalSet(const VkCommandBuffer& commandBuffer);
-
-        static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
-                                                  const VkAllocationCallbacks* pAllocator) {
-            auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)
-                    vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-
-            if (func != nullptr) {
-                func(instance, debugMessenger, pAllocator);
-            }
-        }
+        void bindGlobalBindlessSet(const VkCommandBuffer& commandBuffer);
 
     };
 }

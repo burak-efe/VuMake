@@ -19,9 +19,14 @@
 #include "Scene0.h"
 
 
-
 int main(int argc, char* argv[]) {
-    Scene0 scen;
-    scen.Run();
+    Vu::Scene0 scen{};
+
+    try {
+        scen.Run();
+    } catch (const std::exception& e) {
+        std::puts(e.what());
+        system("pause");
+    }
     return EXIT_SUCCESS;
 }

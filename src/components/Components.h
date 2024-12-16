@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Common.h"
+#include "VuResourceManager.h"
+
 
 namespace Vu {
     struct VuMesh;
@@ -8,7 +10,7 @@ namespace Vu {
 
     struct MeshRenderer {
         VuMesh* mesh;
-        VuShader* vuShader;
+        VuHandle<VuShader> shader;
         uint32 materialIndex;
     };
 

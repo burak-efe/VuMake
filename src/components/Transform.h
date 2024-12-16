@@ -8,7 +8,6 @@ namespace Vu {
         quat Rotation = glm::identity<quat>();
         float3 Scale = float3(1.0f, 1.0f, 1.0f);
 
-
         void Rotate(const float3& axis, float angle) {
             Rotation = glm::rotate(Rotation, angle, axis);
         }

@@ -9,7 +9,8 @@
 
 namespace Vu {
 
-    struct VuShaderCreateInfo {
+
+    struct VuGraphicsShaderCreateInfo {
         std::filesystem::path vertexShaderPath;
         std::filesystem::path fragmentShaderPath;
         VkRenderPass renderPass;
@@ -17,9 +18,9 @@ namespace Vu {
 
     struct VuShader {
 
-        inline static Slang::ComPtr<slang::IGlobalSession> globalSession;
+        inline static slang::IGlobalSession* globalSession;
 
-        VuShaderCreateInfo lastCreateInfo;
+        VuGraphicsShaderCreateInfo lastCreateInfo;
 
         VkShaderModule vertexShaderModule;
         VkShaderModule fragmentShaderModule;
@@ -28,12 +29,12 @@ namespace Vu {
 
         time_t lastModifiedTime = 0;
 
-        static void initSystem() {
-            slang::createGlobalSession(globalSession.writeRef());
+        static void initCompilerSystem() {
+            slang::createGlobalSession(&globalSession);
 
         }
 
-        static void uninitSystem() {
+        static void uninitCompilerSystem() {
             slang::shutdown();
         }
 
@@ -45,13 +46,13 @@ namespace Vu {
         }
 
 
-        void init(const VuShaderCreateInfo& createInfo) {
+        void initAsGraphicsShader(const VuGraphicsShaderCreateInfo& createInfo) {
             ZoneScoped;
             this->lastCreateInfo = createInfo;
             this->renderPass = createInfo.renderPass;
 
-            const auto vertShaderCode = Vu::ReadFile(createInfo.vertexShaderPath);
-            const auto fragShaderCode = Vu::ReadFile(createInfo.fragmentShaderPath);
+            const std::vector<char> vertShaderCode = Vu::readFile(createInfo.vertexShaderPath);
+            const std::vector<char> fragShaderCode = Vu::readFile(createInfo.fragmentShaderPath);
 
             lastModifiedTime = std::max(getlastModifiedTime(createInfo.vertexShaderPath),
                                         getlastModifiedTime(createInfo.fragmentShaderPath));
@@ -62,20 +63,81 @@ namespace Vu {
             auto fragOutPath = createInfo.fragmentShaderPath;
             fragOutPath.replace_extension("spv");
 
-
-            // slang::SessionDesc sessionDesc;
-            // Slang::ComPtr<slang::ISession> session;
-            // globalSession->createSession(sessionDesc, session.writeRef());
             //
-            // slang::IModule* module = session->loadModule("MyShaders");
+            // //slang session
+            // const char* searchPaths[] = {"assets/shaders/"};
+            // slang::TargetDesc targetDesc = {};
+            // targetDesc.format = SLANG_SPIRV;
+            // targetDesc.profile = globalSession->findProfile("spirv_1_5");
+            // targetDesc.flags = 0;
+            //
+            //
+            // slang::SessionDesc sessionDesc = {};
+            // sessionDesc.targets = &targetDesc;
+            // sessionDesc.targetCount = 1;
+            // sessionDesc.searchPaths = searchPaths;
+            // sessionDesc.searchPathCount = 1;
+            //
+            //
+            // std::vector<slang::CompilerOptionEntry> options;
+            // options.push_back(
+            //     {
+            //         slang::CompilerOptionName::EmitSpirvDirectly,
+            //         {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}
+            //     });
+            // sessionDesc.compilerOptionEntries = options.data();
+            // sessionDesc.compilerOptionEntryCount = options.size();
+            //
+            // slang::ISession* session;
+            // globalSession->createSession(sessionDesc, &session);
+            //
+            //
+            // //slang module
+            // slang::IBlob* db{};
+            // slang::IModule* module = session->loadModule("hello-world.slang", &db);
+            // if (db != nullptr) {
+            //     fprintf(stderr, "%s\n", (const char *) db->getBufferPointer());
+            //
+            // }
+            //
+            //
+            // int32 entrypointCount = module->getDefinedEntryPointCount();
+            // slang::IEntryPoint* entryPoint{};
+            // module->findEntryPointByName("computeMain", &entryPoint);
+            //
+            // std::vector<slang::IComponentType *> componentTypes{};
+            // componentTypes.push_back(module);
+            // componentTypes.push_back(entryPoint);
+            //
+            //
+            // slang::IComponentType* composedProgram;
+            // //
+            // {
+            //     slang::IBlob* diagnosticsBlob;
+            //     SlangResult result = session->createCompositeComponentType(componentTypes.data(),
+            //                                                                componentTypes.size(),
+            //                                                                &composedProgram,
+            //                                                                &diagnosticsBlob);
+            // }
+            //
+            //
+            // slang::IBlob* spirvCode;
+            // //
+            // {
+            //     slang::IBlob* diagnosticsBlob;
+            //     SlangResult result = composedProgram->getEntryPointCode(
+            //         0,
+            //         0,
+            //         &spirvCode,
+            //         &diagnosticsBlob);
+            // }
+            //
 
-
-
-            std::string vertCmd = std::format("{0} {1} -target spirv  -o {2}",
+            std::string vertCmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout  -o {2}",
                                               config::SHADER_COMPILER_PATH,
                                               createInfo.vertexShaderPath.generic_string(),
                                               vertOutPath.generic_string());
-            auto fragCmd = std::format("{0} {1} -target spirv  -o {2}",
+            auto fragCmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout -o {2}",
                                        config::SHADER_COMPILER_PATH,
                                        createInfo.fragmentShaderPath.generic_string(),
                                        fragOutPath.generic_string());
@@ -86,8 +148,8 @@ namespace Vu {
             assert(fRes == 0);
 
 
-            const auto vertSpv = Vu::ReadFile(vertOutPath);
-            const auto fragSpv = Vu::ReadFile(fragOutPath);
+            const auto vertSpv = Vu::readFile(vertOutPath);
+            const auto fragSpv = Vu::readFile(fragOutPath);
 
 
             vertexShaderModule = createShaderModule(vertSpv);
@@ -95,8 +157,8 @@ namespace Vu {
         }
 
         void uninit() {
-            vkDestroyShaderModule(ctx::device, vertexShaderModule, nullptr);
-            vkDestroyShaderModule(ctx::device, fragmentShaderModule, nullptr);
+            vkDestroyShaderModule(ctx::vuDevice->device, vertexShaderModule, nullptr);
+            vkDestroyShaderModule(ctx::vuDevice->device, fragmentShaderModule, nullptr);
 
             for (auto& material: materials) {
                 material.uninit();
@@ -111,11 +173,11 @@ namespace Vu {
                 return;
             }
 
-            vkDeviceWaitIdle(ctx::device);
-            vkDestroyShaderModule(ctx::device, vertexShaderModule, nullptr);
-            vkDestroyShaderModule(ctx::device, fragmentShaderModule, nullptr);
+            vkDeviceWaitIdle(ctx::vuDevice->device);
+            vkDestroyShaderModule(ctx::vuDevice->device, vertexShaderModule, nullptr);
+            vkDestroyShaderModule(ctx::vuDevice->device, fragmentShaderModule, nullptr);
 
-            init(lastCreateInfo);
+            initAsGraphicsShader(lastCreateInfo);
 
             for (auto& material: materials) {
                 material.recompile({vertexShaderModule, fragmentShaderModule, renderPass});
@@ -140,7 +202,7 @@ namespace Vu {
             createInfo.pNext = nullptr;
 
             VkShaderModule shaderModule;
-            VkCheck(vkCreateShaderModule(ctx::device, &createInfo, nullptr, &shaderModule));
+            VkCheck(vkCreateShaderModule(ctx::vuDevice->device, &createInfo, nullptr, &shaderModule));
             return shaderModule;
         }
     };

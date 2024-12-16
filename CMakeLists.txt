@@ -14,6 +14,7 @@ endif ()
 if (MSVC)
     add_compile_options(/Bt) #more verbose log
     add_compile_options(/Zi)
+    add_compile_options(/DEBUG)
 endif ()
 
 ####################################################################################################
@@ -209,22 +210,29 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(fetch_asyncplusplus)
 target_link_libraries(${PROJECT_NAME} PUBLIC Async++)
 ####################################################################################################
-set(SLANG_ENABLE_SLANGD OFF)
-set(SLANG_ENABLE_SLANGC OFF)
-set(SLANG_ENABLE_TESTS OFF)
-set(SLANG_ENABLE_EXAMPLES OFF)
-set(SLANG_ENABLE_SLANG_RHI OFF)
-set(SLANG_ENABLE_PREBUILT_BINARIES OFF)
-set(SLANG_ENABLE_GFX OFF)
-set(SLANG_ENABLE_REPLAYER OFF)
-set(SLANG_ENABLE_SLANG_GLSLANG OFF)
+set(SLANG_ENABLE_SLANG_RHI OFF CACHE BOOL "")
+set(SLANG_ENABLE_CUDA OFF CACHE BOOL "")
+set(SLANG_ENABLE_OPTIX OFF CACHE BOOL "")
+set(SLANG_ENABLE_NVAPI OFF CACHE BOOL "")
+set(SLANG_ENABLE_XLIB OFF CACHE BOOL "")
+set(SLANG_ENABLE_AFTERMATH OFF CACHE BOOL "")
+set(SLANG_ENABLE_DX_ON_VK OFF CACHE BOOL "")
+set(SLANG_ENABLE_GFX OFF CACHE BOOL "")
+set(SLANG_ENABLE_SLANGC OFF CACHE BOOL "")
+set(SLANG_ENABLE_SLANGD OFF CACHE BOOL "")
+set(SLANG_ENABLE_SLANGRT ON CACHE BOOL "")
+set(SLANG_ENABLE_SLANG_GLSLANG OFF CACHE BOOL "")
+set(SLANG_ENABLE_TESTS OFF CACHE BOOL "")
+#set(SLANG_ENABLE_EXAMPLES OFF CACHE BOOL "")
+set(SLANG_ENABLE_REPLAYER OFF CACHE BOOL "")
+set(SLANG_ENABLE_PREBUILT_BINARIES OFF CACHE BOOL "")
 #set(SLANG_EMBED_CORE_MODULE OFF)
 #set(SLANG_LIB_TYPE "SHARED" CACHE STRING FORCE)
 
-FetchContent_Declare (
+FetchContent_Declare(
         fetch_slang
         GIT_REPOSITORY https://github.com/shader-slang/slang
-        GIT_TAG v2024.15
+        GIT_TAG v2024.17
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
 )

@@ -8,17 +8,20 @@ static const float3 ambient = float3(0.01f, 0.01f, 0.01f);
 static const float roughness = 0.5f;
 static const float specularIntensity = 0.5f;
 [shader("fragment")]
-float4 main(VSOutput i) :SV_Target
+float4 fragmentMain(VSOutput i) : SV_Target
 {
-    float3 lightPos = ubo.cameraPos;
+    //FrameConst fc = *((Ptr<FrameConst>) (globalUniformBuffers[0]));
+    var fc = frameConst;
+
+    float3 lightPos = fc.cameraPos;
 
     Ptr<PBRMaterialData> ptr = (Ptr<PBRMaterialData>) pc.materialDataPtr;
     PBRMaterialData data = ptr[0];
 
     float2 uv = i.UV;
 
-    float4 colorSample  = globalTextures[data.texture0].Sample(globalSamplers[0], uv);
-    float3 normalSample = globalTextures[data.texture1].Sample(globalSamplers[0], uv).xyz;
+    float4 colorSample  = globalSampledImages[data.texture0].Sample(globalSamplers[0], uv);
+    float3 normalSample = globalSampledImages[data.texture1].Sample(globalSamplers[0], uv).xyz;
     float3 normalTS = normalSample * 2 - 1;
 
     float3 nrm = normalize(normalTS.r * i.Tangent.xyz + normalTS.g * i.Bitangent + normalTS.b * i.Normal);
@@ -29,7 +32,7 @@ float4 main(VSOutput i) :SV_Target
     float3 normalWS = mul(normalTS,TBN);
 
     // Calculate lighting
-    float3 viewDir = normalize(ubo.cameraPos - i.PosWS);
+    float3 viewDir = normalize(fc.cameraPos - i.PosWS);
 
     float3 lightDir = normalize(lightPos - i.PosWS);
 

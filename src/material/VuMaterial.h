@@ -16,13 +16,13 @@ namespace Vu {
 
     struct VuMaterial {
         VuGraphicsPipeline vuPipeline;
-        PBRMaterialData* pbrMaterialData;
+        GPU_PBR_MaterialData* pbrMaterialData;
 
         void init(const VuMaterialCreateInfo& createInfo) {
             auto bindings = VuMesh::getBindingDescription();
             auto attribs = VuMesh::getAttributeDescriptions();
-            vuPipeline.CreateGraphicsPipeline(
-                ctx::globalPipelineLayout,
+            vuPipeline.initGraphicsPipeline(
+                ctx::vuDevice->globalPipelineLayout,
                 createInfo.vertexShaderModule,
                 createInfo.fragmentShaderModule,
                 bindings,
@@ -38,8 +38,8 @@ namespace Vu {
 
             auto bindings = VuMesh::getBindingDescription();
             auto attribs = VuMesh::getAttributeDescriptions();
-            vuPipeline.CreateGraphicsPipeline(
-                ctx::globalPipelineLayout,
+            vuPipeline.initGraphicsPipeline(
+                ctx::vuDevice->globalPipelineLayout,
                 createInfo.vertexShaderModule,
                 createInfo.fragmentShaderModule,
                 bindings,

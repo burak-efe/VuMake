@@ -3,12 +3,11 @@
 #include <fstream>
 
 #include "Common.h"
-#include "VuCtx.h"
 
 namespace Vu {
 
 
-    inline std::vector<char> ReadFile(const std::filesystem::path& path) {
+    inline std::vector<char> readFile(const std::filesystem::path& path) {
         std::ifstream file(path, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()) {
@@ -27,7 +26,7 @@ namespace Vu {
     }
 
 
-    inline VkImageCreateInfo CreateImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent) {
+    inline VkImageCreateInfo fillImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent) {
         VkImageCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         info.pNext = nullptr;
@@ -46,7 +45,7 @@ namespace Vu {
         return info;
     }
 
-    inline VkImageViewCreateInfo CreateImageViewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags) {
+    inline VkImageViewCreateInfo fillImageViewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags) {
         //build a image-view for the depth image to use for rendering
         VkImageViewCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -66,9 +65,9 @@ namespace Vu {
 
 
 
-    inline uint32 FindMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties) {
+    inline uint32 findMemoryType(VkPhysicalDevice physicalDevice, uint32 typeFilter, VkMemoryPropertyFlags properties) {
         VkPhysicalDeviceMemoryProperties memProperties{};
-        vkGetPhysicalDeviceMemoryProperties(ctx::physicalDevice, &memProperties);
+        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
         for (uint32 i = 0; i < memProperties.memoryTypeCount; i++) {
             if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
                 return i;

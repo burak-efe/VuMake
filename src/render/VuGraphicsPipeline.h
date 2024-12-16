@@ -5,18 +5,17 @@
 #include "VuCtx.h"
 #include "VuDepthStencil.h"
 
-
 namespace Vu {
     struct VuGraphicsPipeline {
         VkPipeline pipeline;
 
-        void CreateGraphicsPipeline(
-            const VkPipelineLayout& pipelineLayout,
-            const VkShaderModule& vertShaderModule,
-            const VkShaderModule& fragShaderModule,
-            const std::span<VkVertexInputBindingDescription>& bindingDescriptions,
-            const std::span<VkVertexInputAttributeDescription>& attributeDescriptions,
-            const VkRenderPass& renderPass) {
+        void initGraphicsPipeline(
+            const VkPipelineLayout pipelineLayout,
+            const VkShaderModule vertShaderModule,
+            const VkShaderModule fragShaderModule,
+            const std::span<VkVertexInputBindingDescription> bindingDescriptions,
+            const std::span<VkVertexInputAttributeDescription> attributeDescriptions,
+            const VkRenderPass renderPass) {
 
             VkPipelineShaderStageCreateInfo vertShaderStageInfo{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -34,7 +33,6 @@ namespace Vu {
 
             auto shaderStages = std::array{vertShaderStageInfo, fragShaderStageInfo};
 
-
             VkPipelineVertexInputStateCreateInfo vertexInputInfo{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
                 .vertexBindingDescriptionCount = static_cast<uint32>(bindingDescriptions.size()),
@@ -42,7 +40,6 @@ namespace Vu {
                 .vertexAttributeDescriptionCount = static_cast<uint32>(attributeDescriptions.size()),
                 .pVertexAttributeDescriptions = attributeDescriptions.data(),
             };
-
 
             VkPipelineInputAssemblyStateCreateInfo inputAssembly{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
@@ -55,7 +52,6 @@ namespace Vu {
                 .viewportCount = 1,
                 .scissorCount = 1,
             };
-
 
             VkPipelineRasterizationStateCreateInfo rasterizer{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
@@ -99,7 +95,6 @@ namespace Vu {
             dynamicState.dynamicStateCount = static_cast<uint32>(dynamicStates.size());
             dynamicState.pDynamicStates = dynamicStates.data();
 
-
             VkGraphicsPipelineCreateInfo pipelineInfo{
                 .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
                 .stageCount = 2,
@@ -117,16 +112,15 @@ namespace Vu {
                 .basePipelineHandle = VK_NULL_HANDLE
             };
 
-            auto depth = VuDepthStencil::CreateDepthStencilCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
+            VkPipelineDepthStencilStateCreateInfo depth = VuDepthStencil::fillDepthStencilCreateInfo(
+                true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
             pipelineInfo.pDepthStencilState = &depth;
 
-            VkCheck(vkCreateGraphicsPipelines(ctx::device,VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
-
-
+            VkCheck(vkCreateGraphicsPipelines(ctx::vuDevice->device,VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
         }
 
         void Dispose() const {
-            vkDestroyPipeline(ctx::device, pipeline, nullptr);
+            vkDestroyPipeline(ctx::vuDevice->device, pipeline, nullptr);
         }
     };
 }

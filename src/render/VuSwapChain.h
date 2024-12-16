@@ -6,13 +6,6 @@
 
 namespace Vu {
     struct VuSwapChain {
-    private:
-        void createSwapChain(VkSurfaceKHR surfaceKHR);
-
-        void createImageViews(VkDevice device);
-
-        void createFramebuffers();
-
     public:
         VkSwapchainKHR swapChain;
         VuRenderPass renderPass;
@@ -29,7 +22,7 @@ namespace Vu {
         uint32_t imageCount;
         uint32_t queueNodeIndex = UINT32_MAX;
 
-        void InitSwapChain(VkSurfaceKHR surface);
+        void init(VkSurfaceKHR surface);
 
         void uninit();
 
@@ -39,8 +32,6 @@ namespace Vu {
 
         void endRenderPass(VkCommandBuffer commandBuffer);
 
-        static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
-
         static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 
         static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
@@ -49,5 +40,11 @@ namespace Vu {
 
         static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
 
+    private:
+        void createSwapChain(VkSurfaceKHR surfaceKHR);
+
+        void createImageViews(VkDevice device);
+
+        void createFramebuffers();
     };
 }

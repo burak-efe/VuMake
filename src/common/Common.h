@@ -27,8 +27,6 @@ namespace Vu {
     using quat = glm::quat;
     using float4x4 = glm::mat4;
 
-
-
     __declspec(noinline) void VkCheck(VkResult res);
 
 }

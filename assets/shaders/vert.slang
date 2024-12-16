@@ -11,10 +11,17 @@ struct VSInput
 
 
 [shader("vertex")]
-VSOutput main(VSInput input)
+VSOutput vertexMain(VSInput input)
 {
+    //FrameConst fc = *((Ptr<FrameConst>) (globalUniformBuffers[0]));
+    var fc = frameConst;
+
+    //var testBuffer = (float3*)(globalStorageBuffers[0]);
+    //printf("ponter is  = %llu", globalStorageBuffers[0]);
+    //float3 testf3 = testBuffer[0];
+
     VSOutput o = (VSOutput)0;
-    o.Pos = mul(ubo.proj, mul(ubo.view, mul(pc.model, float4(input.VertexPosition, 1))));
+    o.Pos = mul(fc.proj, mul(fc.view, mul(pc.model, float4(input.VertexPosition, 1))));
 
     o.PosWS = mul( float4(input.VertexPosition, 1.0),pc.model ).xyz;
 
