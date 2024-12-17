@@ -73,15 +73,15 @@ namespace Vu {
     void VuRenderer::bindMesh(const VuMesh& mesh) {
         ZoneScoped;
         auto commandBuffer = commandBuffers[currentFrame];
-        std::array vertexBuffers = {
-            mesh.vertexBuffer.get().buffer,
-            mesh.vertexBuffer.get().buffer,
-            mesh.vertexBuffer.get().buffer,
-            mesh.vertexBuffer.get().buffer
-        };
-
-        std::array<VkDeviceSize, 4> offsets = {0, mesh.getNormalOffsetAsByte(), mesh.getTangentOffsetAsByte(), mesh.getUV_OffsetAsByte()};
-        vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), offsets.data());
+        // std::array vertexBuffers = {
+        //     mesh.vertexBuffer.get().buffer,
+        //     mesh.vertexBuffer.get().buffer,
+        //     mesh.vertexBuffer.get().buffer,
+        //     mesh.vertexBuffer.get().buffer
+        // };
+        //
+        // std::array<VkDeviceSize, 4> offsets = {0, mesh.getNormalOffsetAsByte(), mesh.getTangentOffsetAsByte(), mesh.getUV_OffsetAsByte()};
+        // vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), offsets.data());
         vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.get().buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 

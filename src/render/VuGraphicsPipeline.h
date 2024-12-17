@@ -35,10 +35,10 @@ namespace Vu {
 
             VkPipelineVertexInputStateCreateInfo vertexInputInfo{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-                .vertexBindingDescriptionCount = static_cast<uint32>(bindingDescriptions.size()),
-                .pVertexBindingDescriptions = bindingDescriptions.data(),
-                .vertexAttributeDescriptionCount = static_cast<uint32>(attributeDescriptions.size()),
-                .pVertexAttributeDescriptions = attributeDescriptions.data(),
+                .vertexBindingDescriptionCount = 0,//static_cast<uint32>(bindingDescriptions.size()),
+                .pVertexBindingDescriptions = nullptr, //bindingDescriptions.data(),
+                .vertexAttributeDescriptionCount = 0,// static_cast<uint32>(attributeDescriptions.size()),
+                .pVertexAttributeDescriptions = nullptr,//attributeDescriptions.data(),
             };
 
             VkPipelineInputAssemblyStateCreateInfo inputAssembly{

@@ -116,17 +116,16 @@ namespace Vu {
             vuRenderer.init();
             ctx::vuRenderer = &vuRenderer;
 
-            VuHandle<VuBuffer> testSSBO;
-            testSSBO.createHandle().init({
-                .lenght = 3, .strideInBytes = 4,
-                .vkUsageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                .vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
-                .vmaCreateFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
-            });
-
-            float up[] = {0,4,0};
-            testSSBO.get().setData(up, sizeof(up), 0);
-            VuResourceManager::registerStorageBuffer(testSSBO.index,testSSBO.get());
+            // VuHandle<VuBuffer> testSSBO;
+            // testSSBO.createHandle().init({
+            //     .lenght = 3, .strideInBytes = 4,
+            //     .vkUsageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            //     .vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+            //     .vmaCreateFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+            // });
+            //float up[] = {0,4,0};
+            //testSSBO.get().setData(up, sizeof(up), 0);
+            ///VuResourceManager::registerStorageBuffer(testSSBO.index,testSSBO.get());
 
 
 

@@ -22,7 +22,7 @@ namespace Vu {
         float4x4 trs;
         //TODO: use index
         uint64 materiealDataPtr;
-        //GPU_Mesh mesh;
+        GPU_Mesh mesh;
     };
 
     struct GPU_FrameConst {

@@ -61,9 +61,9 @@ namespace Vu {
 
         void bindMaterial(const VuMaterial& material);
 
-        void drawIndexed(uint32 indexCount);
-
         void pushConstants(const GPU_PushConstant& pushConstant);
+
+        void drawIndexed(uint32 indexCount);
 
         void beginImgui();
 

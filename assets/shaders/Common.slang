@@ -15,24 +15,24 @@ struct Span<T> {
         set { _pointer[index] = newValue; }
     }
 
-    //Be careful this will not change the size of the span, its just casting type to another
-    Span<T2> CastType<T2>()
-    {
-        Span<T2> casted;
-        casted._pointer = (Ptr<T2>)this._pointer;
-        casted._length = this._length;
-        return casted;
-    }
+    // //Be careful this will not change the size of the span, its just casting type to another
+    // Span<T2> CastType<T2>()
+    // {
+    //     Span<T2> casted;
+    //     casted._pointer = (Ptr<T2>)this._pointer;
+    //     casted._length = this._length;
+    //     return casted;
+    // }
 
 
-    Span<T3> Reinterpret<T3>()
-    {
-        Span<T3> rep;
-        rep._pointer = (Ptr<T3>)this._pointer;
-        uint64_t byteSize  = sizeof(T) *  _length;
-        rep._length = byteSize / sizeof(T3);
-        return rep;
-    }
+    // Span<T3> Reinterpret<T3>()
+    // {
+    //     Span<T3> rep;
+    //     rep._pointer = (Ptr<T3>)this._pointer;
+    //     uint64_t byteSize  = sizeof(T) *  _length;
+    //     rep._length = byteSize / sizeof(T3);
+    //     return rep;
+    // }
 
 
     //Create a new subspan
@@ -54,26 +54,53 @@ enum MeshFlags : uint32_t {
 }
 
 struct Mesh {
-    uint32_t vertexBuffer;
+    uint32_t vertexBufferHandle;
     uint32_t vertexCount;
     MeshFlags flags;
 
-    Span<float3> getPositions()
+    Ptr<float3>  getPositionPtr()
     {
-        return Span<float3>(globalStorageBuffers[vertexBuffer], vertexCount);
+        return (Ptr<float3>) globalStorageBuffers[vertexBufferHandle];
     }
 
-    Span<float3> getNormals()
+    Ptr<float3>  getNormalPtr()
     {
-        var offset = sizeof(float3) * vertexCount;
-        return Span<float3>(globalStorageBuffers[vertexBuffer] + offset, vertexCount);
+        uint64_t prev = (uint64_t)getPositionPtr();
+        uint64_t p = prev + sizeof(float3) * vertexCount;
+        return (Ptr<float3>) p;
     }
 
-    Span<float3> getTangents()
+    Ptr<float4> getTangentPtr()
     {
-        var offset = sizeof(float3) * vertexCount;
-        return Span<float3>(globalStorageBuffers[vertexBuffer] + offset + offset, vertexCount);
+        uint64_t prev = (uint64_t)getNormalPtr();
+        uint64_t p = prev + sizeof(float3) * vertexCount;
+        return (Ptr<float4>) p;
     }
+
+    Ptr<float2> getUV_Ptr()
+    {
+        uint64_t prev = (uint64_t)getTangentPtr();
+        uint64_t p = prev + sizeof(float4) * vertexCount;
+        return (Ptr<float2>) p;
+    }
+
+
+    // Span<float3> getPositions()
+    // {
+    //     return Span<float3>(globalStorageBuffers[vertexBufferHandle], vertexCount);
+    // }
+
+    // Span<float3> getNormals()
+    // {
+    //     var offset = sizeof(float3) * vertexCount;
+    //     return Span<float3>(globalStorageBuffers[vertexBufferHandle] + offset, vertexCount);
+    // }
+
+    // Span<float3> getTangents()
+    // {
+    //     var offset = sizeof(float3) * vertexCount;
+    //     return Span<float3>(globalStorageBuffers[vertexBufferHandle] + offset + offset, vertexCount);
+    // }
 }
 
 struct FrameConst
@@ -95,6 +122,7 @@ struct PushConsts
 {
     float4x4 model;
     uint64_t materialDataPtr;
+    Mesh mesh;
 };
 
 [[vk::push_constant]]

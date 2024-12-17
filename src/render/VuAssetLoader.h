@@ -29,12 +29,6 @@ namespace Vu {
 
 
 
-
-
-
-
-
-
         //TODO
         static void LoadGltf(std::filesystem::path path, VuMesh& dstMesh, GPU_PBR_MaterialData& dstMaterialData) {
             ZoneScoped;
@@ -82,6 +76,8 @@ namespace Vu {
             dstMesh.vertexBuffer.createHandle();
             dstMesh.indexBuffer.createHandle();
 
+
+
             //Indices
 
             if (!primitive.indicesAccessor.has_value()) {
@@ -113,8 +109,9 @@ namespace Vu {
             dstMesh.vertexBuffer.get().init({
                 .lenght = dstMesh.vertexCount * dstMesh.totalAttributesSizePerVertex(),
                 .strideInBytes = 1,
-                .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+                .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
             });
+            VuResourceManager::registerStorageBuffer(dstMesh.vertexBuffer.index, dstMesh.vertexBuffer.get());
             dstMesh.vertexBuffer.get().map();
 
             std::span<uint8> vertexSpanByte = dstMesh.vertexBuffer.get().getSpan(0, sizeof(float3) * dstMesh.vertexCount);

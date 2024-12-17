@@ -21,7 +21,16 @@ namespace Vu {
                     auto mat = meshRenderer.shader.get().materials[meshRenderer.materialIndex];
                     auto adr = VuMaterialDataPool::mapAddressToBufferDeviceAddress(mat.pbrMaterialData);
                     ctx::vuRenderer->bindMaterial(mat);
-                    ctx::vuRenderer->pushConstants({trs.ToTRS(), adr});
+                    GPU_PushConstant pc{
+                        trs.ToTRS(),
+                        adr,
+                        {
+                            meshRenderer.mesh->vertexBuffer.index,
+                            (uint32) meshRenderer.mesh->vertexCount,
+                            0
+                        }
+                    };
+                    ctx::vuRenderer->pushConstants(pc);
                     ctx::vuRenderer->bindMesh(*meshRenderer.mesh);
                     ctx::vuRenderer->drawIndexed(meshRenderer.mesh->indexBuffer.get().lenght);
                 });
@@ -190,8 +199,8 @@ namespace Vu {
                         cam.far);
 
                     ctx::frameConst.cameraPos = glm::vec4(trs.Position, 0);
-                    ctx::frameConst.cameraDir = glm::vec4(float3(cam.yaw, cam.pitch, cam.roll),0);
-                    ctx::frameConst.time = glm::vec4(ctx::time(),0,0,0).x;
+                    ctx::frameConst.cameraDir = glm::vec4(float3(cam.yaw, cam.pitch, cam.roll), 0);
+                    ctx::frameConst.time = glm::vec4(ctx::time(), 0, 0, 0).x;
 
 
                     //const auto* state = SDL_GetKeyboardState(nullptr);
