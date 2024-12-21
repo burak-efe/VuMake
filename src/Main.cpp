@@ -19,11 +19,17 @@
 #include "Scene0.h"
 
 
+#include "SlangTest.h"
+
+
 int main(int argc, char* argv[]) {
     Vu::Scene0 scen{};
 
     try {
         scen.Run();
+        //runSlangTest();
+
+
     } catch (const std::exception& e) {
         std::puts(e.what());
         system("pause");

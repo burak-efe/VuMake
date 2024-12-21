@@ -5,7 +5,7 @@
 #include "flecs.h"
 #include "glm/gtx/string_cast.hpp"
 #include "tracy/Tracy.hpp"
-#include "async++.h"
+//#include "async++.h"
 #include "imgui_internal.h"
 
 #include "Camera.h"
@@ -60,7 +60,6 @@ namespace Vu {
 
                         uint32 dockspace_flags = 0;
                         ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-                        //ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
                         ImGui::DockSpaceOverViewport(dockspace_id, nullptr, ImGuiDockNodeFlags_PassthruCentralNode, nullptr);
 
                         auto wRes = ImGui::Begin("Info");
@@ -68,15 +67,6 @@ namespace Vu {
                         ImGui::Text("Sampler Count: %u", VuPool<VuSampler>::getUsedSlotCount());
                         ImGui::Text("Buffer Count: %u", VuPool<VuBuffer>::getUsedSlotCount());
                         ImGui::End();
-
-                        // ImGui::Begin("Shaders");
-                        // ImGui::End();
-                        //
-                        // ImGui::Begin("Meshes");
-                        // ImGui::End();
-                        //
-                        // ImGui::Begin("Textures");
-                        // ImGui::End();
 
                         static auto first_time = true;
                         if (first_time) {

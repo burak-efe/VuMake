@@ -19,6 +19,7 @@ namespace Vu {
     struct VuShader {
 
         inline static slang::IGlobalSession* globalSession;
+        inline static slang::ISession* session;
 
         VuGraphicsShaderCreateInfo lastCreateInfo;
 
@@ -29,9 +30,144 @@ namespace Vu {
 
         time_t lastModifiedTime = 0;
 
+
+        void createFile(const std::filesystem::path& path, std::span<const uint8_t> data) {
+            // Open file for writing in binary mode
+            std::ofstream file(path, std::ios::binary | std::ios::out);
+
+            // Check if the file was successfully opened
+            if (!file.is_open()) {
+                throw std::runtime_error("Failed to open file: " + path.string());
+            }
+
+            // Write data to the file
+            file.write(reinterpret_cast<const char *>(data.data()), data.size());
+
+            // Ensure the data was written successfully
+            if (!file) {
+                throw std::runtime_error("Failed to write to file: " + path.string());
+            }
+        }
+
+        static void compileToSpirv(const char* shaderName, const char* entryPoitName, slang::IBlob*& outBlob) {
+            //slang module
+            slang::IBlob* db{};
+            slang::IModule* module = session->loadModule(shaderName, &db);
+            if (db != nullptr) {
+                fprintf(stderr, "%s\n", (const char *) db->getBufferPointer());
+            }
+
+            //int32 entrypointCount = module->getDefinedEntryPointCount();
+            slang::IEntryPoint* entryPoint{};
+            module->findEntryPointByName(entryPoitName, &entryPoint);
+
+            std::vector<slang::IComponentType *> componentTypes{};
+            componentTypes.push_back(module);
+            componentTypes.push_back(entryPoint);
+
+            slang::IComponentType* composedProgram;
+            //
+            {
+                slang::IBlob* diagnosticsBlob{};
+                SlangResult result = session->createCompositeComponentType(componentTypes.data(),
+                                                                           componentTypes.size(),
+                                                                           &composedProgram,
+                                                                           &diagnosticsBlob);
+                if (diagnosticsBlob != nullptr) {
+                    fprintf(stderr, "%s\n", (const char *) diagnosticsBlob->getBufferPointer());
+                }
+                assert(result == SLANG_OK);
+            }
+
+            //slang::IBlob* spirvCode;
+            //
+            {
+                slang::IBlob* diagnosticsBlob{};
+                SlangResult result = composedProgram->getEntryPointCode(0, 0, &outBlob, &diagnosticsBlob);
+                if (diagnosticsBlob != nullptr) {
+                    fprintf(stderr, "%s\n", (const char *) diagnosticsBlob->getBufferPointer());
+                }
+                assert(result == SLANG_OK);
+            }
+        }
+
+
         static void initCompilerSystem() {
             slang::createGlobalSession(&globalSession);
+            //slang session
+            const char* searchPaths[] = {"assets/shaders/"};
+            slang::TargetDesc targetDesc {};
+            targetDesc.format = SLANG_SPIRV;
+            targetDesc.profile = globalSession->findProfile("spirv_1_5");
+            targetDesc.flags = 0;
+            //targetDesc.forceGLSLScalarBufferLayout = true;
+            std::vector<slang::CompilerOptionEntry> targetOptions{};
+            // targetOptions.push_back(
+            //     {
+            //         slang::CompilerOptionName::EmitSpirvDirectly,
+            //         {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}
+            //     }
+            // );
+            targetOptions.push_back(
+                {
+                    slang::CompilerOptionName::GLSLForceScalarLayout,
+                    {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}
+                }
+            );
+            targetOptions.push_back(
+                {
+                    slang::CompilerOptionName::MatrixLayoutColumn,
+                    {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}
+                }
+            );
+            //
+            // targetOptions.push_back(
+            //     {
+            //         slang::CompilerOptionName::MatrixLayoutRow,
+            //         {slang::CompilerOptionValueKind::Int, 0, 0, nullptr, nullptr}
+            //     }
+            // );
+            targetDesc.compilerOptionEntries = targetOptions.data();
+            targetDesc.compilerOptionEntryCount = targetOptions.size();
 
+
+            slang::SessionDesc sessionDesc {};
+            sessionDesc.targets = &targetDesc;
+            sessionDesc.targetCount = 1;
+            sessionDesc.searchPaths = searchPaths;
+            sessionDesc.searchPathCount = 1;
+            sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;
+            std::vector<slang::CompilerOptionEntry> sessionOptions{};
+            sessionOptions.push_back(
+                {
+                    slang::CompilerOptionName::EmitSpirvDirectly,
+                    {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}
+                }
+            );
+            // sessionOptions.push_back(
+            //     {
+            //         slang::CompilerOptionName::GLSLForceScalarLayout,
+            //         {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}
+            //     }
+            // );
+            //
+            sessionOptions.push_back(
+                {
+                    slang::CompilerOptionName::MatrixLayoutColumn,
+                    {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}
+                }
+            );
+            // sessionOptions.push_back(
+            //     {
+            //         slang::CompilerOptionName::MatrixLayoutRow,
+            //         {slang::CompilerOptionValueKind::Int, 0, 0, nullptr, nullptr}
+            //     }
+            // );
+            sessionDesc.compilerOptionEntries = sessionOptions.data();
+            sessionDesc.compilerOptionEntryCount = sessionOptions.size();
+
+            //slang::ISession* session;
+            globalSession->createSession(sessionDesc, &session);
         }
 
         static void uninitCompilerSystem() {
@@ -51,109 +187,51 @@ namespace Vu {
             this->lastCreateInfo = createInfo;
             this->renderPass = createInfo.renderPass;
 
-            const std::vector<char> vertShaderCode = Vu::readFile(createInfo.vertexShaderPath);
-            const std::vector<char> fragShaderCode = Vu::readFile(createInfo.fragmentShaderPath);
 
             lastModifiedTime = std::max(getlastModifiedTime(createInfo.vertexShaderPath),
                                         getlastModifiedTime(createInfo.fragmentShaderPath));
 
 
+            const std::vector<char> vertShaderCode = Vu::readFile(createInfo.vertexShaderPath);
+            const std::vector<char> fragShaderCode = Vu::readFile(createInfo.fragmentShaderPath);
             auto vertOutPath = createInfo.vertexShaderPath;
             vertOutPath.replace_extension("spv");
             auto fragOutPath = createInfo.fragmentShaderPath;
             fragOutPath.replace_extension("spv");
 
-            //
-            // //slang session
-            // const char* searchPaths[] = {"assets/shaders/"};
-            // slang::TargetDesc targetDesc = {};
-            // targetDesc.format = SLANG_SPIRV;
-            // targetDesc.profile = globalSession->findProfile("spirv_1_5");
-            // targetDesc.flags = 0;
-            //
-            //
-            // slang::SessionDesc sessionDesc = {};
-            // sessionDesc.targets = &targetDesc;
-            // sessionDesc.targetCount = 1;
-            // sessionDesc.searchPaths = searchPaths;
-            // sessionDesc.searchPathCount = 1;
-            //
-            //
-            // std::vector<slang::CompilerOptionEntry> options;
-            // options.push_back(
-            //     {
-            //         slang::CompilerOptionName::EmitSpirvDirectly,
-            //         {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}
-            //     });
-            // sessionDesc.compilerOptionEntries = options.data();
-            // sessionDesc.compilerOptionEntryCount = options.size();
-            //
-            // slang::ISession* session;
-            // globalSession->createSession(sessionDesc, &session);
-            //
-            //
-            // //slang module
-            // slang::IBlob* db{};
-            // slang::IModule* module = session->loadModule("hello-world.slang", &db);
-            // if (db != nullptr) {
-            //     fprintf(stderr, "%s\n", (const char *) db->getBufferPointer());
-            //
-            // }
-            //
-            //
-            // int32 entrypointCount = module->getDefinedEntryPointCount();
-            // slang::IEntryPoint* entryPoint{};
-            // module->findEntryPointByName("computeMain", &entryPoint);
-            //
-            // std::vector<slang::IComponentType *> componentTypes{};
-            // componentTypes.push_back(module);
-            // componentTypes.push_back(entryPoint);
-            //
-            //
-            // slang::IComponentType* composedProgram;
-            // //
-            // {
-            //     slang::IBlob* diagnosticsBlob;
-            //     SlangResult result = session->createCompositeComponentType(componentTypes.data(),
-            //                                                                componentTypes.size(),
-            //                                                                &composedProgram,
-            //                                                                &diagnosticsBlob);
-            // }
-            //
-            //
-            // slang::IBlob* spirvCode;
-            // //
-            // {
-            //     slang::IBlob* diagnosticsBlob;
-            //     SlangResult result = composedProgram->getEntryPointCode(
-            //         0,
-            //         0,
-            //         &spirvCode,
-            //         &diagnosticsBlob);
-            // }
-            //
 
-            std::string vertCmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout  -o {2}",
-                                              config::SHADER_COMPILER_PATH,
-                                              createInfo.vertexShaderPath.generic_string(),
-                                              vertOutPath.generic_string());
-            auto fragCmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout -o {2}",
-                                       config::SHADER_COMPILER_PATH,
-                                       createInfo.fragmentShaderPath.generic_string(),
-                                       fragOutPath.generic_string());
-
-            uint32 vRes = system(vertCmd.c_str());
-            uint32 fRes = system(fragCmd.c_str());
-            assert(vRes == 0);
-            assert(fRes == 0);
+            //  std::string vertCmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout  -o {2}",
+            //                                    config::SHADER_COMPILER_PATH,
+            //                                    createInfo.vertexShaderPath.generic_string(),
+            //                                    vertOutPath.generic_string());
+            //  auto fragCmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout -o {2}",
+            //                             config::SHADER_COMPILER_PATH,
+            //                             createInfo.fragmentShaderPath.generic_string(),
+            //                             fragOutPath.generic_string());
+            //
+            //  uint32 vRes = system(vertCmd.c_str());
+            //  uint32 fRes = system(fragCmd.c_str());
+            //  assert(vRes == 0);
+            //  assert(fRes == 0);
+            //
+            // const auto vertSpv = Vu::readFile(vertOutPath);
+            // const auto fragSpv = Vu::readFile(fragOutPath);
+            //
+            // vertexShaderModule = createShaderModule(vertSpv.data(), vertSpv.size());
+            // fragmentShaderModule = createShaderModule(fragSpv.data(), fragSpv.size());
 
 
-            const auto vertSpv = Vu::readFile(vertOutPath);
-            const auto fragSpv = Vu::readFile(fragOutPath);
+            slang::IBlob* vertSPV{};
+            slang::IBlob* fragSPV{};
 
+            compileToSpirv(createInfo.vertexShaderPath.filename().generic_string().c_str(), "vertexMain", vertSPV);
+            compileToSpirv(createInfo.fragmentShaderPath.filename().generic_string().c_str(), "fragmentMain", fragSPV);
 
-            vertexShaderModule = createShaderModule(vertSpv);
-            fragmentShaderModule = createShaderModule(fragSpv);
+            createFile("assets/shaders/vertexFromApi.spv", {(uint8_t *) vertSPV->getBufferPointer(), vertSPV->getBufferSize()});
+            createFile("assets/shaders/fragmentFromApi.spv", {(uint8_t *) fragSPV->getBufferPointer(), fragSPV->getBufferSize()});
+
+            vertexShaderModule = createShaderModule(vertSPV->getBufferPointer(), vertSPV->getBufferSize());
+            fragmentShaderModule = createShaderModule(fragSPV->getBufferPointer(), fragSPV->getBufferSize());
         }
 
         void uninit() {
@@ -193,12 +271,12 @@ namespace Vu {
         }
 
 
-        static VkShaderModule createShaderModule(const std::vector<char>& code) {
+        static VkShaderModule createShaderModule(const void* code, size_t size) {
 
             VkShaderModuleCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-            createInfo.codeSize = code.size();
-            createInfo.pCode = reinterpret_cast<const uint32 *>(code.data());
+            createInfo.codeSize = size;
+            createInfo.pCode = reinterpret_cast<const uint32 *>(code);
             createInfo.pNext = nullptr;
 
             VkShaderModule shaderModule;

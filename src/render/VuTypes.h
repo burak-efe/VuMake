@@ -28,8 +28,8 @@ namespace Vu {
     struct GPU_FrameConst {
         float4x4 view;
         float4x4 proj;
-        float3 cameraPos;
-        float3 cameraDir;
+        float4 cameraPos;
+        float4 cameraDir;
         float time;
         float debugIndex;
     };

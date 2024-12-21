@@ -107,8 +107,8 @@ struct FrameConst
 {
     float4x4 view;
     float4x4 proj;
-    float3 _cameraPos;
-    float3 _cameraDir;
+    float4 _cameraPos;
+    float4 _cameraDir;
     float _time;
     float _debugIndex;
 
