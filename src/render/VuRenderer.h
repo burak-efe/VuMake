@@ -3,7 +3,6 @@
 #include <functional>
 #include <stack>
 
-#include "SDL3/SDL_vulkan.h"
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_sdl3.h"
@@ -39,8 +38,6 @@ namespace Vu {
         VuHandle<VuTexture> debugTexture;
         VuHandle<VuSampler> debugSampler;
 
-        //VuMaterialDataPool materialDataPool;
-
         std::stack<std::function<void()> > disposeStack;
 
         void init();
@@ -57,7 +54,7 @@ namespace Vu {
 
         void endFrame();
 
-        void bindMesh(const VuMesh& mesh);
+        void bindMesh( VuMesh& mesh);
 
         void bindMaterial(const VuMaterial& material);
 

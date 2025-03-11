@@ -9,31 +9,32 @@
 #include "Common.h"
 #include "VuConfig.h"
 #include "VuTypes.h"
+#include "VuUtils.h"
 
 namespace Vu {
 
     struct VuDeviceCreateInfo {
-        const VkBool32 enableValidationLayers;
+        const VkBool32                   enableValidationLayers;
         const VkPhysicalDeviceFeatures2& physicalDeviceFeatures2;
-        const VkSurfaceKHR surface;
-        const std::span<const char *> deviceExtensions;
+        const VkSurfaceKHR               surface;
+        const std::span<const char *>    deviceExtensions;
     };
-    struct VuDevice {
-        VkInstance instance;
-        VkDebugUtilsMessengerEXT debugMessenger;
-        VkPhysicalDevice physicalDevice;
-        QueueFamilyIndices queueFamilyIndices;
-        VkDevice device;
-        VkQueue graphicsQueue;
-        VkQueue presentQueue;
-        VmaAllocator vma;
-        VkCommandPool commandPool;
 
-        VkDescriptorSetLayout globalDescriptorSetLayout;
+    struct VuDevice {
+        VkInstance                   instance;
+        VkDebugUtilsMessengerEXT     debugMessenger;
+        VkPhysicalDevice             physicalDevice;
+        QueueFamilyIndices           queueFamilyIndices;
+        VkDevice                     device;
+        VkQueue                      graphicsQueue;
+        VkQueue                      presentQueue;
+        VmaAllocator                 vma;
+        VkCommandPool                commandPool;
+        VkDescriptorSetLayout        globalDescriptorSetLayout;
         std::vector<VkDescriptorSet> globalDescriptorSets;
-        VkDescriptorPool descriptorPool;
-        VkDescriptorPool uiDescriptorPool;
-        VkPipelineLayout globalPipelineLayout;
+        VkDescriptorPool             descriptorPool;
+        VkDescriptorPool             uiDescriptorPool;
+        VkPipelineLayout             globalPipelineLayout;
 
         VuDisposeStack disposeStack;
 
@@ -41,7 +42,7 @@ namespace Vu {
             disposeStack.disposeAll();
         }
 
-        void initInstance(VkBool32 enableValidationLayers,
+        void initInstance(VkBool32                enableValidationLayers,
                           std::span<const char *> validationLayers,
                           std::span<const char *> instanceExtensions) {
 
@@ -118,8 +119,8 @@ namespace Vu {
         void initCommandPool() {
             ZoneScoped;
             VkCommandPoolCreateInfo poolInfo{};
-            poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-            poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+            poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+            poolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
             poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
             VkCheck(vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool));
         }
@@ -138,7 +139,7 @@ namespace Vu {
             initGlobalDescriptorSet(maxFramesInFligth);
             std::array descSetLayouts{globalDescriptorSetLayout};
 
-            VuPipelineLayout::createPipelineLayout(device, descSetLayouts, config::PUSH_CONST_SIZE, globalPipelineLayout);
+            createPipelineLayout(device, descSetLayouts, config::PUSH_CONST_SIZE, globalPipelineLayout);
             disposeStack.push([&] {
                 vkDestroyPipelineLayout(device, globalPipelineLayout, nullptr);
             });
@@ -202,15 +203,13 @@ namespace Vu {
                     | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT
                     | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
 
-            // VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT
-
             std::array descriptorSetLayoutFlags{flag, flag, flag, flag, flag, flag};
 
             VkDescriptorSetLayoutBindingFlagsCreateInfoEXT binding_flags{};
-            binding_flags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-            binding_flags.bindingCount = descriptorSetLayoutFlags.size();
+            binding_flags.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
+            binding_flags.bindingCount  = descriptorSetLayoutFlags.size();
             binding_flags.pBindingFlags = descriptorSetLayoutFlags.data();
-            globalSetLayout.pNext = &binding_flags;
+            globalSetLayout.pNext       = &binding_flags;
 
             VkCheck(vkCreateDescriptorSetLayout(device, &globalSetLayout, nullptr, &globalDescriptorSetLayout));
         }
@@ -256,9 +255,9 @@ namespace Vu {
 
         VkCommandBuffer BeginSingleTimeCommands() {
             VkCommandBufferAllocateInfo allocInfo{};
-            allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-            allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-            allocInfo.commandPool = commandPool;
+            allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+            allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+            allocInfo.commandPool        = commandPool;
             allocInfo.commandBufferCount = 1;
 
             VkCommandBuffer commandBuffer;
@@ -277,9 +276,9 @@ namespace Vu {
             vkEndCommandBuffer(commandBuffer);
 
             VkSubmitInfo submitInfo{};
-            submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             submitInfo.commandBufferCount = 1;
-            submitInfo.pCommandBuffers = &commandBuffer;
+            submitInfo.pCommandBuffers    = &commandBuffer;
 
             vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
             vkQueueWaitIdle(graphicsQueue);
@@ -288,17 +287,17 @@ namespace Vu {
         }
 
         //STATIC FUNCTIONS///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                            VkDebugUtilsMessageTypeFlagsEXT messageType,
+        static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
+                                                            VkDebugUtilsMessageTypeFlagsEXT             messageType,
                                                             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                                            void* pUserData) {
+                                                            void*                                       pUserData) {
             std::cout << "[VALIDATION]: " << pCallbackData->pMessage << std::endl;
             return VK_FALSE;
         }
 
         static void fillDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
-            createInfo = {};
-            createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+            createInfo                 = {};
+            createInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
             createInfo.messageSeverity = //VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -308,10 +307,10 @@ namespace Vu {
             createInfo.pfnUserCallback = debugCallback;
         }
 
-        static VkResult createDebugUtilsMessengerEXT(VkInstance instance,
+        static VkResult createDebugUtilsMessengerEXT(VkInstance                                instance,
                                                      const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                                     const VkAllocationCallbacks* pAllocator,
-                                                     VkDebugUtilsMessengerEXT* pDebugMessenger) {
+                                                     const VkAllocationCallbacks*              pAllocator,
+                                                     VkDebugUtilsMessengerEXT*                 pDebugMessenger) {
             auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(
                 instance, "vkCreateDebugUtilsMessengerEXT"));
             if (func != nullptr) {
@@ -321,8 +320,8 @@ namespace Vu {
             }
         }
 
-        static void destroyDebugUtilsMessengerEXT(VkInstance instance,
-                                                  VkDebugUtilsMessengerEXT debugMessenger,
+        static void destroyDebugUtilsMessengerEXT(VkInstance                   instance,
+                                                  VkDebugUtilsMessengerEXT     debugMessenger,
                                                   const VkAllocationCallbacks* pAllocator) {
             auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(
                 instance, "vkDestroyDebugUtilsMessengerEXT"));
@@ -362,12 +361,12 @@ namespace Vu {
         }
 
         static bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface, std::span<const char *> enabledExtensions) {
-            QueueFamilyIndices indices = QueueFamilyIndices::findQueueFamilies(device, surface);
-            bool extensionsSupported = checkDeviceExtensionSupport(device, enabledExtensions);
-            bool swapChainAdequate = false;
+            QueueFamilyIndices indices             = QueueFamilyIndices::findQueueFamilies(device, surface);
+            bool               extensionsSupported = checkDeviceExtensionSupport(device, enabledExtensions);
+            bool               swapChainAdequate   = false;
             if (extensionsSupported) {
                 SwapChainSupportDetails swapChainSupport = SwapChainSupportDetails::querySwapChainSupport(device, surface);
-                swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+                swapChainAdequate                        = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
             }
 
             VkPhysicalDeviceFeatures supportedFeatures;
@@ -403,10 +402,10 @@ namespace Vu {
         }
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        void createInstance(bool enableValidationLayers,
+        void createInstance(bool                    enableValidationLayers,
                             std::span<const char *> validationLayers,
                             std::span<const char *> extensions,
-                            VkInstance& outInstance) {
+                            VkInstance&             outInstance) {
             ZoneScoped;
 
             if (enableValidationLayers && !checkValidationLayerSupport(validationLayers)) {
@@ -414,23 +413,23 @@ namespace Vu {
             }
 
             VkApplicationInfo appInfo{};
-            appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-            appInfo.pApplicationName = "VuMake";
+            appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+            appInfo.pApplicationName   = "VuMake";
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-            appInfo.pEngineName = "No Engine";
-            appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-            appInfo.apiVersion = VK_API_VERSION_1_2;
+            appInfo.pEngineName        = "No Engine";
+            appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
+            appInfo.apiVersion         = VK_API_VERSION_1_2;
 
             VkInstanceCreateInfo instanceCreateInfo{};
-            instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+            instanceCreateInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
             instanceCreateInfo.pApplicationInfo = &appInfo;
 
-            instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+            instanceCreateInfo.enabledExtensionCount   = static_cast<uint32_t>(extensions.size());
             instanceCreateInfo.ppEnabledExtensionNames = extensions.data();
 
             VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
             if (enableValidationLayers) {
-                instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+                instanceCreateInfo.enabledLayerCount   = static_cast<uint32_t>(validationLayers.size());
                 instanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
                 fillDebugMessengerCreateInfo(debugCreateInfo);
 
@@ -474,12 +473,12 @@ namespace Vu {
             }
         }
 
-        static void createPhysicalDevice(const VkInstance& instance,
-                                         const VkSurfaceKHR& surface,
+        static void createPhysicalDevice(const VkInstance&       instance,
+                                         const VkSurfaceKHR&     surface,
                                          std::span<const char *> enabledExtensions,
-                                         VkPhysicalDevice& outPhysicalDevice) {
+                                         VkPhysicalDevice&       outPhysicalDevice) {
             ZoneScoped;
-            outPhysicalDevice = VK_NULL_HANDLE;
+            outPhysicalDevice    = VK_NULL_HANDLE;
             uint32_t deviceCount = 0;
             vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -504,33 +503,33 @@ namespace Vu {
 
 
         static void createDevice(const VkPhysicalDeviceFeatures2& features,
-                                 const QueueFamilyIndices& indices,
-                                 const VkPhysicalDevice& physicalDevice,
-                                 std::span<const char *> enabledExtensions,
-                                 VkDevice& outDevice,
-                                 VkQueue& outGraphicsQueue,
-                                 VkQueue& outPresentQueue) {
+                                 const QueueFamilyIndices&        indices,
+                                 const VkPhysicalDevice&          physicalDevice,
+                                 std::span<const char *>          enabledExtensions,
+                                 VkDevice&                        outDevice,
+                                 VkQueue&                         outGraphicsQueue,
+                                 VkQueue&                         outPresentQueue) {
             ZoneScoped;
             std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
-            std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+            std::set<uint32_t>                   uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
             float queuePriority = 1.0f;
             for (uint32_t queueFamily: uniqueQueueFamilies) {
                 VkDeviceQueueCreateInfo queueCreateInfo{};
-                queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+                queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
                 queueCreateInfo.queueFamilyIndex = queueFamily;
-                queueCreateInfo.queueCount = 1;
+                queueCreateInfo.queueCount       = 1;
                 queueCreateInfo.pQueuePriorities = &queuePriority;
                 queueCreateInfos.push_back(queueCreateInfo);
             }
 
             VkDeviceCreateInfo createInfo{};
-            createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-            createInfo.pNext = &features;
-            createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-            createInfo.pQueueCreateInfos = queueCreateInfos.data();
-            createInfo.pEnabledFeatures = nullptr;
-            createInfo.enabledExtensionCount = static_cast<uint32_t>(enabledExtensions.size());
+            createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+            createInfo.pNext                   = &features;
+            createInfo.queueCreateInfoCount    = static_cast<uint32_t>(queueCreateInfos.size());
+            createInfo.pQueueCreateInfos       = queueCreateInfos.data();
+            createInfo.pEnabledFeatures        = nullptr;
+            createInfo.enabledExtensionCount   = static_cast<uint32_t>(enabledExtensions.size());
             createInfo.ppEnabledExtensionNames = enabledExtensions.data();
             //create
             {

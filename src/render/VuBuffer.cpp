@@ -58,11 +58,10 @@ namespace Vu{
         return lenght * stride;
     }
 
-    std::span<uint8> VuBuffer::getSpan(VkDeviceSize start, VkDeviceSize bytelenght) {
-        auto* ptr = static_cast<uint8 *>(mapPtr);
+    std::span<uint8> VuBuffer::getMappedSpan(VkDeviceSize start, VkDeviceSize bytelenght) {
+        uint8* ptr = static_cast<uint8 *>(mapPtr);
         ptr += start;
-        std::span span(ptr, bytelenght);
-        return span;
+        return std::span(ptr, bytelenght);
     }
 
     void VuBuffer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {

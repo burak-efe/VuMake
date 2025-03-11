@@ -4,8 +4,8 @@
 
 #include <tracy/Tracy.hpp>
 #include "vk_mem_alloc.h"
+#include "SDL3/SDL_vulkan.h"
 
-#include "VuInitializers.h"
 #include "VuResourceManager.h"
 #include "VuShader.h"
 
@@ -21,7 +21,6 @@ namespace Vu {
         initSurface();
         initVulkanDevice();
         initSwapchain();
-
 
         ctx::vuDevice->initBindless(config::BINDLESS_CONFIG_INFO, config::MAX_FRAMES_IN_FLIGHT);
 
@@ -42,11 +41,11 @@ namespace Vu {
 
 
         //debug resources
-        debugTexture.createHandle().init({std::filesystem::path("assets/textures/error.png"), VK_FORMAT_R8G8B8A8_UNORM});
-        VuResourceManager::writeSampledImageToGlobalPool(debugTexture.index, debugTexture.get().imageView);
+        debugTexture.createHandle()->init({std::filesystem::path("assets/textures/error.png"), VK_FORMAT_R8G8B8A8_UNORM});
+        VuResourceManager::writeSampledImageToGlobalPool(debugTexture.index, debugTexture.get()->imageView);
         disposeStack.push([&] { debugTexture.destroyHandle(); });
 
-        debugSampler.createHandle().init({});
+        debugSampler.createHandle()->init({});
         disposeStack.push([&] { debugSampler.destroyHandle(); });
     }
 

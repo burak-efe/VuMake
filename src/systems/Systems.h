@@ -12,17 +12,20 @@
 #include "Components.h"
 #include "VuRenderer.h"
 #include "VuMaterialDataPool.h"
+#include "VuMathUtils.h"
 
 namespace Vu {
     inline flecs::system AddRenderingSystem(flecs::world& world) {
         return world.system<Transform, const MeshRenderer>("Rendering")
-                .each([](Transform& trs, const MeshRenderer& meshRenderer) {
+                .each([](Transform& transform, const MeshRenderer& meshRenderer) {
 
-                    auto mat = meshRenderer.shader.get().materials[meshRenderer.materialIndex];
-                    auto adr = VuMaterialDataPool::mapAddressToBufferDeviceAddress(mat.pbrMaterialData);
+                    auto shader = meshRenderer.shader;
+                    auto mat    = shader.get()->materials[meshRenderer.materialIndex];
+                    auto adr    = VuMaterialDataPool::mapAddressToBufferDeviceAddress(mat.pbrMaterialData);
                     ctx::vuRenderer->bindMaterial(mat);
+                    float4x4 trs = transform.ToTRS();
                     GPU_PushConstant pc{
-                        trs.ToTRS(),
+                        trs,
                         adr,
                         {
                             meshRenderer.mesh->vertexBuffer.index,
@@ -32,7 +35,7 @@ namespace Vu {
                     };
                     ctx::vuRenderer->pushConstants(pc);
                     ctx::vuRenderer->bindMesh(*meshRenderer.mesh);
-                    ctx::vuRenderer->drawIndexed(meshRenderer.mesh->indexBuffer.get().lenght);
+                    ctx::vuRenderer->drawIndexed(meshRenderer.mesh->indexBuffer.get()->lenght);
                 });
     }
 
@@ -70,9 +73,9 @@ namespace Vu {
                     ImGui::Separator();
                     ImGui::Text(e.name());
                     ImGui::SliderFloat3(std::format("Position ##{0}", e.id()).c_str(),
-                                        &trs.Position.x, -8.0f, 8.0f);
-                    ImGui::Text(std::format("Rotation {0:}", glm::to_string(trs.Rotation)).c_str());
-                    ImGui::Text(std::format("Scale {0:}", glm::to_string(trs.Scale)).c_str());
+                                        &trs.position.x, -8.0f, 8.0f);
+                    // ImGui::Text(std::format("Rotation {0:}", glm::to_string(trs.rotation)).c_str());
+                    // ImGui::Text(std::format("Scale {0:}", glm::to_string(trs.scale)).c_str());
                     //}
                 });
     }
@@ -151,15 +154,15 @@ namespace Vu {
                             return;
                         }
 
-                        float xOffset = -ctx::mouseDeltaX;
-                        float yOffset = -ctx::mouseDeltaY;
+                        float xOffset = ctx::mouseDeltaX;
+                        float yOffset = ctx::mouseDeltaY;
 
                         xOffset *= cam.sensitivity;
                         yOffset *= cam.sensitivity;
 
                         float smoothingFactor = 0.4f; // tweak this value
-                        float smoothedDeltaX = (cam.lastX * smoothingFactor) + (xOffset * (1.0f - smoothingFactor));
-                        float smoothedDeltaY = (cam.lastY * smoothingFactor) + (yOffset * (1.0f - smoothingFactor));
+                        float smoothedDeltaX  = (cam.lastX * smoothingFactor) + (xOffset * (1.0f - smoothingFactor));
+                        float smoothedDeltaY  = (cam.lastY * smoothingFactor) + (yOffset * (1.0f - smoothingFactor));
 
                         cam.yaw +=
                                 smoothedDeltaY;
@@ -181,26 +184,26 @@ namespace Vu {
 
                     trs.SetEulerAngles(float3(cam.yaw, cam.pitch, cam.roll));
 
-                    glm::quat asEuler = glm::quat(float3(cam.yaw, cam.pitch, cam.roll));
-                    float3 rotatedTranslation = QuatMul(asEuler, movement);
+                    quaternion asEuler            = fromEulerYXZ(float3(cam.yaw, cam.pitch, cam.roll));
+                    float3     rotatedTranslation = rotate(asEuler , movement);
 
-                    trs.Position.x += rotatedTranslation.x;
-                    trs.Position.y += rotatedTranslation.y;
-                    trs.Position.z += rotatedTranslation.z;
+                    trs.position.x += rotatedTranslation.x;
+                    trs.position.y += rotatedTranslation.y;
+                    trs.position.z += rotatedTranslation.z;
 
 
-                    //VuFrameConst ubo{};
-                    ctx::frameConst.view = glm::inverse(trs.ToTRS());
-                    ctx::frameConst.proj = glm::perspective(
-                        glm::radians(cam.fov),
-                        static_cast<float>(ctx::vuRenderer->swapChain.swapChainExtent.width)
-                        / static_cast<float>(ctx::vuRenderer->swapChain.swapChainExtent.height),
+                    ctx::frameConst.view = inverse(trs.ToTRS());
+                    ctx::frameConst.proj = createPerspectiveProjectionMatrix(
+                        cam.fov,
+                        static_cast<float>(ctx::vuRenderer->swapChain.swapChainExtent.width),
+                        static_cast<float>(ctx::vuRenderer->swapChain.swapChainExtent.height),
                         cam.near,
-                        cam.far);
+                        cam.far
+                    );
 
-                    ctx::frameConst.cameraPos = glm::vec4(trs.Position, 0);
-                    ctx::frameConst.cameraDir = glm::vec4(float3(cam.yaw, cam.pitch, cam.roll), 0);
-                    ctx::frameConst.time = glm::vec4(ctx::time(), 0, 0, 0).x;
+                    ctx::frameConst.cameraPos = float4(trs.position, 0);
+                    ctx::frameConst.cameraDir = float4(float3(cam.yaw, cam.pitch, cam.roll), 0);
+                    ctx::frameConst.time      = float4(ctx::time(), 0, 0, 0).x;
 
 
                     //const auto* state = SDL_GetKeyboardState(nullptr);

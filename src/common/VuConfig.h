@@ -1,6 +1,11 @@
 #pragma once
 #include "Common.h"
-//#include "VuTypes.h"
+
+//Matrix Layout : Column Major
+//Coordinate System : Left handed, +Y up, +Z forward, +X right
+//Unit Scale: 1 unit = 1 meter
+//Angle Unit: Radian
+//Euler angles order: YXZ (Yaw,Pitch,Roll)
 
 namespace Vu {
     struct VuBindlessConfigInfo {
@@ -22,7 +27,6 @@ namespace Vu {
 }
 
 namespace Vu::config {
-
 
     constexpr uint32 MAX_FRAMES_IN_FLIGHT = 2;
     constexpr VuBindlessConfigInfo BINDLESS_CONFIG_INFO{

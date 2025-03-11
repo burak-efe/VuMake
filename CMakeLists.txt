@@ -67,6 +67,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/components)
 target_include_directories(${PROJECT_NAME} PRIVATE src/systems)
 target_include_directories(${PROJECT_NAME} PRIVATE src/render)
 target_include_directories(${PROJECT_NAME} PRIVATE src/material)
+target_include_directories(${PROJECT_NAME} PRIVATE src/math)
 ####################################################################################################
 #imgui
 add_sources_recursively(${PROJECT_NAME} external/imgui)
@@ -75,14 +76,14 @@ target_include_directories(${PROJECT_NAME} PRIVATE external/imgui)
 #Header Onlys
 target_include_directories(${PROJECT_NAME} PRIVATE external/stb)
 ####################################################################################################
-find_package(Vulkan 1.3.296.0 REQUIRED)
+find_package(Vulkan 1.4.304 REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
 ####################################################################################################
 FetchContent_Declare(
         fetch_volk
         GIT_REPOSITORY https://github.com/zeux/volk
-        GIT_TAG vulkan-sdk-1.3.296.0
+        GIT_TAG vulkan-sdk-1.4.304.1
 )
 FetchContent_MakeAvailable(fetch_volk)
 if (WIN32)
@@ -109,7 +110,7 @@ set(SDL_CAMERA OFF)
 FetchContent_Declare(
         fetch_SDL
         GIT_REPOSITORY https://github.com/libsdl-org/SDL
-        GIT_TAG preview-3.1.3
+        GIT_TAG release-3.2.4
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
 )
@@ -128,21 +129,21 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(fetch_fastgltf)
 target_link_libraries(${PROJECT_NAME} PRIVATE fastgltf)
 ####################################################################################################
-set(GLM_BUILD_LIBRARY OFF)
-FetchContent_Declare(
-        fetch_glm
-        GIT_REPOSITORY https://github.com/g-truc/glm
-        GIT_TAG 1.0.1
-        GIT_SHALLOW TRUE
-        GIT_PROGRESS TRUE
-)
-FetchContent_MakeAvailable(fetch_glm)
-target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
+#set(GLM_BUILD_LIBRARY OFF)
+#FetchContent_Declare(
+#        fetch_glm
+#        GIT_REPOSITORY https://github.com/g-truc/glm
+#        GIT_TAG 1.0.1
+#        GIT_SHALLOW TRUE
+#        GIT_PROGRESS TRUE
+#)
+#FetchContent_MakeAvailable(fetch_glm)
+#target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
 ####################################################################################################
 FetchContent_Declare(
         fetch_flecs
         GIT_REPOSITORY https://github.com/SanderMertens/flecs
-        GIT_TAG v4.0.2
+        GIT_TAG v4.0.4
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
 )
@@ -159,16 +160,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(fetch_buddy_alloc)
 target_include_directories(${PROJECT_NAME} PRIVATE ${buddy_alloc_SOURCE_DIR}/)
 ####################################################################################################
-#FetchContent_Declare(
-#        fetch_daw_json
-#        GIT_REPOSITORY https://github.com/beached/daw_json_link
-#        GIT_TAG release
-#        GIT_SHALLOW TRUE
-#        GIT_PROGRESS TRUE
-#)
-#FetchContent_MakeAvailable(fetch_daw_json)
-#target_link_libraries(${PROJECT_NAME} PRIVATE daw::daw-json-link)
-####################################################################################################
 FetchContent_Declare(
         fetch_tracy
         GIT_REPOSITORY https://github.com/wolfpld/tracy.git
@@ -181,6 +172,16 @@ option(TRACY_ENABLE "" ON)
 option(TRACY_STATIC "" OFF)
 target_link_libraries(${PROJECT_NAME} PRIVATE TracyClient)
 ####################################################################################################
+#FetchContent_Declare(
+#        fetch_hlslcpp
+#        GIT_REPOSITORY https://github.com/redorav/hlslpp
+#        GIT_TAG 3.6
+#        GIT_SHALLOW TRUE
+#        GIT_PROGRESS TRUE
+#)
+#FetchContent_MakeAvailable(fetch_hlslcpp)
+#target_include_directories(${PROJECT_NAME} PRIVATE ${fetch_hlslcpp_SOURCE_DIR}/include)
+####################################################################################################
 #set(BUILD_SHARED_LIBS OFF)
 #FetchContent_Declare(
 #        fetch_asyncplusplus
@@ -192,9 +193,18 @@ target_link_libraries(${PROJECT_NAME} PRIVATE TracyClient)
 #FetchContent_MakeAvailable(fetch_asyncplusplus)
 #target_link_libraries(${PROJECT_NAME} PRIVATE Async++)
 ####################################################################################################
+#FetchContent_Declare(
+#        fetch_daw_json
+#        GIT_REPOSITORY https://github.com/beached/daw_json_link
+#        GIT_TAG release
+#        GIT_SHALLOW TRUE
+#        GIT_PROGRESS TRUE
+#)
+#FetchContent_MakeAvailable(fetch_daw_json)
+#target_link_libraries(${PROJECT_NAME} PRIVATE daw::daw-json-link)
+####################################################################################################
 #set(SLANG_EMBED_CORE_MODULE OFF)
 #set(SLANG_LIB_TYPE SHARED CACHE STRING FORCE)
-
 
 set(SLANG_ENABLE_DXIL OFF CACHE BOOL "")
 set(SLANG_ENABLE_GFX OFF CACHE BOOL "")
@@ -214,11 +224,10 @@ set(SLANG_ENABLE_TESTS OFF CACHE BOOL "")
 set(SLANG_ENABLE_REPLAYER OFF CACHE BOOL "")
 set(SLANG_ENABLE_PREBUILT_BINARIES OFF CACHE BOOL "")
 
-
 FetchContent_Declare(
         fetch_slang
         GIT_REPOSITORY https://github.com/shader-slang/slang
-        GIT_TAG v2024.17
+        GIT_TAG v2025.5.2
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
 )
@@ -230,37 +239,6 @@ set_target_properties(slang
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
-
-#add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#        $<TARGET_FILE_DIR:${PROJECT_NAME}>/Debug/bin/slang.dll $<TARGET_FILE_DIR:${PROJECT_NAME}>)
-####################################################################################################
-#FetchContent_Declare(
-#        fetch_spirv_reflect
-#        GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Reflect
-#        GIT_TAG vulkan-sdk-1.3.296)
-#FetchContent_MakeAvailable(fetch_spirv_reflect)
-#target_sources(${PROJECT_NAME} PUBLIC ${fetch_spirv_reflect_SOURCE_DIR}/spirv_reflect.h)
-#target_sources(${PROJECT_NAME} PUBLIC ${fetch_spirv_reflect_SOURCE_DIR}/spirv_reflect.cpp)
-#target_include_directories(${PROJECT_NAME} PUBLIC ${fetch_spirv_reflect_SOURCE_DIR})
-####################################################################################################
-#FetchContent_Declare(
-#        fetch_vk_bootstrap
-#        GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap
-#        GIT_TAG v1.3.296)
-#FetchContent_MakeAvailable(fetch_vk_bootstrap)
-#target_link_libraries(${PROJECT_NAME} PUBLIC vk-bootstrap::vk-bootstrap)
-####################################################################################################
-#target_compile_definitions(${PROJECT_NAME} PUBLIC VK_NO_PROTOTYPES)
-#target_compile_definitions(${PROJECT_NAME} PUBLIC VOLK_IMPLEMENTATION)
-#Copy asset files to build directory
-#add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E copy_directory
-#        ${CMAKE_SOURCE_DIR}/shaders $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders)
-#if(WIN32)
-#    add_custom_command(TARGET {PROJECT_NAME} POST_BUILD
-#            COMMAND ${CMAKE_COMMAND} cmd ${CMAKE_SOURCE_DIR}/shaders/compile.bat)
-#endif()
 ####################################################################################################
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E create_symlink

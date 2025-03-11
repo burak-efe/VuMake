@@ -127,31 +127,5 @@ namespace Vu {
         }
     };
 
-    struct VuPipelineLayout {
-
-        static void createPipelineLayout(const VkDevice device,
-                                         const std::span<VkDescriptorSetLayout> descriptorSetLayouts,
-                                         const uint32 pushConstantSizeAsByte,
-                                         VkPipelineLayout& outPipelineLayout) {
-            ZoneScoped;
-
-            //push constants
-            VkPushConstantRange pcRange{
-                .stageFlags = VK_SHADER_STAGE_ALL,
-                .offset = 0,
-                .size = pushConstantSizeAsByte,
-            };
-
-            VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-            pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-            pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
-            pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
-            pipelineLayoutInfo.pushConstantRangeCount = 1;
-            pipelineLayoutInfo.pPushConstantRanges = &pcRange;
-
-            VkCheck(vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &outPipelineLayout));
-        }
-
-    };
 
 }

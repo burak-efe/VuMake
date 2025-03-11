@@ -8,7 +8,8 @@
 #include <fastgltf/core.hpp>
 #include <fastgltf/tools.hpp>
 #include <fastgltf/util.hpp>
-#include <fastgltf/glm_element_traits.hpp>
+#include <fastgltf/math.hpp>
+//#include <fastgltf/glm_element_traits.hpp>
 
 #include "VuResourceManager.h"
 
@@ -17,17 +18,14 @@ namespace Vu {
     template<typename T>
     struct VuAssetRef {
         const char* path;
-        VkBool32 isLoaded;
+        VkBool32    isLoaded;
         VuHandle<T> handle;
-
     };
 
-    
+
     struct VuAssetLoader {
 
         //inline static std::vector<const char*>
-
-
 
         //TODO
         static void LoadGltf(std::filesystem::path path, VuMesh& dstMesh, GPU_PBR_MaterialData& dstMaterialData) {
@@ -47,18 +45,18 @@ namespace Vu {
                 std::cout << "Some error occurred while reading the buffer, parsing the JSON, or validating the data." << "\n";
             }
 
-            auto mesh = asset.get().meshes.at(0);
-            auto prims = mesh.primitives;
+            auto mesh      = asset.get().meshes.at(0);
+            auto prims     = mesh.primitives;
             auto primitive = prims.at(0);
 
             auto parentPath = path.parent_path();
 
-            fastgltf::Optional<size_t> matIndex = primitive.materialIndex;
-            fastgltf::Material& material = asset->materials.at(matIndex.value());
-            fastgltf::TextureInfo& colorTexInfo = material.pbrData.baseColorTexture.value();
-            fastgltf::Image& colorImage = asset->images[colorTexInfo.textureIndex];
-            fastgltf::sources::URI colorPath = std::get<fastgltf::sources::URI>(colorImage.data);
-            auto colorTexPath = parentPath / colorPath.uri.string();
+            fastgltf::Optional<size_t> matIndex     = primitive.materialIndex;
+            fastgltf::Material&        material     = asset->materials.at(matIndex.value());
+            fastgltf::TextureInfo&     colorTexInfo = material.pbrData.baseColorTexture.value();
+            fastgltf::Image&           colorImage   = asset->images[colorTexInfo.textureIndex];
+            fastgltf::sources::URI     colorPath    = std::get<fastgltf::sources::URI>(colorImage.data);
+            auto                       colorTexPath = parentPath / colorPath.uri.string();
 
             // Handle<VuTexture> colorTexture; //TODO: leak
             // colorTexture.createHandle().init({colorTexPath, VK_FORMAT_R8G8B8A8_SRGB});
@@ -77,111 +75,124 @@ namespace Vu {
             dstMesh.indexBuffer.createHandle();
 
 
-
             //Indices
 
             if (!primitive.indicesAccessor.has_value()) {
                 std::cout << "Primitive index accessor has not been set!" << "\n";
                 return;
             }
-            auto& indexAccesor = asset->accessors[primitive.indicesAccessor.value()];
-            uint32 indexCount = indexAccesor.count;
-            dstMesh.indexBuffer.get().init({
+            auto&  indexAccesor = asset->accessors[primitive.indicesAccessor.value()];
+            uint32 indexCount   = indexAccesor.count;
+            dstMesh.indexBuffer.get()->init({
                 .lenght = indexCount,
                 .strideInBytes = sizeof(uint32),
                 .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT
             });
-            dstMesh.indexBuffer.get().map();
-            auto indexSpanByte = dstMesh.indexBuffer.get().getSpan(0, indexCount * sizeof(uint32));
-            std::span<uint32> indexSpan = std::span(reinterpret_cast<uint32 *>(indexSpanByte.data()), indexCount);
+            dstMesh.indexBuffer.get()->map();
+            auto              indexSpanByte = dstMesh.indexBuffer.get()->getMappedSpan(0, indexCount * sizeof(uint32));
+            std::span<uint32> indexSpan     = std::span(reinterpret_cast<uint32 *>(indexSpanByte.data()), indexCount);
             fastgltf::iterateAccessorWithIndex<uint32>(
                 asset.get(), indexAccesor,
                 [&](uint32 index, std::size_t idx) { indexSpan[idx] = index; }
             );
-            dstMesh.indexBuffer.get().unmap();
+            dstMesh.indexBuffer.get()->unmap();
 
 
             //Position
-            fastgltf::Attribute* positionIt = primitive.findAttribute("POSITION");
-            fastgltf::Accessor& positionAccessor = asset->accessors[positionIt->accessorIndex];
+            fastgltf::Attribute* positionIt       = primitive.findAttribute("POSITION");
+            fastgltf::Accessor&  positionAccessor = asset->accessors[positionIt->accessorIndex];
 
             dstMesh.vertexCount = positionAccessor.count;
-            dstMesh.vertexBuffer.get().init({
+            dstMesh.vertexBuffer.get()->init({
                 .lenght = dstMesh.vertexCount * dstMesh.totalAttributesSizePerVertex(),
                 .strideInBytes = 1,
-                .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+                .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
             });
-            VuResourceManager::registerStorageBuffer(dstMesh.vertexBuffer.index, dstMesh.vertexBuffer.get());
-            dstMesh.vertexBuffer.get().map();
+            VuResourceManager::registerStorageBuffer(dstMesh.vertexBuffer.index, *dstMesh.vertexBuffer.get());
+            dstMesh.vertexBuffer.get()->map();
 
-            std::span<uint8> vertexSpanByte = dstMesh.vertexBuffer.get().getSpan(0, sizeof(float3) * dstMesh.vertexCount);
-            std::span<float3> vertexSpan = std::span(reinterpret_cast<float3 *>(vertexSpanByte.data()), dstMesh.vertexCount);
+            std::span<uint8> vertexSpanByte =
+                    dstMesh.vertexBuffer.get()->getMappedSpan(0, sizeof(fastgltf::math::f32vec3) * dstMesh.vertexCount);
+            std::span<fastgltf::math::f32vec3> vertexSpan =
+                    std::span(reinterpret_cast<fastgltf::math::f32vec3 *>(vertexSpanByte.data()), dstMesh.vertexCount);
 
-            std::span<uint8> normalSpanByte = dstMesh.vertexBuffer.get().getSpan(dstMesh.getNormalOffsetAsByte(),
-                                                                           sizeof(float3) * dstMesh.vertexCount);
-            std::span<float3> normalSpan = std::span(reinterpret_cast<float3 *>(normalSpanByte.data()), dstMesh.vertexCount);
 
-            std::span<uint8> tangentSpanByte = dstMesh.vertexBuffer.get().getSpan(dstMesh.getTangentOffsetAsByte(),
-                                                                            sizeof(float4) * dstMesh.vertexCount);
-            std::span<float4> tangentSpan = std::span(reinterpret_cast<float4 *>(tangentSpanByte.data()), dstMesh.vertexCount);
+            std::span<uint8> normalSpanByte =
+                    dstMesh.vertexBuffer.get()->getMappedSpan(dstMesh.getNormalOffsetAsByte(), sizeof(fastgltf::math::f32vec3) * dstMesh.vertexCount);
+            std::span<fastgltf::math::f32vec3> normalSpan =
+                    std::span(reinterpret_cast<fastgltf::math::f32vec3 *>(normalSpanByte.data()), dstMesh.vertexCount);
 
-            std::span<uint8> uvSpanByte = dstMesh.vertexBuffer.get().getSpan(dstMesh.getUV_OffsetAsByte(), sizeof(float2) * dstMesh.vertexCount);
-            std::span<float2> uvSpan = std::span(reinterpret_cast<float2 *>(uvSpanByte.data()), dstMesh.vertexCount);
+
+            std::span<uint8> tangentSpanByte =
+                    dstMesh.vertexBuffer.get()->getMappedSpan(dstMesh.getTangentOffsetAsByte(), sizeof(fastgltf::math::f32vec4) * dstMesh.vertexCount);
+            std::span<fastgltf::math::f32vec4> tangentSpan =
+                    std::span(reinterpret_cast<fastgltf::math::f32vec4 *>(tangentSpanByte.data()), dstMesh.vertexCount);
+
+
+            std::span<uint8> uvSpanByte =
+                    dstMesh.vertexBuffer.get()->getMappedSpan(dstMesh.getUV_OffsetAsByte(), sizeof(fastgltf::math::f32vec2) * dstMesh.vertexCount);
+            std::span<fastgltf::math::f32vec2> uvSpan =
+                    std::span(reinterpret_cast<fastgltf::math::f32vec2 *>(uvSpanByte.data()), dstMesh.vertexCount);
 
             //pos
             {
                 ZoneScopedN("Positions");
-                fastgltf::iterateAccessorWithIndex<glm::vec3>(
+                fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec3>(
                     asset.get(), positionAccessor,
-                    [&](glm::vec3 pos, std::size_t idx) { vertexSpan[idx] = pos; }
+                    [&](fastgltf::math::f32vec3 pos, std::size_t idx) { vertexSpan[idx] = pos; }
                 );
             }
 
             //normal
             {
                 ZoneScopedN("Normals");
-                auto* normalIt = primitive.findAttribute("NORMAL");
+                auto* normalIt       = primitive.findAttribute("NORMAL");
                 auto& normalAccessor = asset->accessors[normalIt->accessorIndex];
 
-                fastgltf::iterateAccessorWithIndex<glm::vec3>(
+                fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec3>(
                     asset.get(), normalAccessor,
-                    [&](glm::vec3 normal, std::size_t idx) { normalSpan[idx] = normal; }
+                    [&](fastgltf::math::f32vec3 normal, std::size_t idx) { normalSpan[idx] = normal; }
                 );
 
             }
             //uv
             {
                 ZoneScopedN("UVs");
-                auto* uvIter = primitive.findAttribute("TEXCOORD_0");
+                auto* uvIter     = primitive.findAttribute("TEXCOORD_0");
                 auto& uvAccessor = asset->accessors[uvIter->accessorIndex];
 
-                fastgltf::iterateAccessorWithIndex<glm::vec2>(
+                fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec2>(
                     asset.get(), uvAccessor,
-                    [&](glm::vec2 uv, std::size_t idx) { uvSpan[idx] = uv; }
+                    [&](fastgltf::math::f32vec2 uv, std::size_t idx) { uvSpan[idx] = uv; }
                 );
             }
 
             //tangent
             {
                 ZoneScopedN("Tangents");
-                auto* tangentIt = primitive.findAttribute("TANGENT");
-                fastgltf::Accessor& tangentAccessor = asset->accessors[tangentIt->accessorIndex];
-                auto tangentbufferIndex = tangentAccessor.bufferViewIndex.value();
+                auto*               tangentIt          = primitive.findAttribute("TANGENT");
+                fastgltf::Accessor& tangentAccessor    = asset->accessors[tangentIt->accessorIndex];
+                auto                tangentbufferIndex = tangentAccessor.bufferViewIndex.value();
                 if (tangentbufferIndex == 0 && tangentAccessor.byteOffset == 0) {
                     std::cout << "Gltf file has no tangents" << std::endl;
 
-                    dstMesh.calculateTangents(indexSpan, vertexSpan, normalSpan, uvSpan, tangentSpan);
+                    auto pos = rpCastSpan<fastgltf::math::f32vec3, float3>(vertexSpan);
+                    auto norm = rpCastSpan<fastgltf::math::f32vec3, float3>(normalSpan);
+                    auto uv = rpCastSpan<fastgltf::math::f32vec2, float2>(uvSpan);
+                    auto tang = rpCastSpan<fastgltf::math::f32vec4, float4>(tangentSpan);
+
+                    dstMesh.calculateTangents(indexSpan, pos, norm, uv, tang);
 
                 } else {
-                    fastgltf::iterateAccessorWithIndex<float4>(
+                    fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec4>(
                         asset.get(), tangentAccessor,
-                        [&](float4 tangent, std::size_t idx) { tangentSpan[idx] = tangent; }
+                        [&](fastgltf::math::f32vec4 tangent, std::size_t idx) { tangentSpan[idx] = tangent; }
                     );
                 }
             }
 
 
-            dstMesh.vertexBuffer.get().unmap();
+            dstMesh.vertexBuffer.get()->unmap();
         }
     };
 }

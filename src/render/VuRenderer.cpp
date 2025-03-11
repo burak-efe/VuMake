@@ -16,7 +16,6 @@ namespace Vu {
 
     void VuRenderer::beginFrame() {
         ZoneScoped;
-        SDL_PollEvent(&ctx::sdlEvent);
         waitForFences();
         VkResult result = vkAcquireNextImageKHR(
             ctx::vuDevice->device, swapChain.swapChain, UINT64_MAX,
@@ -48,10 +47,10 @@ namespace Vu {
         swapChain.beginRenderPass(commandBuffer, imageIndex);
 
         VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = (float) swapChain.swapChainExtent.height;
-        viewport.width = (float) swapChain.swapChainExtent.width;
-        viewport.height = -(float) swapChain.swapChainExtent.height;
+        viewport.x        = 0.0f;
+        viewport.y        = (float) swapChain.swapChainExtent.height;
+        viewport.width    = (float) swapChain.swapChainExtent.width;
+        viewport.height   = -(float) swapChain.swapChainExtent.height;
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
@@ -70,27 +69,17 @@ namespace Vu {
 
     }
 
-    void VuRenderer::bindMesh(const VuMesh& mesh) {
+    void VuRenderer::bindMesh(VuMesh& mesh) {
         ZoneScoped;
+        //we are using vertex pulling, so only index buffers we need to bind
         auto commandBuffer = commandBuffers[currentFrame];
-        // std::array vertexBuffers = {
-        //     mesh.vertexBuffer.get().buffer,
-        //     mesh.vertexBuffer.get().buffer,
-        //     mesh.vertexBuffer.get().buffer,
-        //     mesh.vertexBuffer.get().buffer
-        // };
-        //
-        // std::array<VkDeviceSize, 4> offsets = {0, mesh.getNormalOffsetAsByte(), mesh.getTangentOffsetAsByte(), mesh.getUV_OffsetAsByte()};
-        // vkCmdBindVertexBuffers(commandBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), offsets.data());
-        vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.get().buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.get()->buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
-    void VuRenderer::bindMaterial(const VuMaterial& material ) {
+    void VuRenderer::bindMaterial(const VuMaterial& material) {
         ZoneScoped;
         auto commandBuffer = commandBuffers[currentFrame];
-        //material.bindFrameConstants(commandBuffer, currentFrame);
         material.bindPipeline(commandBuffer);
-        //material.pushConstants(commandBuffer, pushConstant);
     }
 
     void VuRenderer::drawIndexed(uint32 indexCount) {
@@ -100,7 +89,8 @@ namespace Vu {
 
     void VuRenderer::pushConstants(const GPU_PushConstant& pushConstant) {
         auto commandBuffer = commandBuffers[currentFrame];
-        vkCmdPushConstants(commandBuffer, ctx::vuDevice->globalPipelineLayout, VK_SHADER_STAGE_ALL, 0, config::PUSH_CONST_SIZE, &pushConstant);
+        vkCmdPushConstants(commandBuffer, ctx::vuDevice->globalPipelineLayout, VK_SHADER_STAGE_ALL, 0, config::PUSH_CONST_SIZE,
+                           &pushConstant);
     }
 
     void VuRenderer::beginImgui() {
@@ -125,18 +115,18 @@ namespace Vu {
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
-        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
+        VkSemaphore          waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
+        VkPipelineStageFlags waitStages[]     = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+        submitInfo.waitSemaphoreCount         = 1;
+        submitInfo.pWaitSemaphores            = waitSemaphores;
+        submitInfo.pWaitDstStageMask          = waitStages;
 
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
+        submitInfo.pCommandBuffers    = &commandBuffers[currentFrame];
 
-        VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+        VkSemaphore signalSemaphores[]  = {renderFinishedSemaphores[currentFrame]};
         submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
+        submitInfo.pSignalSemaphores    = signalSemaphores;
 
         VkCheck(vkQueueSubmit(ctx::vuDevice->graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]));
 
@@ -144,11 +134,11 @@ namespace Vu {
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
+        presentInfo.pWaitSemaphores    = signalSemaphores;
 
         VkSwapchainKHR swapChains[] = {swapChain.swapChain};
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapChains;
+        presentInfo.swapchainCount  = 1;
+        presentInfo.pSwapchains     = swapChains;
 
         presentInfo.pImageIndices = &currentFrameImageIndex;
 
@@ -174,7 +164,7 @@ namespace Vu {
         ZoneScoped;
         SDL_Event event;
 
-        int width = 0;
+        int width  = 0;
         int height = 0;
         SDL_GetWindowSize(ctx::window, &width, &height);
         auto minimized = (SDL_GetWindowFlags(ctx::window) & SDL_WINDOW_MINIMIZED) == SDL_WINDOW_MINIMIZED;

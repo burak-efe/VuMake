@@ -17,6 +17,6 @@ namespace Vu {
 
     struct Spinn {
         float3 axis = float3(0, 1, 0);
-        float angle = glm::radians(0.f);
+        float angle = 0.1F;
     };
 }

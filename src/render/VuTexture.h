@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Common.h"
-#include "VuCtx.h"
 #include "VuBuffer.h"
 #include "VuImage.h"
 

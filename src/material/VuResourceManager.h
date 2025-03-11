@@ -6,76 +6,88 @@
 namespace Vu {
     struct VuBindlessConfigInfo;
 
+    template<typename T>
+    struct VuHandle;
+
+    struct ResourceCounters {
+        uint32 referanceCounter;
+        uint32 generationCounter;
+    };
+
     //TObj should implement uninit()
     //this class is not incrementing or decrementing refCount itselfs, object that receives(or sends it) should do that instead
     template<typename TObj>
     struct VuPool {
-        inline static std::vector<TObj> data;
-        inline static std::stack<uint32> freeList;
-        inline static std::vector<uint32> refCounts;
+        inline static std::vector<TObj>   data;
+        inline static std::vector<ResourceCounters> counters;
+        inline static std::stack<uint32>  freeList;
+
+        static TObj* get(uint32 index, uint32 generation) {
+            if (generation != counters[index].generationCounter) {
+                return nullptr;
+            }
+            return &data[index];
+        }
 
         static uint32 getUsedSlotCount() {
             return data.size() - freeList.size();
         }
 
         //allocate, set refCount to one, and return index
-        static uint32 allocate() {
+        static void allocate(uint32& index, uint32& generation) {
             if (!freeList.empty()) {
                 uint32 i = freeList.top();
                 freeList.pop();
-                refCounts[i] = 0;
-                return i;
+                counters[i].referanceCounter = 1;
+                index        = i;
+                generation   = counters[index].generationCounter;
+                return;
             }
             data.push_back(TObj{});
-            refCounts.push_back(1);
-            return data.size() - 1;
+            counters.push_back({1,0});
+            index      = data.size() - 1;
+            generation = counters[index].generationCounter;
         }
 
         static void increaseRefCount(uint32 index) {
-            refCounts[index] += 1;
+            counters[index].referanceCounter += 1;
         }
 
-        static void decreaseRefCount(uint32 index) {
-            refCounts[index] -= 1;
+        static VkBool32 decreaseRefCount(uint32 index) {
+            counters[index].referanceCounter -= 1;
 
-            if (refCounts[index] == 0) {
+            if (counters[index].referanceCounter == 0) {
                 //delete
-                freeList.push(index);
                 data[index].uninit();
+                freeList.push(index);
+                counters[index].generationCounter++;
+                return true;
             }
-            if (refCounts[index] < 0) {
+
+            if (counters[index].referanceCounter < 0) {
                 std::cerr << "Referance count of object below zero" << std::endl;
             }
+            return false;
         }
     };
 
     template<typename T>
     struct VuHandle {
         uint32 index;
+        uint32 generation;
 
         //alloc a slot from pool and return the unitialized object
-        T& createHandle() {
-            index = VuPool<T>::allocate();
-            return get();
+        T* createHandle() {
+            VuPool<T>::allocate(index, generation);
+            return VuPool<T>::get(index, generation);
         }
-
         //return true if reference count drops == 0, which meand you need to uninit the object
-        void destroyHandle() {
-            //return
-            VuPool<T>::decreaseRefCount(index);
+        VkBool32 destroyHandle() {
+            return VuPool<T>::decreaseRefCount(index);
         }
 
-        // void increaseRefCount() {
-        //     VuPool<T>::increaseRefCount(index);
-        // }
-
-        ////return true if reference count drops below 1, which meany you need to uninit the object
-        // VkBool32 decreaseRefCount() {
-        //     return VuPool<T>::decreaseRefCount(index);
-        // }
-
-        T& get() const {
-            return VuPool<T>::data.at(index);
+        T* get() {
+            return VuPool<T>::get(index, generation);
         }
     };
 
