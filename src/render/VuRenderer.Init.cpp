@@ -72,8 +72,8 @@ namespace Vu {
         }
         // Vulkan Instance
         {
-            uint32 count = 0;
-            const char* const * instance_extensions = SDL_Vulkan_GetInstanceExtensions(&count);
+            uint32                    count               = 0;
+            const char* const *       instance_extensions = SDL_Vulkan_GetInstanceExtensions(&count);
             std::vector<const char *> extensions(instance_extensions, instance_extensions + count);
             extensions.append_range(config::INSTANCE_EXTENSIONS);
             ctx::vuDevice->initInstance(config::ENABLE_VALIDATION_LAYERS_LAYERS, config::VALIDATION_LAYERS, extensions);
@@ -88,28 +88,42 @@ namespace Vu {
     void VuRenderer::initVulkanDevice() {
         ZoneScoped;
 
-        VkPhysicalDevice8BitStorageFeatures m_8BitStorageFeatures {
-            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES,
+        VkPhysicalDeviceSynchronization2FeaturesKHR sync2Features{
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
             .pNext = nullptr,
-            .storageBuffer8BitAccess = VK_TRUE,
-            .uniformAndStorageBuffer8BitAccess = VK_TRUE,
-            .storagePushConstant8 = VK_TRUE
+            .synchronization2 = VK_TRUE
         };
 
-        VkPhysicalDeviceScalarBlockLayoutFeatures scalarBlockFeatures{};
-        scalarBlockFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES;
-        scalarBlockFeatures.pNext = &m_8BitStorageFeatures;
-        scalarBlockFeatures.scalarBlockLayout = VK_TRUE;
-
-        VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeatures = {
-            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
-            .pNext = &scalarBlockFeatures,
-            .bufferDeviceAddress = VK_TRUE,
+        VkPhysicalDeviceVulkan11Features vk11_features{
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
+            .pNext = &sync2Features,
+            .storageBuffer16BitAccess = VK_FALSE,
+            .uniformAndStorageBuffer16BitAccess = VK_FALSE,
+            .storagePushConstant16 = VK_FALSE,
+            .storageInputOutput16 = VK_FALSE,
+            .multiview = VK_FALSE,
+            .multiviewGeometryShader = VK_FALSE,
+            .multiviewTessellationShader = VK_FALSE,
+            .variablePointersStorageBuffer = VK_FALSE,
+            .variablePointers = VK_FALSE,
+            .protectedMemory = VK_FALSE,
+            .samplerYcbcrConversion = VK_FALSE,
+            .shaderDrawParameters = VK_FALSE
         };
 
-        VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures = {
-            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
-            .pNext = &bufferDeviceAddressFeatures,
+        VkPhysicalDeviceVulkan12Features vk12_features{
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+            .pNext = &vk11_features,
+            .samplerMirrorClampToEdge = VK_FALSE,
+            .drawIndirectCount = VK_FALSE,
+            .storageBuffer8BitAccess = VK_FALSE,
+            .uniformAndStorageBuffer8BitAccess = VK_FALSE,
+            .storagePushConstant8 = VK_FALSE,
+            .shaderBufferInt64Atomics = VK_FALSE,
+            .shaderSharedInt64Atomics = VK_FALSE,
+            .shaderFloat16 = VK_FALSE,
+            .shaderInt8 = VK_FALSE,
+            .descriptorIndexing = VK_TRUE,
             .shaderInputAttachmentArrayDynamicIndexing = VK_TRUE,
             .shaderUniformTexelBufferArrayDynamicIndexing = VK_TRUE,
             .shaderStorageTexelBufferArrayDynamicIndexing = VK_TRUE,
@@ -128,27 +142,45 @@ namespace Vu {
             .descriptorBindingStorageTexelBufferUpdateAfterBind = VK_TRUE,
             .descriptorBindingUpdateUnusedWhilePending = VK_TRUE,
             .descriptorBindingPartiallyBound = VK_TRUE,
-            .descriptorBindingVariableDescriptorCount = VK_TRUE,
+            .descriptorBindingVariableDescriptorCount = VK_FALSE,
             .runtimeDescriptorArray = VK_TRUE,
+            .samplerFilterMinmax = VK_FALSE,
+            .scalarBlockLayout = VK_TRUE,
+            .imagelessFramebuffer = VK_FALSE,
+            .uniformBufferStandardLayout = VK_FALSE,
+            .shaderSubgroupExtendedTypes = VK_FALSE,
+            .separateDepthStencilLayouts = VK_FALSE,
+            .hostQueryReset = VK_FALSE,
+            .timelineSemaphore = VK_TRUE,
+            .bufferDeviceAddress = VK_TRUE,
+            .bufferDeviceAddressCaptureReplay = VK_FALSE,
+            .bufferDeviceAddressMultiDevice = VK_FALSE,
+            .vulkanMemoryModel = VK_FALSE,
+            .vulkanMemoryModelDeviceScope = VK_FALSE,
+            .vulkanMemoryModelAvailabilityVisibilityChains = VK_FALSE,
+            .shaderOutputViewportIndex = VK_FALSE,
+            .shaderOutputLayer = VK_FALSE,
+            .subgroupBroadcastDynamicId = VK_FALSE,
         };
+
 
         VkPhysicalDeviceFeatures deviceFeatures{};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
-        deviceFeatures.shaderInt64 = VK_TRUE;
+        deviceFeatures.shaderInt64       = VK_TRUE;
 
         VkPhysicalDeviceFeatures2 deviceFeatures2{
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-            .pNext = &descriptorIndexingFeatures,
+            .pNext = &vk12_features,
             .features = deviceFeatures,
         };
 
 
         ctx::vuDevice->initDevice({
-            config::ENABLE_VALIDATION_LAYERS_LAYERS,
-            deviceFeatures2,
-            surface,
-            config::DEVICE_EXTENSIONS
-        });
+                                      config::ENABLE_VALIDATION_LAYERS_LAYERS,
+                                      deviceFeatures2,
+                                      surface,
+                                      config::DEVICE_EXTENSIONS
+                                  });
     }
 
     void VuRenderer::initSurface() {
@@ -168,11 +200,15 @@ namespace Vu {
         ZoneScoped;
         commandBuffers.resize(config::MAX_FRAMES_IN_FLIGHT);
         VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = ctx::vuDevice->commandPool;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.commandPool        = ctx::vuDevice->commandPool;
+        allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocInfo.commandBufferCount = static_cast<uint32>(commandBuffers.size());
         VkCheck(vkAllocateCommandBuffers(ctx::vuDevice->device, &allocInfo, commandBuffers.data()));
+        for (uint32 i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
+            std::string name = std::format("Command Buffer {}", i);
+            giveDebugName(ctx::vuDevice->device, VK_OBJECT_TYPE_COMMAND_BUFFER, commandBuffers[i], name.c_str());
+        }
     }
 
     void VuRenderer::initSyncObjects() {
@@ -214,12 +250,13 @@ namespace Vu {
 
             uniformBuffers[i] = VuBuffer();
             uniformBuffers[i].init({
-                .lenght = 1,
-                .strideInBytes = bufferSize,
-                .vkUsageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                .vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO,
-                .vmaCreateFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
-            });
+                                       .lenght = 1,
+                                       .strideInBytes = bufferSize,
+                                       .vkUsageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                                       .vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO,
+                                       .vmaCreateFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT |
+                                                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+                                   });
         }
         for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
             VuResourceManager::writeUBO_ToGlobalPool(0, i, uniformBuffers[i]);
@@ -244,11 +281,11 @@ namespace Vu {
         };
 
         VkDescriptorPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = 1;
-        poolInfo.pPoolSizes = pool_sizes;
-        poolInfo.maxSets = 1000;
-        poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        poolInfo.pPoolSizes    = pool_sizes;
+        poolInfo.maxSets       = 1000;
+        poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
         VkCheck(vkCreateDescriptorPool(ctx::vuDevice->device, &poolInfo, nullptr, &ctx::vuDevice->uiDescriptorPool));
         disposeStack.push([&] { vkDestroyDescriptorPool(ctx::vuDevice->device, ctx::vuDevice->uiDescriptorPool, nullptr); });
@@ -271,16 +308,16 @@ namespace Vu {
         disposeStack.push([] { ImGui_ImplSDL3_Shutdown(); });
 
         ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = ctx::vuDevice->instance;
-        init_info.PhysicalDevice = ctx::vuDevice->physicalDevice;
-        init_info.Device = ctx::vuDevice->device;
-        init_info.QueueFamily = VuSwapChain::findQueueFamilies(ctx::vuDevice->physicalDevice, surface).graphicsFamily.value();
-        init_info.Queue = ctx::vuDevice->graphicsQueue;
-        init_info.DescriptorPool = ctx::vuDevice->uiDescriptorPool;
-        init_info.MinImageCount = 2;
-        init_info.ImageCount = 2;
-        init_info.UseDynamicRendering = false;
-        init_info.RenderPass = swapChain.renderPass.renderPass;
+        init_info.Instance                  = ctx::vuDevice->instance;
+        init_info.PhysicalDevice            = ctx::vuDevice->physicalDevice;
+        init_info.Device                    = ctx::vuDevice->device;
+        init_info.QueueFamily               = VuSwapChain::findQueueFamilies(ctx::vuDevice->physicalDevice, surface).graphicsFamily.value();
+        init_info.Queue                     = ctx::vuDevice->graphicsQueue;
+        init_info.DescriptorPool            = ctx::vuDevice->uiDescriptorPool;
+        init_info.MinImageCount             = 2;
+        init_info.ImageCount                = 2;
+        init_info.UseDynamicRendering       = false;
+        init_info.RenderPass                = swapChain.renderPass.renderPass;
 
         ImGui_ImplVulkan_Init(&init_info);
         disposeStack.push([] { ImGui_ImplVulkan_Shutdown(); });
@@ -295,15 +332,15 @@ namespace Vu {
 
     void VuRenderer::bindGlobalBindlessSet(const VkCommandBuffer& commandBuffer) {
         vkCmdBindDescriptorSets(
-            commandBuffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            ctx::vuDevice->globalPipelineLayout,
-            0,
-            1,
-            &ctx::vuDevice->globalDescriptorSets[currentFrame],
-            0,
-            nullptr
-        );
+                                commandBuffer,
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                ctx::vuDevice->globalPipelineLayout,
+                                0,
+                                1,
+                                &ctx::vuDevice->globalDescriptorSets[currentFrame],
+                                0,
+                                nullptr
+                               );
     }
 
     void VuRenderer::uninit() {

@@ -17,9 +17,12 @@ namespace Vu {
     void VuRenderer::beginFrame() {
         ZoneScoped;
         waitForFences();
-        VkResult result = vkAcquireNextImageKHR(
-            ctx::vuDevice->device, swapChain.swapChain, UINT64_MAX,
-            imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &currentFrameImageIndex);
+        VkResult result = vkAcquireNextImageKHR(ctx::vuDevice->device,
+                                                swapChain.swapChain,
+                                                UINT64_MAX,
+                                                imageAvailableSemaphores[currentFrame],
+                                                VK_NULL_HANDLE,
+                                                &currentFrameImageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             resetSwapChain();
@@ -66,7 +69,48 @@ namespace Vu {
         ZoneScoped;
         swapChain.endRenderPass(commandBuffer);
         VkCheck(vkEndCommandBuffer(commandBuffer));
+    }
 
+    void VuRenderer::endFrame() {
+        ZoneScoped;
+        endRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+        VkSemaphore          waitSemaphores[]   = {imageAvailableSemaphores[currentFrame]};
+        VkPipelineStageFlags waitStages[]       = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+        VkSemaphore          signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+
+        submitInfo.waitSemaphoreCount   = 1;
+        submitInfo.pWaitSemaphores      = waitSemaphores;
+        submitInfo.pWaitDstStageMask    = waitStages;
+        submitInfo.commandBufferCount   = 1;
+        submitInfo.pCommandBuffers      = &commandBuffers[currentFrame];
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores    = signalSemaphores;
+
+        VkCheck(vkQueueSubmit(ctx::vuDevice->graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]));
+
+        VkPresentInfoKHR presentInfo{};
+        VkSwapchainKHR   swapChains[] = {swapChain.swapChain};
+
+        presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores    = signalSemaphores;
+        presentInfo.swapchainCount     = 1;
+        presentInfo.pSwapchains        = swapChains;
+        presentInfo.pImageIndices      = &currentFrameImageIndex;
+
+
+        auto result = vkQueuePresentKHR(ctx::vuDevice->presentQueue, &presentInfo);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+            resetSwapChain();
+        } else if (result != VK_SUCCESS) {
+            throw std::runtime_error("failed to present swap chain image!");
+        }
+        currentFrame = (currentFrame + 1) % config::MAX_FRAMES_IN_FLIGHT;
+        FrameMark;
     }
 
     void VuRenderer::bindMesh(VuMesh& mesh) {
@@ -107,50 +151,6 @@ namespace Vu {
 
         ImGui::Render();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-    }
-
-    void VuRenderer::endFrame() {
-        ZoneScoped;
-        endRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-        VkSemaphore          waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
-        VkPipelineStageFlags waitStages[]     = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-        submitInfo.waitSemaphoreCount         = 1;
-        submitInfo.pWaitSemaphores            = waitSemaphores;
-        submitInfo.pWaitDstStageMask          = waitStages;
-
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers    = &commandBuffers[currentFrame];
-
-        VkSemaphore signalSemaphores[]  = {renderFinishedSemaphores[currentFrame]};
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores    = signalSemaphores;
-
-        VkCheck(vkQueueSubmit(ctx::vuDevice->graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]));
-
-        VkPresentInfoKHR presentInfo{};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores    = signalSemaphores;
-
-        VkSwapchainKHR swapChains[] = {swapChain.swapChain};
-        presentInfo.swapchainCount  = 1;
-        presentInfo.pSwapchains     = swapChains;
-
-        presentInfo.pImageIndices = &currentFrameImageIndex;
-
-        auto result = vkQueuePresentKHR(ctx::vuDevice->presentQueue, &presentInfo);
-
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-            resetSwapChain();
-        } else if (result != VK_SUCCESS) {
-            throw std::runtime_error("failed to present swap chain image!");
-        }
-        currentFrame = (currentFrame + 1) % config::MAX_FRAMES_IN_FLIGHT;
-        FrameMark;
     }
 
 

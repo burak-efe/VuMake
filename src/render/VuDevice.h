@@ -68,7 +68,7 @@ namespace Vu {
                          physicalDevice,
                          info.deviceExtensions,
                          device, graphicsQueue, presentQueue
-            );
+                        );
             disposeStack.push([&] {
                 vkDestroyDevice(device, nullptr);
             });
@@ -291,7 +291,9 @@ namespace Vu {
                                                             VkDebugUtilsMessageTypeFlagsEXT             messageType,
                                                             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                                             void*                                       pUserData) {
-            std::cout << "[VALIDATION]: " << pCallbackData->pMessage << std::endl;
+            std::cout << "###############################################################################################################\n"
+                    << "[VALIDATION]: " << pCallbackData->pMessage << "\n"
+                    << "###############################################################################################################\n";
             return VK_FALSE;
         }
 
@@ -312,7 +314,7 @@ namespace Vu {
                                                      const VkAllocationCallbacks*              pAllocator,
                                                      VkDebugUtilsMessengerEXT*                 pDebugMessenger) {
             auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(
-                instance, "vkCreateDebugUtilsMessengerEXT"));
+                 instance, "vkCreateDebugUtilsMessengerEXT"));
             if (func != nullptr) {
                 return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
             } else {
@@ -324,7 +326,7 @@ namespace Vu {
                                                   VkDebugUtilsMessengerEXT     debugMessenger,
                                                   const VkAllocationCallbacks* pAllocator) {
             auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(
-                instance, "vkDestroyDebugUtilsMessengerEXT"));
+                 instance, "vkDestroyDebugUtilsMessengerEXT"));
             if (func != nullptr) {
                 func(instance, debugMessenger, pAllocator);
             }
@@ -433,6 +435,7 @@ namespace Vu {
                 instanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
                 fillDebugMessengerCreateInfo(debugCreateInfo);
 
+                //
                 // const char* layer_name = "VK_LAYER_KHRONOS_validation";
                 //
                 // const VkBool32 setting_validate_core = VK_TRUE;

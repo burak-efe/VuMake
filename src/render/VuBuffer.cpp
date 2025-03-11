@@ -46,7 +46,7 @@ namespace Vu{
         deviceAdressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
         deviceAdressInfo.buffer = buffer;
 
-        VkDeviceAddress address = vkGetBufferDeviceAddressKHR(ctx::vuDevice->device, &deviceAdressInfo);
+        VkDeviceAddress address = vkGetBufferDeviceAddress(ctx::vuDevice->device, &deviceAdressInfo);
         return address;
     }
 

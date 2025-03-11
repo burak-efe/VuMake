@@ -98,4 +98,18 @@ namespace Vu {
         VkCheck(vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &outPipelineLayout));
     }
 
+
+    inline void giveDebugName(const VkDevice device, const VkObjectType objType, const void* objHandle, const char* debugName) {
+#ifndef NDEBUG
+        VkDebugUtilsObjectNameInfoEXT info{
+            . sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+            . pNext = nullptr,
+            . objectType = objType,
+            . objectHandle = reinterpret_cast<uint64_t>(objHandle),
+            . pObjectName = debugName,
+        };
+        vkSetDebugUtilsObjectNameEXT(device, &info);
+#endif
+    }
+
 }
