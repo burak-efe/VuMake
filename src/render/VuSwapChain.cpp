@@ -11,14 +11,15 @@ namespace Vu
         createSwapChain(createInfo.surface);
         createImageViews(createInfo.device);
         depthStencil.init({
-                              createInfo.device,
-                              createInfo.physicalDevice,
-                              swapChainExtent.width,
-                              swapChainExtent.height,
-                              VK_FORMAT_D32_SFLOAT_S8_UINT,
-
+                              .device = createInfo.device,
+                              .physicalDevice = createInfo.physicalDevice,
+                              .width = swapChainExtent.width,
+                              .height = swapChainExtent.height,
+                              .format = VK_FORMAT_D32_SFLOAT_S8_UINT,
+                              .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                              .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
                           });
-        renderPass.init({ createInfo.device, swapChainImageFormat, depthStencil.lastCreateInfo.format});
+        renderPass.init({createInfo.device, swapChainImageFormat, depthStencil.lastCreateInfo.format});
         createFramebuffers();
     }
 
@@ -251,12 +252,13 @@ namespace Vu
 
     void VuSwapChain::createFramebuffers()
     {
-        ZoneScoped;
+        //ZoneScoped;
         framebuffers.resize(swapChainImageViews.size());
+
 
         for (size_t i = 0; i < swapChainImageViews.size(); i++)
         {
-            std::array attachments = {
+            std::array<VkImageView, 2> attachments = {
                 swapChainImageViews[i],
                 depthStencil.imageView
             };
@@ -271,6 +273,7 @@ namespace Vu
             framebufferInfo.layers          = 1;
 
             VkCheck(vkCreateFramebuffer(lastCreateInfo.device, &framebufferInfo, nullptr, &framebuffers[i]));
+
             auto name = std::format("framebuffer [{}]", i);
             giveDebugName(lastCreateInfo.device, VK_OBJECT_TYPE_FRAMEBUFFER, framebuffers[i], name.c_str());
         }

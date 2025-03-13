@@ -10,9 +10,13 @@ void Vu::VuImage::init(const VuTextureCreateInfo& createInfo)
                 createInfo.physicalDevice,
                 createInfo.width, createInfo.height,
                 createInfo.format,
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
+                createInfo.tiling,
+                createInfo.usage,
+                createInfo.properties,
+                image,
+                imageMemory);
+
+    createImageView(createInfo.device, createInfo.format, image, createInfo.aspectMask, imageView);
 }
 
 void Vu::VuImage::initFromAsset(VuDevice& vuDevice, const path& path, VkFormat format)
@@ -43,13 +47,17 @@ void Vu::VuImage::initFromAsset(VuDevice& vuDevice, const path& path, VkFormat f
     staging.setData(pixels, imageSize);
     stbi_image_free(pixels);
 
-    createImage(vuDevice.device,
-                vuDevice.physicalDevice,
-                texWidth, texHeight,
-                format,
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
+    uint32 w = texWidth;
+    uint32 h = texHeight;
+
+    init({vuDevice.device, vuDevice.physicalDevice, w, h, format});
+    // createImage(vuDevice.device,
+    //             vuDevice.physicalDevice,
+    //             texWidth, texHeight,
+    //             format,
+    //             VK_IMAGE_TILING_OPTIMAL,
+    //             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+    //             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
 
     transitionImageLayout(vuDevice, image,
                           VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -59,7 +67,6 @@ void Vu::VuImage::initFromAsset(VuDevice& vuDevice, const path& path, VkFormat f
     transitionImageLayout(vuDevice, image,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    createImageView(vuDevice.device, format, image, imageView);
 
     staging.uninit();
 }
@@ -78,9 +85,16 @@ void Vu::VuImage::uninit()
     vkDestroyImageView(lastCreateInfo.device, imageView, nullptr);
 }
 
-void Vu::VuImage::createImage(VkDevice        device, VkPhysicalDevice  physicalDevice, uint32_t width, uint32_t height, VkFormat format,
-                              VkImageTiling   tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image,
-                              VkDeviceMemory& imageMemory)
+void Vu::VuImage::createImage(const VkDevice              device,
+                              const VkPhysicalDevice      physicalDevice,
+                              const uint32_t              width,
+                              const uint32_t              height,
+                              const VkFormat              format,
+                              const VkImageTiling         tiling,
+                              const VkImageUsageFlags     usage,
+                              const VkMemoryPropertyFlags properties,
+                              VkImage&                    image,
+                              VkDeviceMemory&             imageMemory)
 {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -118,14 +132,18 @@ void Vu::VuImage::createImage(VkDevice        device, VkPhysicalDevice  physical
     vkBindImageMemory(device, image, imageMemory, 0);
 }
 
-void Vu::VuImage::createImageView(VkDevice device, VkFormat format, VkImage image, VkImageView& outImageView)
+void Vu::VuImage::createImageView(VkDevice           device,
+                                  VkFormat           format,
+                                  VkImage            image,
+                                  VkImageAspectFlags imageAspect,
+                                  VkImageView&       outImageView)
 {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image                           = image;
     viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
     viewInfo.format                          = format;
-    viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.aspectMask     = imageAspect;
     viewInfo.subresourceRange.baseMipLevel   = 0;
     viewInfo.subresourceRange.levelCount     = 1;
     viewInfo.subresourceRange.baseArrayLayer = 0;

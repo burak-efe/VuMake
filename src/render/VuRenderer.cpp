@@ -5,44 +5,53 @@
 #include "VuConfig.h"
 #include "VuDevice.h"
 
-namespace Vu {
-    bool VuRenderer::shouldWindowClose() {
+namespace Vu
+{
+    bool VuRenderer::shouldWindowClose()
+    {
         return ctx::sdlEvent.type == SDL_EVENT_QUIT;
     }
 
-    void VuRenderer::waitIdle() {
+    void VuRenderer::waitIdle()
+    {
         ZoneScoped;
-        vkDeviceWaitIdle(ctx::vuDevice->device);
+        vkDeviceWaitIdle(vuDevice.device);
     }
 
-    void VuRenderer::beginFrame() {
+    void VuRenderer::beginFrame()
+    {
         ZoneScoped;
         waitForFences();
-        VkResult result = vkAcquireNextImageKHR(ctx::vuDevice->device,
+        VkResult result = vkAcquireNextImageKHR(vuDevice.device,
                                                 swapChain.swapChain,
                                                 UINT64_MAX,
                                                 imageAvailableSemaphores[currentFrame],
                                                 VK_NULL_HANDLE,
                                                 &currentFrameImageIndex);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
             resetSwapChain();
             std::cerr << "[INFO]: SwapChain Recreated because of VK_ERROR_OUT_OF_DATE_KHR" << "\n";
-        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        }
+        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        {
             throw std::runtime_error("failed to acquire swap chain image!");
         }
 
-        vkResetFences(ctx::vuDevice->device, 1, &inFlightFences[currentFrame]);
+        vkResetFences(vuDevice.device, 1, &inFlightFences[currentFrame]);
         vkResetCommandBuffer(commandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
         beginRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
     }
 
-    void VuRenderer::waitForFences() {
+    void VuRenderer::waitForFences()
+    {
         ZoneScoped;
-        vkWaitForFences(ctx::vuDevice->device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+        vkWaitForFences(vuDevice.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
     }
 
-    void VuRenderer::beginRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex) {
+    void VuRenderer::beginRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex)
+    {
         ZoneScoped;
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -52,9 +61,9 @@ namespace Vu {
 
         VkViewport viewport{};
         viewport.x        = 0.0f;
-        viewport.y        = (float) swapChain.swapChainExtent.height;
-        viewport.width    = (float) swapChain.swapChainExtent.width;
-        viewport.height   = -(float) swapChain.swapChainExtent.height;
+        viewport.y        = (float)swapChain.swapChainExtent.height;
+        viewport.width    = (float)swapChain.swapChainExtent.width;
+        viewport.height   = -(float)swapChain.swapChainExtent.height;
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
@@ -66,13 +75,15 @@ namespace Vu {
         bindGlobalBindlessSet(commandBuffer);
     }
 
-    void VuRenderer::endRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex) {
+    void VuRenderer::endRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex)
+    {
         ZoneScoped;
         swapChain.endRenderPass(commandBuffer);
         VkCheck(vkEndCommandBuffer(commandBuffer));
     }
 
-    void VuRenderer::endFrame() {
+    void VuRenderer::endFrame()
+    {
         ZoneScoped;
         endRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
         VkSubmitInfo submitInfo{};
@@ -90,7 +101,7 @@ namespace Vu {
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores    = signalSemaphores;
 
-        VkCheck(vkQueueSubmit(ctx::vuDevice->graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]));
+        VkCheck(vkQueueSubmit(vuDevice.graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]));
 
         VkPresentInfoKHR presentInfo{};
         VkSwapchainKHR   swapChains[] = {swapChain.swapChain};
@@ -103,42 +114,51 @@ namespace Vu {
         presentInfo.pImageIndices      = &currentFrameImageIndex;
 
 
-        auto result = vkQueuePresentKHR(ctx::vuDevice->presentQueue, &presentInfo);
+        auto result = vkQueuePresentKHR(vuDevice.presentQueue, &presentInfo);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+        {
             resetSwapChain();
-        } else if (result != VK_SUCCESS) {
+        }
+        else if (result != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to present swap chain image!");
         }
         currentFrame = (currentFrame + 1) % config::MAX_FRAMES_IN_FLIGHT;
         FrameMark;
     }
 
-    void VuRenderer::bindMesh(VuMesh& mesh) {
+    void VuRenderer::bindMesh(VuMesh& mesh)
+    {
         ZoneScoped;
         //we are using vertex pulling, so only index buffers we need to bind
         auto commandBuffer = commandBuffers[currentFrame];
-        vkCmdBindIndexBuffer(commandBuffer, mesh.indexBuffer.get()->buffer, 0, VK_INDEX_TYPE_UINT32);
+        auto indexBuffer   = vuDevice.bufferPool.get(mesh.indexBuffer);
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
-    void VuRenderer::bindMaterial(const VuMaterial& material) {
+    void VuRenderer::bindMaterial(const VuMaterial& material)
+    {
         ZoneScoped;
         auto commandBuffer = commandBuffers[currentFrame];
         material.bindPipeline(commandBuffer);
     }
 
-    void VuRenderer::drawIndexed(uint32 indexCount) {
+    void VuRenderer::drawIndexed(uint32 indexCount)
+    {
         auto commandBuffer = commandBuffers[currentFrame];
         vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
     }
 
-    void VuRenderer::pushConstants(const GPU_PushConstant& pushConstant) {
+    void VuRenderer::pushConstants(const GPU_PushConstant& pushConstant)
+    {
         auto commandBuffer = commandBuffers[currentFrame];
-        vkCmdPushConstants(commandBuffer, ctx::vuDevice->globalPipelineLayout, VK_SHADER_STAGE_ALL, 0, config::PUSH_CONST_SIZE,
+        vkCmdPushConstants(commandBuffer, vuDevice.globalPipelineLayout, VK_SHADER_STAGE_ALL, 0, config::PUSH_CONST_SIZE,
                            &pushConstant);
     }
 
-    void VuRenderer::beginImgui() {
+    void VuRenderer::beginImgui()
+    {
         ZoneScoped;
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplSDL3_NewFrame();
@@ -146,7 +166,8 @@ namespace Vu {
         ImGui::NewFrame();
     }
 
-    void VuRenderer::endImgui() {
+    void VuRenderer::endImgui()
+    {
         ZoneScoped;
         auto commandBuffer = commandBuffers[currentFrame];
 
@@ -155,13 +176,15 @@ namespace Vu {
     }
 
 
-    void VuRenderer::updateFrameConstantBuffer(GPU_FrameConst ubo) {
+    void VuRenderer::updateFrameConstantBuffer(GPU_FrameConst ubo)
+    {
         ZoneScoped;
         uniformBuffers[currentFrame].setData(&ubo, sizeof(ubo));
     }
 
 
-    void VuRenderer::resetSwapChain() {
+    void VuRenderer::resetSwapChain()
+    {
         ZoneScoped;
         SDL_Event event;
 
@@ -170,12 +193,13 @@ namespace Vu {
         SDL_GetWindowSize(ctx::window, &width, &height);
         auto minimized = (SDL_GetWindowFlags(ctx::window) & SDL_WINDOW_MINIMIZED) == SDL_WINDOW_MINIMIZED;
 
-        while (width <= 0 || height <= 0 || minimized) {
+        while (width <= 0 || height <= 0 || minimized)
+        {
             SDL_GetWindowSize(ctx::window, &width, &height);
             minimized = (SDL_GetWindowFlags(ctx::window) & SDL_WINDOW_MINIMIZED) == SDL_WINDOW_MINIMIZED;
             SDL_WaitEvent(&event);
         }
-        vkDeviceWaitIdle(ctx::vuDevice->device);
+        vkDeviceWaitIdle(vuDevice.device);
         swapChain.resetSwapChain(surface);
     }
 }

@@ -111,8 +111,8 @@ namespace Vu
     struct VuResourceManager
     {
     private:
-        inline static VuBuffer bufferOfStorageBuffer;
-        inline static VuBuffer bufferOfUniformBuffer;
+        inline static VuBuffer bufferOfStorageBuffer{};
+        inline static VuBuffer bufferOfUniformBuffer{};
 
     public:
         static void init(const VuBindlessConfigInfo& info);

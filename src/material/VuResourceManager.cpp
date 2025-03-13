@@ -5,7 +5,7 @@
 #include "VuDevice.h"
 
 void Vu::VuResourceManager::init(const VuBindlessConfigInfo& info) {
-    ZoneScoped;
+    //ZoneScoped;
     bufferOfStorageBuffer.init({.length = info.storageBufferCount, .strideInBytes = sizeof(uint64)});
     bufferOfUniformBuffer.init({info.uniformBufferCount, sizeof(uint64)});
 

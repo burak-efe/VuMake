@@ -18,14 +18,13 @@ namespace Vu
     struct VuDeviceCreateInfo
     {
         const VkBool32                   enableValidationLayers;
-        const VkPhysicalDeviceFeatures2& physicalDeviceFeatures2;
+        const VkPhysicalDeviceFeatures2 physicalDeviceFeatures2;
         const VkSurfaceKHR               surface;
         const std::span<const char*>     deviceExtensions;
     };
 
     struct VuDevice
     {
-    public:
         VkInstance                   instance;
         VkDebugUtilsMessengerEXT     debugMessenger;
         VkPhysicalDevice             physicalDevice;
@@ -41,15 +40,19 @@ namespace Vu
         VkPipelineLayout             globalPipelineLayout;
         VmaAllocator                 vma;
 
-        VuPool2<VuImage, 4096>   imagePool;
-        VuPool2<VuBuffer, 4096>  bufferPool;
-        VuPool2<VuSampler, 4096> samplerPool;
-        VuPool2<VuShader, 4096> shaderPool;
+        VuPool2<VuImage, 32>   imagePool;
+        VuPool2<VuSampler, 32> samplerPool;
+        VuPool2<VuBuffer, 32>  bufferPool;
+        VuPool2<VuShader, 32>  shaderPool;
 
-    private:
+        VuImage*   get(const VuHandle2<VuImage> handle) { return imagePool.get(handle); }
+        VuSampler* get(const VuHandle2<VuSampler> handle) { return samplerPool.get(handle); }
+        VuBuffer*  get(const VuHandle2<VuBuffer> handle) { return bufferPool.get(handle); }
+        VuShader*  get(const VuHandle2<VuShader> handle) { return shaderPool.get(handle); }
+
+
         VuDisposeStack disposeStack;
 
-    public:
         void uninit();
 
         void initInstance(VkBool32               enableValidationLayers, std::span<const char*> validationLayers,

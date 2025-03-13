@@ -15,14 +15,15 @@
 #include "VuRenderer.h"
 
 
-namespace Vu {
-
-    struct Scene0 {
+namespace Vu
+{
+    struct Scene0
+    {
     private:
         std::filesystem::path gnomePath = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
 
-        VuHandle2 shader{};
-        VuRenderer         vuRenderer{};
+        VuHandle2<VuShader> shader{};
+        VuRenderer          vuRenderer{};
 
         flecs::system spinningSystem;
         flecs::system flyCameraSystem;
@@ -33,11 +34,13 @@ namespace Vu {
 
         bool uiNeedBuild = true;
 
-        void UpdateLoop() {
+        void UpdateLoop()
+        {
             ZoneScoped;
 
             //Update Loop
-            while (!vuRenderer.shouldWindowClose()) {
+            while (!vuRenderer.shouldWindowClose())
+            {
                 ctx::PreUpdate();
                 ctx::UpdateInput();
 
@@ -92,28 +95,34 @@ namespace Vu {
         }
 
     public:
-        void Run() {
+        void Run()
+        {
             ZoneScoped;
-            auto device   = VuDevice{};
-            ctx::vuDevice = &device;
-            std::cout << "Scene init" << std::endl;
-            vuRenderer.init();
+            //auto device   = VuDevice{};
+            //ctx::vuDevice = &device;
+            //std::cout << "Scene init" << std::endl;
+
             ctx::vuRenderer = &vuRenderer;
+            ctx::vuDevice = &vuRenderer.vuDevice;
+            vuRenderer.init();
 
             VuMesh mesh{};
 
-            shader.createHandle()->init(
-                {
-                    "assets/shaders/vert.slang",
-                    "assets/shaders/frag.slang",
-                    vuRenderer.swapChain.renderPass.renderPass
-                }
-            );
+            shader          = vuRenderer.vuDevice.shaderPool.createHandle();
+            auto* shaderPtr = vuRenderer.vuDevice.shaderPool.get(shader);
 
-            uint32 mat0 = shader.get()->createMaterial();
+            shaderPtr->init(
+                            {
+                                "assets/shaders/vert.slang",
+                                "assets/shaders/frag.slang",
+                                vuRenderer.swapChain.renderPass.renderPass
+                            }
+                           );
 
-            GPU_PBR_MaterialData* data = shader.get()->materials[mat0].pbrMaterialData;
-            VuAssetLoader::LoadGltf(gnomePath, mesh, *data);
+            uint32 mat0 = shaderPtr->createMaterial();
+
+            GPU_PBR_MaterialData* data = shaderPtr->materials[mat0].pbrMaterialData;
+            VuAssetLoader::LoadGltf(vuRenderer.vuDevice, gnomePath, mesh, *data);
 
             //
             {
@@ -129,18 +138,18 @@ namespace Vu {
 
                 //Add Entities
                 auto ent = world.entity("Obj1").set(Transform{
-                    .position = float3(0, 0, 0), .rotation = quaternion::identity(), .scale = float3(10.0F, 10.0F, 10.0F)
-                }).set(MeshRenderer{&mesh, shader, mat0}).set(Spinn{});
+                                                        .position = float3(0, 0, 0), .rotation = quaternion::identity(),
+                                                        .scale = float3(10.0F, 10.0F, 10.0F)
+                                                    }).set(MeshRenderer{&mesh, shader, mat0}).set(Spinn{});
 
                 world.entity("Cam").set(
-                    Transform(float3(0.0f, 0.0f, 3.5f), quaternion::identity(), float3(1, 1, 1))
-                ).set(Camera{});
+                                        Transform(float3(0.0f, 0.0f, 3.5f), quaternion::identity(), float3(1, 1, 1))
+                                       ).set(Camera{});
 
                 UpdateLoop();
-
             }
             vuRenderer.waitIdle();
-            shader.destroyHandle();
+            //shader.destroyHandle();
             mesh.uninit();
             vuRenderer.uninit();
         }

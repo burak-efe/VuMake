@@ -5,10 +5,13 @@
 
 namespace Vu
 {
+    template<typename  T>
     struct VuHandle2
     {
         uint32 index;
         uint32 generation;
+
+        //T* get(){return nullptr;}
     };
 
     struct ResourceCounters2
@@ -31,30 +34,30 @@ namespace Vu
         uint32                                  freeListCounter   = 0;
 
         //Handle functions
-        T* get(const VuHandle2 handle) const
+        T* get(const VuHandle2<T> handle)
         {
             return get(handle.index, handle.generation);
         }
 
         //alloc a slot from pool and return the unitialized object
-        VuHandle2 createHandle()
+        VuHandle2<T> createHandle()
         {
-            VuHandle2 handle{};
+            VuHandle2<T> handle{};
             allocate(handle.index, handle.generation);
             return handle;
         }
 
         //return true if reference count drops == 0, which meand you need to uninit the object
-        VkBool32 destroyHandle(const VuHandle2 handle)
+        VkBool32 destroyHandle(const VuHandle2<T> handle)
         {
             return decreaseRefCount(handle.index);
         }
 
 
         // NULLABLE:  get the data that this handle points to, it can be null
-        T* get(uint32 index, uint32 generation) const
+        T* get(uint32 index, uint32 generation)
         {
-            T* result = nullptr;
+            T* result = (T*)nullptr;
             if (generation == counters[index].generationCounter)
             {
                 result = &data[index];

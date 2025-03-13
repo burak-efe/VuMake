@@ -7,9 +7,6 @@
 #include "vk_mem_alloc.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-// #define GLM_FORCE_RADIANS
-// #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-// #define GLM_ENABLE_EXPERIMENTAL
 
 #include "Common.h"
 
@@ -18,14 +15,16 @@
 
 #include "Scene0.h"
 
+int main(int argc, char* argv[])
+{
+    Vu::Scene0* scen = new Vu::Scene0();
 
-
-int main(int argc, char* argv[]) {
-    Vu::Scene0 scen{};
-
-    try {
-        scen.Run();
-    } catch (const std::exception& e) {
+    try
+    {
+        scen->Run();
+    }
+    catch (const std::exception& e)
+    {
         std::puts(e.what());
         system("pause");
     }

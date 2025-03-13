@@ -22,7 +22,8 @@ namespace Vu{
         allocCreateInfo.usage = info.vmaMemoryUsage;
         allocCreateInfo.flags = info.vmaCreateFlags;
 
-        VkCheck(vmaCreateBuffer(ctx::vuDevice->vma, &createInfo, &allocCreateInfo, &buffer, &allocation, &allocationInfo));
+        auto vma = ctx::vuDevice->vma;
+        VkCheck(vmaCreateBuffer(vma, &createInfo, &allocCreateInfo, &buffer, &allocation, &allocationInfo));
     }
 
     void VuBuffer::uninit() {

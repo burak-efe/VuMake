@@ -35,14 +35,14 @@ namespace Vu
             const char* const *      instance_extensions = SDL_Vulkan_GetInstanceExtensions(&count);
             std::vector<const char*> extensions(instance_extensions, instance_extensions + count);
             extensions.append_range(config::INSTANCE_EXTENSIONS);
-            ctx::vuDevice->initInstance(config::ENABLE_VALIDATION_LAYERS_LAYERS, config::VALIDATION_LAYERS, extensions);
+            vuDevice.initInstance(config::ENABLE_VALIDATION_LAYERS_LAYERS, config::VALIDATION_LAYERS, extensions);
 
-            volkLoadInstance(ctx::vuDevice->instance);
+            volkLoadInstance(vuDevice.instance);
         }
         //init surface
         {
-            SDL_Vulkan_CreateSurface(ctx::window, ctx::vuDevice->instance, nullptr, &surface);
-            disposeStack.push([&] { SDL_Vulkan_DestroySurface(ctx::vuDevice->instance, surface, nullptr); });
+            SDL_Vulkan_CreateSurface(ctx::window, vuDevice.instance, nullptr, &surface);
+            disposeStack.push([&] { SDL_Vulkan_DestroySurface(vuDevice.instance, surface, nullptr); });
         }
         //init device
         {
@@ -131,21 +131,21 @@ namespace Vu
                 .features = deviceFeatures,
             };
 
-            ctx::vuDevice->initDevice({
-                                          config::ENABLE_VALIDATION_LAYERS_LAYERS,
-                                          deviceFeatures2,
-                                          surface,
-                                          config::DEVICE_EXTENSIONS
-                                      });
+            vuDevice.initDevice({
+                                    config::ENABLE_VALIDATION_LAYERS_LAYERS,
+                                    deviceFeatures2,
+                                    surface,
+                                    config::DEVICE_EXTENSIONS
+                                });
         }
         //init swapchain
         {
             swapChain = VuSwapChain{};
-            swapChain.init(surface);
+            swapChain.init({vuDevice.device, vuDevice.physicalDevice, surface});
             disposeStack.push([&] { swapChain.uninit(); });
         }
 
-        ctx::vuDevice->initBindless(config::BINDLESS_CONFIG_INFO, config::MAX_FRAMES_IN_FLIGHT);
+        vuDevice.initBindless(config::BINDLESS_CONFIG_INFO, config::MAX_FRAMES_IN_FLIGHT);
         VuResourceManager::init(config::BINDLESS_CONFIG_INFO);
         disposeStack.push([&] { VuResourceManager::uninit(); });
 
@@ -192,14 +192,14 @@ namespace Vu
             commandBuffers.resize(config::MAX_FRAMES_IN_FLIGHT);
             VkCommandBufferAllocateInfo allocInfo{};
             allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-            allocInfo.commandPool        = ctx::vuDevice->commandPool;
+            allocInfo.commandPool        = vuDevice.commandPool;
             allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
             allocInfo.commandBufferCount = static_cast<uint32>(commandBuffers.size());
-            VkCheck(vkAllocateCommandBuffers(ctx::vuDevice->device, &allocInfo, commandBuffers.data()));
+            VkCheck(vkAllocateCommandBuffers(vuDevice.device, &allocInfo, commandBuffers.data()));
             for (uint32 i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
             {
                 std::string name = std::format("Command Buffer {}", i);
-                giveDebugName(ctx::vuDevice->device, VK_OBJECT_TYPE_COMMAND_BUFFER, commandBuffers[i], name.c_str());
+                giveDebugName(vuDevice.device, VK_OBJECT_TYPE_COMMAND_BUFFER, commandBuffers[i], name.c_str());
             }
         }
         //init sync objects
@@ -217,37 +217,41 @@ namespace Vu
 
             for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
             {
-                VkCheck(vkCreateSemaphore(ctx::vuDevice->device, &semaphoreInfo, nullptr,
+                VkCheck(vkCreateSemaphore(vuDevice.device, &semaphoreInfo, nullptr,
                                           &imageAvailableSemaphores[i]));
-                VkCheck(vkCreateSemaphore(ctx::vuDevice->device, &semaphoreInfo, nullptr,
+                VkCheck(vkCreateSemaphore(vuDevice.device, &semaphoreInfo, nullptr,
                                           &renderFinishedSemaphores[i]));
-                VkCheck(vkCreateFence(ctx::vuDevice->device, &fenceInfo, nullptr, &inFlightFences[i]));
+                VkCheck(vkCreateFence(vuDevice.device, &fenceInfo, nullptr, &inFlightFences[i]));
             }
 
-            disposeStack.push([vr = *this]
+            disposeStack.push([vr = *this, this]
             {
                 for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
                 {
-                    vkDestroySemaphore(ctx::vuDevice->device, vr.imageAvailableSemaphores[i], nullptr);
-                    vkDestroySemaphore(ctx::vuDevice->device, vr.renderFinishedSemaphores[i], nullptr);
-                    vkDestroyFence(ctx::vuDevice->device, vr.inFlightFences[i], nullptr);
+                    vkDestroySemaphore(vuDevice.device, vr.imageAvailableSemaphores[i], nullptr);
+                    vkDestroySemaphore(vuDevice.device, vr.renderFinishedSemaphores[i], nullptr);
+                    vkDestroyFence(vuDevice.device, vr.inFlightFences[i], nullptr);
                 }
             });
         }
         initImGui();
         //init default resources
         {
+            defaultImageHandle    = vuDevice.imagePool.createHandle();
+            auto* defaultImagePtr = vuDevice.imagePool.get(defaultImageHandle);
+            defaultImagePtr->initFromAsset(vuDevice,
+                                           std::filesystem::path("assets/textures/error.png"),
+                                           VK_FORMAT_R8G8B8A8_UNORM);
 
-            debugTexture.createHandle()->init({
-                                                  std::filesystem::path("assets/textures/error.png"),
-                                                  VK_FORMAT_R8G8B8A8_UNORM
-                                              });
-            VuResourceManager::writeSampledImageToGlobalPool(debugTexture.index, debugTexture.get()->imageView);
-            disposeStack.push([&] { debugTexture.destroyHandle(); });
+            VuResourceManager::writeSampledImageToGlobalPool(defaultImageHandle.index, defaultImagePtr->imageView);
+            //disposeStack.push([&] { debugTexture.destroyHandle(); });
 
-            debugSampler.createHandle()->init({});
-            VuResourceManager::writeSamplerToGlobalPool(debugSampler.index, debugSampler.get()->vkSampler);
-            disposeStack.push([&] { debugSampler.destroyHandle(); });
+            defaultSamplerHandle    = vuDevice.samplerPool.createHandle();
+            auto* defaultSamplerPtr = vuDevice.samplerPool.get(defaultSamplerHandle);
+            defaultSamplerPtr->init({.device = vuDevice.device, .physicalDevice = vuDevice.physicalDevice});
+
+            VuResourceManager::writeSamplerToGlobalPool(defaultSamplerHandle.index, defaultSamplerPtr->vkSampler);
+            //disposeStack.push([&] { debugSampler.destroyHandle(); });
         }
     }
 
@@ -266,10 +270,10 @@ namespace Vu
         poolInfo.maxSets       = 1000;
         poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-        VkCheck(vkCreateDescriptorPool(ctx::vuDevice->device, &poolInfo, nullptr, &ctx::vuDevice->uiDescriptorPool));
+        VkCheck(vkCreateDescriptorPool(vuDevice.device, &poolInfo, nullptr, &vuDevice.uiDescriptorPool));
         disposeStack.push([&]
         {
-            vkDestroyDescriptorPool(ctx::vuDevice->device, ctx::vuDevice->uiDescriptorPool, nullptr);
+            vkDestroyDescriptorPool(vuDevice.device, vuDevice.uiDescriptorPool, nullptr);
         });
 
         // Setup Dear ImGui context
@@ -290,13 +294,13 @@ namespace Vu
         disposeStack.push([] { ImGui_ImplSDL3_Shutdown(); });
 
         ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = ctx::vuDevice->instance;
-        init_info.PhysicalDevice = ctx::vuDevice->physicalDevice;
-        init_info.Device = ctx::vuDevice->device;
-        init_info.QueueFamily = VuSwapChain::findQueueFamilies(ctx::vuDevice->physicalDevice, surface).graphicsFamily.
+        init_info.Instance                  = vuDevice.instance;
+        init_info.PhysicalDevice            = vuDevice.physicalDevice;
+        init_info.Device                    = vuDevice.device;
+        init_info.QueueFamily               = VuSwapChain::findQueueFamilies(vuDevice.physicalDevice, surface).graphicsFamily.
             value();
-        init_info.Queue               = ctx::vuDevice->graphicsQueue;
-        init_info.DescriptorPool      = ctx::vuDevice->uiDescriptorPool;
+        init_info.Queue               = vuDevice.graphicsQueue;
+        init_info.DescriptorPool      = vuDevice.uiDescriptorPool;
         init_info.MinImageCount       = 2;
         init_info.ImageCount          = 2;
         init_info.UseDynamicRendering = false;
@@ -319,10 +323,10 @@ namespace Vu
         vkCmdBindDescriptorSets(
                                 commandBuffer,
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                ctx::vuDevice->globalPipelineLayout,
+                                vuDevice.globalPipelineLayout,
                                 0,
                                 1,
-                                &ctx::vuDevice->globalDescriptorSets[currentFrame],
+                                &vuDevice.globalDescriptorSets[currentFrame],
                                 0,
                                 nullptr
                                );
@@ -330,7 +334,7 @@ namespace Vu
 
     void VuRenderer::uninit()
     {
-        vkDeviceWaitIdle(ctx::vuDevice->device);
+        vkDeviceWaitIdle(vuDevice.device);
         while (!disposeStack.empty())
         {
             std::function<void()> disposeFunc = disposeStack.top();

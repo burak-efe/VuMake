@@ -12,6 +12,7 @@
 #include "VuSwapChain.h"
 #include "VuBuffer.h"
 #include "VuMaterial.h"
+#include "VuDevice.h"
 
 
 namespace Vu
@@ -21,7 +22,7 @@ namespace Vu
 
     struct VuRenderer
     {
-    public:
+        VuDevice vuDevice{};
         std::vector<VkCommandBuffer> commandBuffers;
         std::vector<VkSemaphore>     imageAvailableSemaphores;
         std::vector<VkSemaphore>     renderFinishedSemaphores;
@@ -35,8 +36,8 @@ namespace Vu
         uint32 currentFrame           = 0;
         uint32 currentFrameImageIndex = 0;
 
-        VuHandle2 debugTexture;
-        VuHandle2 debugSampler;
+        VuHandle2<VuImage> defaultImageHandle;
+        VuHandle2<VuSampler> defaultSamplerHandle;
 
         std::stack<std::function<void()>> disposeStack;
 

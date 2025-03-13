@@ -11,6 +11,7 @@ namespace std::filesystem {
 
 namespace Vu {
     struct VuDevice;
+    struct VuBuffer;
 
     struct VuMeshCreateInfo
     {
@@ -21,8 +22,8 @@ namespace Vu {
 
         VuMeshCreateInfo lastCreateInfo;
         uint32    vertexCount;
-        VuHandle2 indexBuffer;
-        VuHandle2 vertexBuffer;
+        VuHandle2<VuBuffer> indexBuffer;
+        VuHandle2<VuBuffer> vertexBuffer;
 
 
         void init()
