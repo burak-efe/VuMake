@@ -3,4 +3,5 @@
 
 namespace Vu::Math {
 
-} // namespace VuMath
+
+}

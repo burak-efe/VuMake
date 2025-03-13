@@ -29,6 +29,12 @@ namespace Vu {
 namespace Vu::config {
 
     constexpr uint32 MAX_FRAMES_IN_FLIGHT = 2;
+
+    // constexpr uint32 MAX_STORAGE_BUFFER_COUNT = 2;
+    // constexpr uint32 MAX_SAMPLER_COUNT = 2;
+    // constexpr uint32 MAX_SAMPLED_IMAGE_COUNT = 2;
+
+
     constexpr VuBindlessConfigInfo BINDLESS_CONFIG_INFO{
         .uboBinding = 0,
         .samplerBinding = 1,
@@ -62,20 +68,15 @@ namespace Vu::config {
     inline static std::vector<const char *> INSTANCE_EXTENSIONS = {
 #ifndef  NDEBUG
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
-        //VK_EXT_LAYER_SETTINGS_EXTENSION_NAME,
 #endif
     };
 
     inline static std::vector<const char *> DEVICE_EXTENSIONS = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
-        //VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-        //VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
         VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
-        //VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME
     };
 
     constexpr char SHADER_COMPILER_PATH[] = "bin\\slang\\slangc.exe";
-
 
 }

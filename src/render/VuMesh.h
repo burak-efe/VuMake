@@ -1,24 +1,40 @@
 #pragma once
 
 #include "Common.h"
-#include "VuBuffer.h"
-#include "VuResourceManager.h"
+
+#include "VuPools.h"
+
 
 namespace std::filesystem {
     class path;
 }
 
 namespace Vu {
+    struct VuDevice;
+
+    struct VuMeshCreateInfo
+    {
+        VuDevice* vuDevice;
+    };
 
     struct VuMesh {
-        uint32             vertexCount;
-        VuHandle<VuBuffer> indexBuffer;
-        VuHandle<VuBuffer> vertexBuffer;
+
+        VuMeshCreateInfo lastCreateInfo;
+        uint32    vertexCount;
+        VuHandle2 indexBuffer;
+        VuHandle2 vertexBuffer;
+
+
+        void init()
+        {
+
+        }
 
 
         void uninit() {
-            vertexBuffer.destroyHandle();
-            indexBuffer.destroyHandle();
+            //lastCreateInfo.vuDevice.
+            //vertexBuffer.destroyHandle();
+            //indexBuffer.destroyHandle();
         }
 
         VkDeviceSize totalAttributesSizePerVertex() {

@@ -1,28 +1,41 @@
 #pragma once
 #include "Common.h"
-#include "VuDepthStencil.h"
-#include "VuRenderPass.h"
+
 #include "VuTypes.h"
+#include "VuRenderPass.h"
+#include "VuImage.h"
 
-namespace Vu {
-    struct VuSwapChain {
+namespace Vu
+{
+    struct VuSwapChainCreateInfo
+    {
+        //VuDevice*        vuDevice;
+        VkDevice         device;
+        VkPhysicalDevice physicalDevice;
+        VkSurfaceKHR     surface;
+    };
+
+    struct VuSwapChain
+    {
     public:
-        VkSwapchainKHR swapChain;
-        VuRenderPass renderPass;
-        VuDepthStencil depthStencil;
+        VuSwapChainCreateInfo lastCreateInfo;
+        VkSwapchainKHR        swapChain;
+        VuRenderPass          renderPass;
+        VuImage               depthStencil;
+        //VuDepthStencil depthStencil;
 
-        std::vector<VkImage> swapChainImages;
-        std::vector<VkImageView> swapChainImageViews;
+        std::vector<VkImage>       swapChainImages;
+        std::vector<VkImageView>   swapChainImageViews;
         std::vector<VkFramebuffer> framebuffers;
 
-        VkFormat colorFormat;
+        VkFormat        colorFormat;
         VkColorSpaceKHR colorSpace;
-        VkFormat swapChainImageFormat;
-        VkExtent2D swapChainExtent;
-        uint32_t imageCount;
-        uint32_t queueNodeIndex = UINT32_MAX;
+        VkFormat        swapChainImageFormat;
+        VkExtent2D      swapChainExtent;
+        uint32_t        imageCount;
+        uint32_t        queueNodeIndex = UINT32_MAX;
 
-        void init(VkSurfaceKHR surface);
+        void init(const VuSwapChainCreateInfo& createInfo);
 
         void uninit();
 

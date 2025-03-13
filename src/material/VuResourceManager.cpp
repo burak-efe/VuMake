@@ -6,7 +6,7 @@
 
 void Vu::VuResourceManager::init(const VuBindlessConfigInfo& info) {
     ZoneScoped;
-    bufferOfStorageBuffer.init({.lenght = info.storageBufferCount, .strideInBytes = sizeof(uint64)});
+    bufferOfStorageBuffer.init({.length = info.storageBufferCount, .strideInBytes = sizeof(uint64)});
     bufferOfUniformBuffer.init({info.uniformBufferCount, sizeof(uint64)});
 
     writeStorageBuffer(bufferOfStorageBuffer, config::BINDLESS_CONFIG_INFO.storageBufferBinding);
@@ -31,7 +31,7 @@ void Vu::VuResourceManager::registerUniformBuffer(uint32 writeIndex, const VuBuf
 void Vu::VuResourceManager::writeStorageBuffer(const VuBuffer& buffer, uint32 binding) {
     VkDescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = buffer.buffer;
-    bufferInfo.range = buffer.lenght * buffer.stride;
+    bufferInfo.range = buffer.length * buffer.stride;
 
     for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
         VkWriteDescriptorSet descriptorWrite{};

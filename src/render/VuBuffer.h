@@ -7,7 +7,7 @@
 namespace Vu {
 
     struct VuBufferCreateInfo {
-        VkDeviceSize             lenght         = 1;
+        VkDeviceSize             length         = 1;
         VkDeviceSize             strideInBytes  = 4;
         VkBufferUsageFlags       vkUsageFlags   = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaMemoryUsage           vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO;
@@ -19,7 +19,7 @@ namespace Vu {
         VkBuffer           buffer;
         VmaAllocation      allocation;
         VmaAllocationInfo  allocationInfo;
-        VkDeviceSize       lenght;
+        VkDeviceSize       length;
         VkDeviceSize       stride;
         void*              mapPtr;
 
@@ -34,11 +34,11 @@ namespace Vu {
 
         VkDeviceAddress getDeviceAddress() const;
 
-        VkResult setData(const void* data, VkDeviceSize byteSize, VkDeviceSize offset = 0);
+        VkResult setData(const void* data, VkDeviceSize byteSize, VkDeviceSize offset = 0) const;
 
-        VkDeviceSize getSizeInBytes();
+        VkDeviceSize getSizeInBytes() const;
 
-        std::span<uint8> getMappedSpan(VkDeviceSize start, VkDeviceSize bytelenght);
+        std::span<uint8> getMappedSpan(VkDeviceSize start, VkDeviceSize bytelenght) const;
 
         static void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 

@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_fastgltf-subbuild/CMakeFiles/fetch_fastgltf-populate"
+		},
+		{
+			"file" : "D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_fastgltf-subbuild/CMakeFiles/fetch_fastgltf-populate.rule"
+		},
+		{
+			"file" : "D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_fastgltf-subbuild/CMakeFiles/fetch_fastgltf-populate-complete.rule"
+		},
+		{
+			"file" : "D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_fastgltf-subbuild/fetch_fastgltf-populate-prefix/src/fetch_fastgltf-populate-stamp/fetch_fastgltf-populate-build.rule"
+		},
+		{
+			"file" : "D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_fastgltf-subbuild/fetch_fastgltf-populate-prefix/src/fetch_fastgltf-populate-stamp/fetch_fastgltf-populate-configure.rule"
+		},
+		{
+			"file" : "D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_fastgltf-subbuild/fetch_fastgltf-populate-prefix/src/fetch_fastgltf-populate-stamp/fetch_fastgltf-populate-download.rule"
+		},
+		{
+			"file" : "D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_fastgltf-subbuild/fetch_fastgltf-populate-prefix/src/fetch_fastgltf-populate-stamp/fetch_fastgltf-populate-install.rule"
+		},
+		{
+			"file" : "D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_fastgltf-subbuild/fetch_fastgltf-populate-prefix/src/fetch_fastgltf-populate-stamp/fetch_fastgltf-populate-mkdir.rule"
+		},
+		{
+			"file" : "D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_fastgltf-subbuild/fetch_fastgltf-populate-prefix/src/fetch_fastgltf-populate-stamp/fetch_fastgltf-populate-patch.rule"
+		},
+		{
+			"file" : "D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_fastgltf-subbuild/fetch_fastgltf-populate-prefix/src/fetch_fastgltf-populate-stamp/fetch_fastgltf-populate-test.rule"
+		},
+		{
+			"file" : "D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_fastgltf-subbuild/fetch_fastgltf-populate-prefix/src/fetch_fastgltf-populate-stamp/fetch_fastgltf-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"fetch_fastgltf-populate"
+		],
+		"name" : "fetch_fastgltf-populate"
+	}
+}

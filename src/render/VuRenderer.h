@@ -12,92 +12,55 @@
 #include "VuSwapChain.h"
 #include "VuBuffer.h"
 #include "VuMaterial.h"
-#include "VuSampler.h"
-#include "VuTexture.h"
-#include "VuResourceManager.h"
 
-namespace Vu {
-    constexpr uint32 WIDTH = 1280;
+
+namespace Vu
+{
+    constexpr uint32 WIDTH  = 1280;
     constexpr uint32 HEIGHT = 720;
 
-    struct VuRenderer {
+    struct VuRenderer
+    {
     public:
         std::vector<VkCommandBuffer> commandBuffers;
-        std::vector<VkSemaphore> imageAvailableSemaphores;
-        std::vector<VkSemaphore> renderFinishedSemaphores;
-        std::vector<VkFence> inFlightFences;
-        std::vector<VuBuffer> uniformBuffers;
+        std::vector<VkSemaphore>     imageAvailableSemaphores;
+        std::vector<VkSemaphore>     renderFinishedSemaphores;
+        std::vector<VkFence>         inFlightFences;
+        std::vector<VuBuffer>        uniformBuffers;
 
-        VkSurfaceKHR surface;
-        VuSwapChain swapChain;
+        VkSurfaceKHR             surface;
+        VuSwapChain              swapChain;
         ImGui_ImplVulkanH_Window imguiMainWindowData;
 
-        uint32 currentFrame = 0;
+        uint32 currentFrame           = 0;
         uint32 currentFrameImageIndex = 0;
 
-        VuHandle<VuTexture> debugTexture;
-        VuHandle<VuSampler> debugSampler;
+        VuHandle2 debugTexture;
+        VuHandle2 debugSampler;
 
-        std::stack<std::function<void()> > disposeStack;
+        std::stack<std::function<void()>> disposeStack;
 
         void init();
-
-        void initWindow();
-
         void uninit();
-
         bool shouldWindowClose();
-
         void waitIdle();
-
         void beginFrame();
-
         void endFrame();
-
-        void bindMesh( VuMesh& mesh);
-
+        void bindMesh(VuMesh& mesh);
         void bindMaterial(const VuMaterial& material);
-
         void pushConstants(const GPU_PushConstant& pushConstant);
-
         void drawIndexed(uint32 indexCount);
-
         void beginImgui();
-
         void endImgui();
-
         void updateFrameConstantBuffer(GPU_FrameConst ubo);
-
         void reloadShaders();
 
     private:
         void waitForFences();
-
         void beginRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex);
-
         void endRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex);
-
-        void initSDL();
-
-        void initVulkanDevice();
-
-        void initVulkanInstance();
-
-        void initImGui();
-
-        void initSurface();
-
-        void initSwapchain();
-
-        void initCommandBuffers();
-
-        void initSyncObjects();
-
         void resetSwapChain();
-
-        void initUniformBuffers();
-
         void bindGlobalBindlessSet(const VkCommandBuffer& commandBuffer);
-
+        void initImGui();
     };
 }

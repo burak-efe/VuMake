@@ -20,7 +20,7 @@ namespace Vu {
             ZoneScoped;
 
             materialDataBuffer.init({
-                .lenght = BLOCK_COUNT,
+                .length = BLOCK_COUNT,
                 .strideInBytes = MINIMUM_BLOCK_SIZE,
                 .vkUsageFlags = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 .vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO,

@@ -8,13 +8,13 @@ namespace Vu{
 
         createInfo = info;
         stride = info.strideInBytes;
-        lenght = info.lenght;
+        length = info.length;
 
         VkBufferCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .size = (lenght * stride),
+            .size = (length * stride),
             .usage = info.vkUsageFlags
         };
 
@@ -50,16 +50,19 @@ namespace Vu{
         return address;
     }
 
-    VkResult VuBuffer::setData(const void* data, VkDeviceSize byteSize, VkDeviceSize offset) {
+    VkResult VuBuffer::setData(const void* data, VkDeviceSize byteSize, VkDeviceSize offset) const
+    {
         return vmaCopyMemoryToAllocation(ctx::vuDevice->vma, data, allocation, offset, byteSize);
     }
 
-    VkDeviceSize VuBuffer::getSizeInBytes() {
-        return lenght * stride;
+    VkDeviceSize VuBuffer::getSizeInBytes() const
+    {
+        return length * stride;
     }
 
-    std::span<uint8> VuBuffer::getMappedSpan(VkDeviceSize start, VkDeviceSize bytelenght) {
-        uint8* ptr = static_cast<uint8 *>(mapPtr);
+    std::span<uint8> VuBuffer::getMappedSpan(VkDeviceSize start, VkDeviceSize bytelenght) const
+    {
+        auto* ptr = static_cast<uint8 *>(mapPtr);
         ptr += start;
         return std::span(ptr, bytelenght);
     }

@@ -1,0 +1,3 @@
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_flecs-subbuild/CMakeFiles/fetch_flecs-populate.dir
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_flecs-subbuild/CMakeFiles/edit_cache.dir
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_flecs-subbuild/CMakeFiles/rebuild_cache.dir

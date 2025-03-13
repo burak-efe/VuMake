@@ -68,6 +68,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/systems)
 target_include_directories(${PROJECT_NAME} PRIVATE src/render)
 target_include_directories(${PROJECT_NAME} PRIVATE src/material)
 target_include_directories(${PROJECT_NAME} PRIVATE src/math)
+target_include_directories(${PROJECT_NAME} PRIVATE src/util)
 ####################################################################################################
 #imgui
 add_sources_recursively(${PROJECT_NAME} external/imgui)
@@ -206,39 +207,39 @@ target_link_libraries(${PROJECT_NAME} PRIVATE TracyClient)
 #set(SLANG_EMBED_CORE_MODULE OFF)
 #set(SLANG_LIB_TYPE SHARED CACHE STRING FORCE)
 
-set(SLANG_ENABLE_DXIL OFF CACHE BOOL "")
-set(SLANG_ENABLE_GFX OFF CACHE BOOL "")
-set(SLANG_ENABLE_SLANGD OFF CACHE BOOL "")
-set(SLANG_ENABLE_SLANGC OFF CACHE BOOL "")
-set(SLANG_ENABLE_SLANGRT ON CACHE BOOL "")
-set(SLANG_ENABLE_SLANG_GLSLANG OFF CACHE BOOL "")
-set(SLANG_ENABLE_EXAMPLES OFF CACHE BOOL "")
-set(SLANG_ENABLE_SLANG_RHI OFF CACHE BOOL "")
-set(SLANG_ENABLE_CUDA OFF CACHE BOOL "")
-set(SLANG_ENABLE_OPTIX OFF CACHE BOOL "")
-set(SLANG_ENABLE_NVAPI OFF CACHE BOOL "")
-set(SLANG_ENABLE_XLIB OFF CACHE BOOL "")
-set(SLANG_ENABLE_AFTERMATH OFF CACHE BOOL "")
-set(SLANG_ENABLE_DX_ON_VK OFF CACHE BOOL "")
-set(SLANG_ENABLE_TESTS OFF CACHE BOOL "")
-set(SLANG_ENABLE_REPLAYER OFF CACHE BOOL "")
-set(SLANG_ENABLE_PREBUILT_BINARIES OFF CACHE BOOL "")
-
-FetchContent_Declare(
-        fetch_slang
-        GIT_REPOSITORY https://github.com/shader-slang/slang
-        GIT_TAG v2025.5.2
-        GIT_SHALLOW TRUE
-        GIT_PROGRESS TRUE
-)
-FetchContent_MakeAvailable(fetch_slang)
-target_link_libraries(${PROJECT_NAME} PRIVATE slang)
-
-set_target_properties(slang
-        PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-)
+#set(SLANG_ENABLE_DXIL OFF CACHE BOOL "")
+#set(SLANG_ENABLE_GFX OFF CACHE BOOL "")
+#set(SLANG_ENABLE_SLANGD OFF CACHE BOOL "")
+#set(SLANG_ENABLE_SLANGC OFF CACHE BOOL "")
+#set(SLANG_ENABLE_SLANGRT ON CACHE BOOL "")
+#set(SLANG_ENABLE_SLANG_GLSLANG OFF CACHE BOOL "")
+#set(SLANG_ENABLE_EXAMPLES OFF CACHE BOOL "")
+#set(SLANG_ENABLE_SLANG_RHI OFF CACHE BOOL "")
+#set(SLANG_ENABLE_CUDA OFF CACHE BOOL "")
+#set(SLANG_ENABLE_OPTIX OFF CACHE BOOL "")
+#set(SLANG_ENABLE_NVAPI OFF CACHE BOOL "")
+#set(SLANG_ENABLE_XLIB OFF CACHE BOOL "")
+#set(SLANG_ENABLE_AFTERMATH OFF CACHE BOOL "")
+#set(SLANG_ENABLE_DX_ON_VK OFF CACHE BOOL "")
+#set(SLANG_ENABLE_TESTS OFF CACHE BOOL "")
+#set(SLANG_ENABLE_REPLAYER OFF CACHE BOOL "")
+#set(SLANG_ENABLE_PREBUILT_BINARIES OFF CACHE BOOL "")
+#
+#FetchContent_Declare(
+#        fetch_slang
+#        GIT_REPOSITORY https://github.com/shader-slang/slang
+#        GIT_TAG v2025.6.1
+#        GIT_SHALLOW TRUE
+#        GIT_PROGRESS TRUE
+#)
+#FetchContent_MakeAvailable(fetch_slang)
+#target_link_libraries(${PROJECT_NAME} PRIVATE slang)
+#
+#set_target_properties(slang
+#        PROPERTIES
+#        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+#        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+#)
 ####################################################################################################
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E create_symlink

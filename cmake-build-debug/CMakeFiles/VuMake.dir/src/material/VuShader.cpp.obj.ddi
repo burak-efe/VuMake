@@ -1,0 +1,15 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "CMakeFiles\\VuMake.dir\\src\\material\\VuShader.cpp.obj",
+            "outputs": [
+                "D:\\Dev\\Vulkan\\VuMake\\cmake-build-debug\\vc140.pdb",
+                "CMakeFiles\\VuMake.dir\\src\\material\\VuShader.cpp.obj.ddi",
+                "D:/Dev/Vulkan/VuMake/cmake-build-debug/CMakeFiles/VuMake.dir/./cmake_pch.cxx.pch"
+            ],
+            "requires": []
+        }
+    ]
+}

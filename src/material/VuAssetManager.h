@@ -18,8 +18,6 @@ namespace Vu {
             }
 
         }
-
         //resorce states: Loaded, Unloaded, Source: Disk, Web, Procedural
-
     };
 }

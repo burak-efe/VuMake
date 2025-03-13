@@ -1,0 +1,53 @@
+ninja_dyndep_version = 1.0
+build CMakeFiles\VuMake.dir\src\Main.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\common\Common.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\material\VuMaterial.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\material\VuResourceManager.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\material\VuShader.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\math\VuFloat2.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\math\VuFloat3.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\math\VuFloat4.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\math\VuFloat4x4.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\math\VuMath.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\math\VuQuaternion.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\render\VuBuffer.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\render\VuDevice.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\render\VuGraphicsPipeline.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\render\VuImage.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\render\VuRenderer.Init.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\render\VuRenderer.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\render\VuSampler.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\src\render\VuSwapChain.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\external\imgui\imgui.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\external\imgui\imgui_demo.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\external\imgui\imgui_draw.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\external\imgui\imgui_impl_sdl3.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\external\imgui\imgui_impl_vulkan.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\external\imgui\imgui_tables.cpp.obj: dyndep
+
+build CMakeFiles\VuMake.dir\external\imgui\imgui_widgets.cpp.obj: dyndep
+

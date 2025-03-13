@@ -1,0 +1,361 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.28"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						5
+					]
+				},
+				{
+					"build" : "_deps/fetch_volk-build",
+					"jsonFile" : "directory-_deps.fetch_volk-build-Debug-44c2c06a1b07499f4af0.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "cmake-build-debug/_deps/fetch_volk-src",
+					"targetIndexes" : 
+					[
+						12
+					]
+				},
+				{
+					"build" : "_deps/fetch_vma-build",
+					"jsonFile" : "directory-_deps.fetch_vma-build-Debug-444feabae55e8c88829b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.15"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 2,
+					"source" : "cmake-build-debug/_deps/fetch_vma-src"
+				},
+				{
+					"build" : "_deps/fetch_sdl-build",
+					"jsonFile" : "directory-_deps.fetch_sdl-build-Debug-34fef5ed0f1bc66c1d56.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 3,
+					"source" : "cmake-build-debug/_deps/fetch_sdl-src",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3
+					]
+				},
+				{
+					"build" : "_deps/fetch_fastgltf-build",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.fetch_fastgltf-build-Debug-01a9b4980e99033d4d63.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 4,
+					"source" : "cmake-build-debug/_deps/fetch_fastgltf-src",
+					"targetIndexes" : 
+					[
+						9
+					]
+				},
+				{
+					"build" : "_deps/fetch_flecs-build",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.fetch_flecs-build-Debug-b11707861e30c419b232.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 5,
+					"source" : "cmake-build-debug/_deps/fetch_flecs-src",
+					"targetIndexes" : 
+					[
+						10,
+						11
+					]
+				},
+				{
+					"build" : "_deps/fetch_buddy_alloc-build",
+					"jsonFile" : "directory-_deps.fetch_buddy_alloc-build-Debug-5d4a28499fc23717c934.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 6,
+					"source" : "cmake-build-debug/_deps/fetch_buddy_alloc-src",
+					"targetIndexes" : 
+					[
+						6,
+						7,
+						8
+					]
+				},
+				{
+					"build" : "_deps/fetch_tracy-build",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.fetch_tracy-build-Debug-6be770571bb2b02c6b65.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 7,
+					"source" : "cmake-build-debug/_deps/fetch_tracy-src",
+					"targetIndexes" : 
+					[
+						4
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "VuMake",
+					"targetIndexes" : 
+					[
+						5
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "volk",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						12
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2
+					],
+					"name" : "VMA",
+					"parentIndex" : 0
+				},
+				{
+					"directoryIndexes" : 
+					[
+						3
+					],
+					"name" : "SDL3",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						4
+					],
+					"name" : "fastgltf",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						9
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						5
+					],
+					"name" : "flecs",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						10,
+						11
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						6
+					],
+					"name" : "buddy_bench",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						6,
+						7,
+						8
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						7
+					],
+					"name" : "Tracy",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						4
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 3,
+					"id" : "SDL3-shared::@f438714d947e6d576ec3",
+					"jsonFile" : "target-SDL3-shared-Debug-d95fe1fe3671e95ef476.json",
+					"name" : "SDL3-shared",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "SDL3-static::@f438714d947e6d576ec3",
+					"jsonFile" : "target-SDL3-static-Debug-9adcbf3d214fbff6c694.json",
+					"name" : "SDL3-static",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "SDL3_test::@f438714d947e6d576ec3",
+					"jsonFile" : "target-SDL3_test-Debug-4469b6f7e3a4f7d0fab5.json",
+					"name" : "SDL3_test",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "SDL_uclibc::@f438714d947e6d576ec3",
+					"jsonFile" : "target-SDL_uclibc-Debug-a403d7648eeb3d1eee5a.json",
+					"name" : "SDL_uclibc",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "TracyClient::@c576eb8374fed3af6b7e",
+					"jsonFile" : "target-TracyClient-Debug-25c34d1201a581c9ef05.json",
+					"name" : "TracyClient",
+					"projectIndex" : 7
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "VuMake::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-VuMake-Debug-fed236584df03c3d8ac9.json",
+					"name" : "VuMake",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 6,
+					"id" : "buddy_bench::@5aa13e21ca2d62819289",
+					"jsonFile" : "target-buddy_bench-Debug-d3780791e24a80bc1191.json",
+					"name" : "buddy_bench",
+					"projectIndex" : 6
+				},
+				{
+					"directoryIndex" : 6,
+					"id" : "buddy_cpp_translation_unit::@5aa13e21ca2d62819289",
+					"jsonFile" : "target-buddy_cpp_translation_unit-Debug-f605b2719c479f1833a2.json",
+					"name" : "buddy_cpp_translation_unit",
+					"projectIndex" : 6
+				},
+				{
+					"directoryIndex" : 6,
+					"id" : "buddy_tests::@5aa13e21ca2d62819289",
+					"jsonFile" : "target-buddy_tests-Debug-67de24773fb7e0f526b9.json",
+					"name" : "buddy_tests",
+					"projectIndex" : 6
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "fastgltf::@4266ef7e32e3071be5cb",
+					"jsonFile" : "target-fastgltf-Debug-04b31a39836f79fcf702.json",
+					"name" : "fastgltf",
+					"projectIndex" : 4
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "flecs::@8883e749f4210a3e3813",
+					"jsonFile" : "target-flecs-Debug-5fde94b1bb997466011e.json",
+					"name" : "flecs",
+					"projectIndex" : 5
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "flecs_static::@8883e749f4210a3e3813",
+					"jsonFile" : "target-flecs_static-Debug-19ce0cfad217a52d1869.json",
+					"name" : "flecs_static",
+					"projectIndex" : 5
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "volk::@8410388cd9de2872ac34",
+					"jsonFile" : "target-volk-Debug-db7bcb3ee33794105515.json",
+					"name" : "volk",
+					"projectIndex" : 1
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "D:/Dev/Vulkan/VuMake/cmake-build-debug",
+		"source" : "D:/Dev/Vulkan/VuMake"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

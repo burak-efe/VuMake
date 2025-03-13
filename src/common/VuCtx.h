@@ -2,7 +2,6 @@
 
 #include "Common.h"
 #include "SDL3/SDL.h"
-#include "volk.h"
 #include "VuTypes.h"
 
 namespace Vu {
@@ -12,8 +11,8 @@ namespace Vu {
 
     namespace ctx {
 
-        inline VuDevice*      vuDevice   = nullptr;
-        inline VuRenderer*    vuRenderer = nullptr;
+        //inline VuDevice*      vuDevice   = nullptr;
+        //inline VuRenderer*    vuRenderer = nullptr;
         inline GPU_FrameConst frameConst;
 
         inline SDL_Window* window = nullptr;

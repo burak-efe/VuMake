@@ -12,7 +12,6 @@
 #include "Systems.h"
 #include "Transform.h"
 #include "VuAssetLoader.h"
-#include "VuResourceManager.h"
 #include "VuRenderer.h"
 
 
@@ -22,7 +21,7 @@ namespace Vu {
     private:
         std::filesystem::path gnomePath = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
 
-        VuHandle<VuShader> shader{};
+        VuHandle2 shader{};
         VuRenderer         vuRenderer{};
 
         flecs::system spinningSystem;
@@ -48,44 +47,44 @@ namespace Vu {
 
                 //Rendering
                 {
-                    shader.get()->tryRecompile();
+                    //shader.get()->tryRecompile();
 
                     vuRenderer.beginFrame();
                     drawMeshSystem.run();
 
-                    //UI
-                    {
-                        vuRenderer.beginImgui();
-
-                        ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-                        auto vPort = ImGui::DockSpaceOverViewport(dockspace_id, nullptr, ImGuiDockNodeFlags_PassthruCentralNode, nullptr);
-
-                        auto wRes = ImGui::Begin("Info");
-                        ImGui::Text("Texture Count: %u", VuPool<VuTexture>::getUsedSlotCount());
-                        ImGui::Text("Sampler Count: %u", VuPool<VuSampler>::getUsedSlotCount());
-                        ImGui::Text("Buffer Count: %u", VuPool<VuBuffer>::getUsedSlotCount());
-                        ImGui::End();
-
-                        if (uiNeedBuild) {
-                            int32 dockspace_flags = 0;
-                            uiNeedBuild           = false;
-
-                            ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
-                            ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
-                            ImGui::DockBuilderSetNodeSize(dockspace_id, {
-                                                              static_cast<float>(vuRenderer.swapChain.swapChainExtent.width),
-                                                              static_cast<float>(vuRenderer.swapChain.swapChainExtent.height)
-                                                          });
-
-                            auto mainR = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.25f, nullptr, &dockspace_id);
-                            auto mainL = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.33f, nullptr, &dockspace_id);
-                            ImGui::DockBuilderDockWindow("Info", mainL);
-
-                            ImGui::DockBuilderFinish(dockspace_id);
-                        }
-
-                        vuRenderer.endImgui();
-                    }
+                    // //UI
+                    // {
+                    //     vuRenderer.beginImgui();
+                    //
+                    //     ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+                    //     auto vPort = ImGui::DockSpaceOverViewport(dockspace_id, nullptr, ImGuiDockNodeFlags_PassthruCentralNode, nullptr);
+                    //
+                    //     auto wRes = ImGui::Begin("Info");
+                    //     ImGui::Text("Texture Count: %u", VuPool<VuTexture>::getUsedSlotCount());
+                    //     ImGui::Text("Sampler Count: %u", VuPool<VuSampler>::getUsedSlotCount());
+                    //     ImGui::Text("Buffer Count: %u", VuPool<VuBuffer>::getUsedSlotCount());
+                    //     ImGui::End();
+                    //
+                    //     if (uiNeedBuild) {
+                    //         int32 dockspace_flags = 0;
+                    //         uiNeedBuild           = false;
+                    //
+                    //         ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
+                    //         ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
+                    //         ImGui::DockBuilderSetNodeSize(dockspace_id, {
+                    //                                           static_cast<float>(vuRenderer.swapChain.swapChainExtent.width),
+                    //                                           static_cast<float>(vuRenderer.swapChain.swapChainExtent.height)
+                    //                                       });
+                    //
+                    //         auto mainR = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.25f, nullptr, &dockspace_id);
+                    //         auto mainL = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.33f, nullptr, &dockspace_id);
+                    //         ImGui::DockBuilderDockWindow("Info", mainL);
+                    //
+                    //         ImGui::DockBuilderFinish(dockspace_id);
+                    //     }
+                    //
+                    //     vuRenderer.endImgui();
+                    // }
 
                     vuRenderer.endFrame();
                 }
@@ -103,7 +102,7 @@ namespace Vu {
 
             VuMesh mesh{};
 
-            shader.createHandle()->initAsGraphicsShader(
+            shader.createHandle()->init(
                 {
                     "assets/shaders/vert.slang",
                     "assets/shaders/frag.slang",

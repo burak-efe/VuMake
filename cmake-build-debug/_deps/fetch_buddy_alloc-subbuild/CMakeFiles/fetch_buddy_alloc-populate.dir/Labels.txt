@@ -1,0 +1,14 @@
+# Target labels
+ fetch_buddy_alloc-populate
+# Source files and their labels
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_buddy_alloc-subbuild/CMakeFiles/fetch_buddy_alloc-populate
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_buddy_alloc-subbuild/CMakeFiles/fetch_buddy_alloc-populate.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_buddy_alloc-subbuild/CMakeFiles/fetch_buddy_alloc-populate-complete.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_buddy_alloc-subbuild/fetch_buddy_alloc-populate-prefix/src/fetch_buddy_alloc-populate-stamp/fetch_buddy_alloc-populate-build.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_buddy_alloc-subbuild/fetch_buddy_alloc-populate-prefix/src/fetch_buddy_alloc-populate-stamp/fetch_buddy_alloc-populate-configure.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_buddy_alloc-subbuild/fetch_buddy_alloc-populate-prefix/src/fetch_buddy_alloc-populate-stamp/fetch_buddy_alloc-populate-download.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_buddy_alloc-subbuild/fetch_buddy_alloc-populate-prefix/src/fetch_buddy_alloc-populate-stamp/fetch_buddy_alloc-populate-install.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_buddy_alloc-subbuild/fetch_buddy_alloc-populate-prefix/src/fetch_buddy_alloc-populate-stamp/fetch_buddy_alloc-populate-mkdir.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_buddy_alloc-subbuild/fetch_buddy_alloc-populate-prefix/src/fetch_buddy_alloc-populate-stamp/fetch_buddy_alloc-populate-patch.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_buddy_alloc-subbuild/fetch_buddy_alloc-populate-prefix/src/fetch_buddy_alloc-populate-stamp/fetch_buddy_alloc-populate-test.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_buddy_alloc-subbuild/fetch_buddy_alloc-populate-prefix/src/fetch_buddy_alloc-populate-stamp/fetch_buddy_alloc-populate-update.rule

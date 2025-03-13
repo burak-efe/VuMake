@@ -3,6 +3,7 @@
 #include <tracy/Tracy.hpp>
 
 #include "VuConfig.h"
+#include "VuDevice.h"
 
 namespace Vu {
     bool VuRenderer::shouldWindowClose() {

@@ -1,0 +1,14 @@
+# Target labels
+ fetch_volk-populate
+# Source files and their labels
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_volk-subbuild/CMakeFiles/fetch_volk-populate
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_volk-subbuild/CMakeFiles/fetch_volk-populate.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_volk-subbuild/CMakeFiles/fetch_volk-populate-complete.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_volk-subbuild/fetch_volk-populate-prefix/src/fetch_volk-populate-stamp/fetch_volk-populate-build.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_volk-subbuild/fetch_volk-populate-prefix/src/fetch_volk-populate-stamp/fetch_volk-populate-configure.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_volk-subbuild/fetch_volk-populate-prefix/src/fetch_volk-populate-stamp/fetch_volk-populate-download.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_volk-subbuild/fetch_volk-populate-prefix/src/fetch_volk-populate-stamp/fetch_volk-populate-install.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_volk-subbuild/fetch_volk-populate-prefix/src/fetch_volk-populate-stamp/fetch_volk-populate-mkdir.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_volk-subbuild/fetch_volk-populate-prefix/src/fetch_volk-populate-stamp/fetch_volk-populate-patch.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_volk-subbuild/fetch_volk-populate-prefix/src/fetch_volk-populate-stamp/fetch_volk-populate-test.rule
+D:/Dev/Vulkan/VuMake/cmake-build-debug/_deps/fetch_volk-subbuild/fetch_volk-populate-prefix/src/fetch_volk-populate-stamp/fetch_volk-populate-update.rule

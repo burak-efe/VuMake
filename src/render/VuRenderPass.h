@@ -1,20 +1,31 @@
 #pragma once
 
 #include "Common.h"
+#include "VuCtx.h"
+#include "VuUtils.h"
 
 namespace Vu {
-    struct VuRenderPass {
 
+    struct VuRenderPassCreateInfo
+    {
+        VkDevice device;
+        VkFormat colorFormat;
+        VkFormat depthStencilFormat;
+    };
+    struct VuRenderPass {
+        VuRenderPassCreateInfo lastCreateInfo;
         VkRenderPass renderPass;
 
         void uninit() {
-            vkDestroyRenderPass(ctx::vuDevice->device, renderPass, nullptr);
+            vkDestroyRenderPass(lastCreateInfo.device, renderPass, nullptr);
         }
 
-        void Init(VkFormat colorFormat, VkFormat depthFormat) {
+        void init(const VuRenderPassCreateInfo& createInfo) {
             ZoneScoped;
+            lastCreateInfo = createInfo;
+
             VkAttachmentDescription colorAttachment{};
-            colorAttachment.format         = colorFormat;
+            colorAttachment.format         = createInfo.colorFormat;
             colorAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
             colorAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
             colorAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
@@ -24,7 +35,7 @@ namespace Vu {
             colorAttachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
             VkAttachmentDescription depthAttachment{};
-            depthAttachment.format         = depthFormat;
+            depthAttachment.format         = createInfo.depthStencilFormat;
             depthAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
             depthAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
             depthAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -50,10 +61,10 @@ namespace Vu {
             VkSubpassDependency dependency{};
             dependency.srcSubpass      = VK_SUBPASS_EXTERNAL;
             dependency.dstSubpass      = 0;
-            dependency.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+            dependency.srcStageMask    = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
             dependency.dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-            dependency.dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
             dependency.srcAccessMask   = 0;
+            dependency.dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
             dependency.dependencyFlags = 0;
 
 
@@ -68,8 +79,8 @@ namespace Vu {
             renderPassInfo.dependencyCount = 1;
             renderPassInfo.pDependencies   = &dependency;
 
-            VkCheck(vkCreateRenderPass(ctx::vuDevice->device, &renderPassInfo, nullptr, &renderPass));
-            giveDebugName(ctx::vuDevice->device, VK_OBJECT_TYPE_RENDER_PASS, renderPass, "Render Pass");
+            VkCheck(vkCreateRenderPass(createInfo.device, &renderPassInfo, nullptr, &renderPass));
+            giveDebugName(createInfo.device, VK_OBJECT_TYPE_RENDER_PASS, renderPass, "Render Pass");
         }
     };
 }
