@@ -103,7 +103,8 @@ namespace Vu
             //std::cout << "Scene init" << std::endl;
 
             ctx::vuRenderer = &vuRenderer;
-            ctx::vuDevice = &vuRenderer.vuDevice;
+            ctx::vuDevice   = &vuRenderer.vuDevice;
+
             vuRenderer.init();
 
             VuMesh mesh{};
@@ -122,32 +123,32 @@ namespace Vu
             uint32 mat0 = shaderPtr->createMaterial();
 
             GPU_PBR_MaterialData* data = shaderPtr->materials[mat0].pbrMaterialData;
+
             VuAssetLoader::LoadGltf(vuRenderer.vuDevice, gnomePath, mesh, *data);
 
-            //
-            {
-                ZoneScopedN("flecs");
-                flecs::world world;
-                //Add Systems
-                spinningSystem  = AddSpinningSystem(world);
-                flyCameraSystem = AddFlyCameraSystem(world);
-                drawMeshSystem  = AddRenderingSystem(world);
-                spinUI          = AddSpinUISystem(world);
-                trsUI           = AddTransformUISystem(world);
-                camUI           = AddCameraUISystem(world);
 
-                //Add Entities
-                auto ent = world.entity("Obj1").set(Transform{
-                                                        .position = float3(0, 0, 0), .rotation = quaternion::identity(),
-                                                        .scale = float3(10.0F, 10.0F, 10.0F)
-                                                    }).set(MeshRenderer{&mesh, shader, mat0}).set(Spinn{});
+            flecs::world world;
+            //Add Systems
+            spinningSystem  = AddSpinningSystem(world);
+            flyCameraSystem = AddFlyCameraSystem(world);
+            drawMeshSystem  = AddRenderingSystem(world);
+            spinUI          = AddSpinUISystem(world);
+            trsUI           = AddTransformUISystem(world);
+            camUI           = AddCameraUISystem(world);
 
-                world.entity("Cam").set(
-                                        Transform(float3(0.0f, 0.0f, 3.5f), quaternion::identity(), float3(1, 1, 1))
-                                       ).set(Camera{});
+            //Add Entities
+            auto ent = world.entity("Obj1").set(Transform{
+                                                    .position = float3(0, 0, 0), .rotation = quaternion::identity(),
+                                                    .scale = float3(10.0F, 10.0F, 10.0F)
+                                                }).set(MeshRenderer{&mesh, shader, mat0}).set(Spinn{});
 
-                UpdateLoop();
-            }
+            world.entity("Cam").set(Transform(float3(0.0f, 0.0f, 3.5f),
+                                              quaternion::identity(),
+                                              float3(1, 1, 1))
+                                   ).set(Camera{});
+
+            UpdateLoop();
+
             vuRenderer.waitIdle();
             //shader.destroyHandle();
             mesh.uninit();

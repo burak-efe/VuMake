@@ -149,12 +149,7 @@ void Vu::VuDevice::initDescriptorSetLayout(const VuBindlessConfigInfo& info)
         .descriptorCount = info.storageImageCount,
         .stageFlags = VK_SHADER_STAGE_ALL,
     };
-    VkDescriptorSetLayoutBinding uniformBuffer{
-        .binding = info.uniformBufferBinding,
-        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        .descriptorCount = 1,
-        .stageFlags = VK_SHADER_STAGE_ALL,
-    };
+
     VkDescriptorSetLayoutBinding storageBuffer{
         .binding = info.storageBufferBinding,
         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -166,9 +161,9 @@ void Vu::VuDevice::initDescriptorSetLayout(const VuBindlessConfigInfo& info)
         sampler,
         sampledImage,
         storageImage,
-        uniformBuffer,
         storageBuffer,
     };
+
     VkDescriptorSetLayoutCreateInfo globalSetLayout{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
@@ -181,7 +176,7 @@ void Vu::VuDevice::initDescriptorSetLayout(const VuBindlessConfigInfo& info)
         | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT
         | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
 
-    std::array descriptorSetLayoutFlags{flag, flag, flag, flag, flag, flag};
+    std::array descriptorSetLayoutFlags{flag, flag, flag, flag, flag};
 
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT binding_flags{};
     binding_flags.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
@@ -198,11 +193,11 @@ void Vu::VuDevice::initDescriptorPool(const VuBindlessConfigInfo& info)
 
     std::array<VkDescriptorPoolSize, 5> poolSizes{
         {
-            {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = info.uboCount},
-            {.type = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = info.samplerCount},
-            {.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, .descriptorCount = info.sampledImageCount},
-            {.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .descriptorCount = info.storageImageCount},
-            {.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = info.storageBufferCount},
+            {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = info.uboCount * config::MAX_FRAMES_IN_FLIGHT},
+            {.type = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = info.samplerCount * config::MAX_FRAMES_IN_FLIGHT},
+            {.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, .descriptorCount = info.sampledImageCount * config::MAX_FRAMES_IN_FLIGHT},
+            {.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .descriptorCount = info.storageImageCount * config::MAX_FRAMES_IN_FLIGHT},
+            {.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = info.storageBufferCount * config::MAX_FRAMES_IN_FLIGHT},
         },
     };
 
@@ -273,7 +268,8 @@ VkBool32 Vu::VuDevice::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT mess
 {
     std::cout << "###############################################################################################################\n"
         << "[VALIDATION]: " << pCallbackData->pMessage << "\n"
-        << "###############################################################################################################\n";
+        << "###############################################################################################################\n"
+        << std::endl;
     return VK_FALSE;
 }
 

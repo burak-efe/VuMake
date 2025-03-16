@@ -4,9 +4,9 @@
 #include "VuDevice.h"
 #include "VuIO.h"
 
-Vu::path Vu::VuShader::compileToSpirv(const path& shaderCodePath)
+Vu::Path Vu::VuShader::compileToSpirv(const Path& shaderCodePath)
 {
-    path spirvFilePath = shaderCodePath;
+    Path spirvFilePath = shaderCodePath;
     spirvFilePath.replace_extension(".spv");
 
     std::string vertCmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout  -o {2}",

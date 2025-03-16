@@ -112,7 +112,7 @@ namespace Vu
     {
     private:
         inline static VuBuffer bufferOfStorageBuffer{};
-        inline static VuBuffer bufferOfUniformBuffer{};
+        //inline static VuBuffer bufferOfUniformBuffer{};
 
     public:
         static void init(const VuBindlessConfigInfo& info);
@@ -122,7 +122,7 @@ namespace Vu
 
         static void registerStorageBuffer(uint32 writeIndex, const VuBuffer& buffer);
 
-        static void registerUniformBuffer(uint32 writeIndex, const VuBuffer& buffer);
+        //static void registerUniformBuffer(uint32 writeIndex, const VuBuffer& buffer);
 
         static void writeStorageBuffer(const VuBuffer& buffer, uint32 binding);
 

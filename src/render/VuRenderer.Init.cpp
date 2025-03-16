@@ -34,7 +34,11 @@ namespace Vu
             uint32                   count               = 0;
             const char* const *      instance_extensions = SDL_Vulkan_GetInstanceExtensions(&count);
             std::vector<const char*> extensions(instance_extensions, instance_extensions + count);
-            extensions.append_range(config::INSTANCE_EXTENSIONS);
+
+            for (auto extension : config::INSTANCE_EXTENSIONS)
+            {
+                extensions.push_back(extension);
+            }
             vuDevice.initInstance(config::ENABLE_VALIDATION_LAYERS_LAYERS, config::VALIDATION_LAYERS, extensions);
 
             volkLoadInstance(vuDevice.instance);
@@ -176,7 +180,7 @@ namespace Vu
                 VuResourceManager::writeUBO_ToGlobalPool(0, i, uniformBuffers[i]);
             }
 
-            VuResourceManager::registerUniformBuffer(0, uniformBuffers[0]);
+            //VuResourceManager::registerUniformBuffer(0, uniformBuffers[0]);
 
             disposeStack.push([vr = *this]
             {

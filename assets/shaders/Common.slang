@@ -136,8 +136,6 @@ struct PBRMaterialData {
 [[vk::binding(0, 0)]]
 ConstantBuffer<FrameConst> frameConst;
 
-//todo engine constants
-
 [[vk::binding(1, 0)]]
 SamplerState globalSamplers[];
 
@@ -148,9 +146,6 @@ Texture2D globalSampledImages[];
 Texture2D globalStorageImages[];
 
 [[vk::binding(4, 0)]]
-StructuredBuffer<uint64_t> globalUniformBuffers;
-
-[[vk::binding(5, 0)]]
 StructuredBuffer<uint64_t> globalStorageBuffers;
 
 

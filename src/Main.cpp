@@ -7,13 +7,13 @@
 #include "vk_mem_alloc.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-
 #include "Common.h"
-
 #define BUDDY_ALLOC_IMPLEMENTATION
 #include "buddy_alloc.h"
-
 #include "Scene0.h"
+
+
+
 
 int main(int argc, char* argv[])
 {

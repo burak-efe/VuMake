@@ -33,7 +33,7 @@ endfunction()
 #Project
 project("VuMake")
 add_executable(${PROJECT_NAME})
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 ####################################################################################################
 # Precompiled Headers
 set(PCH

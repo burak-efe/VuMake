@@ -7,15 +7,15 @@
 void Vu::VuResourceManager::init(const VuBindlessConfigInfo& info) {
     //ZoneScoped;
     bufferOfStorageBuffer.init({.length = info.storageBufferCount, .strideInBytes = sizeof(uint64)});
-    bufferOfUniformBuffer.init({info.uniformBufferCount, sizeof(uint64)});
+    //bufferOfUniformBuffer.init({info.uniformBufferCount, sizeof(uint64)});
 
     writeStorageBuffer(bufferOfStorageBuffer, config::BINDLESS_CONFIG_INFO.storageBufferBinding);
-    writeStorageBuffer(bufferOfUniformBuffer, config::BINDLESS_CONFIG_INFO.uniformBufferBinding);
+    //writeStorageBuffer(bufferOfUniformBuffer, config::BINDLESS_CONFIG_INFO.uniformBufferBinding);
 }
 
 void Vu::VuResourceManager::uninit() {
     bufferOfStorageBuffer.uninit();
-    bufferOfUniformBuffer.uninit();
+    //bufferOfUniformBuffer.uninit();
 }
 
 void Vu::VuResourceManager::registerStorageBuffer(uint32 writeIndex, const VuBuffer& buffer) {
@@ -23,10 +23,10 @@ void Vu::VuResourceManager::registerStorageBuffer(uint32 writeIndex, const VuBuf
     bufferOfStorageBuffer.setData(&address, sizeof(VkDeviceAddress), writeIndex * sizeof(VkDeviceAddress) );
 }
 
-void Vu::VuResourceManager::registerUniformBuffer(uint32 writeIndex, const VuBuffer& buffer) {
-    VkDeviceAddress address = buffer.getDeviceAddress();
-    bufferOfUniformBuffer.setData(&address, sizeof(VkDeviceAddress), writeIndex * sizeof(VkDeviceAddress));
-}
+// void Vu::VuResourceManager::registerUniformBuffer(uint32 writeIndex, const VuBuffer& buffer) {
+//     VkDeviceAddress address = buffer.getDeviceAddress();
+//     //bufferOfUniformBuffer.setData(&address, sizeof(VkDeviceAddress), writeIndex * sizeof(VkDeviceAddress));
+// }
 
 void Vu::VuResourceManager::writeStorageBuffer(const VuBuffer& buffer, uint32 binding) {
     VkDescriptorBufferInfo bufferInfo{};

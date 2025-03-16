@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <source_location>
 
 #include "volk.h"
 #include "tracy/Tracy.hpp"
@@ -28,19 +29,15 @@ namespace Vu
     using float4x4   = Math::Float4x4;
     using quaternion = Math::Quaternion;
 
-    using path   = std::filesystem::path;
-    using string = std::string;
-    //using span = std::span;
+    using Path   = std::filesystem::path;
+    using String = std::string;
 
-    __declspec(noinline) void VkCheck(VkResult res);
+    __declspec(noinline) void VkCheck(VkResult res, std::source_location location = std::source_location::current());
 
     template <typename T_From, typename T_To>
     std::span<T_To> rpCastSpan(std::span<T_From> source)
     {
         static_assert(sizeof(T_From) == sizeof(T_To), "T_From and T_To must be the same size for reinterpret casting.");
-        return std::span<T_To>(
-                               reinterpret_cast<T_To*>(source.data()),
-                               source.size()
-                              );
+        return std::span<T_To>(reinterpret_cast<T_To*>(source.data()), source.size());
     }
 }

@@ -9,8 +9,8 @@ namespace Vu
 {
     struct VuGraphicsShaderCreateInfo
     {
-        path vertexShaderPath   = {};
-        path fragmentShaderPath = {};
+        Path vertexShaderPath   = {};
+        Path fragmentShaderPath = {};
 
         VkRenderPass renderPass = {};
     };
@@ -24,7 +24,7 @@ namespace Vu
 
         std::vector<VuMaterial> materials = {};
 
-        static path compileToSpirv(const path& shaderCodePath);
+        static Path compileToSpirv(const Path& shaderCodePath);
 
 
         void init(const VuGraphicsShaderCreateInfo& createInfo);
