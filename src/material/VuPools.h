@@ -1,17 +1,30 @@
 #pragma once
-#include <iostream>
-#include <stack>
+
 #include "Common.h"
 
 namespace Vu
 {
-    template<typename  T>
+    template <typename T>
+    class Has_uninit
+    {
+    private:
+        // We use SFINAE to detect Uninit()
+        template <typename U>
+        static auto Test(int) -> decltype(std::declval<U>().uninit(), std::true_type());
+
+        template <typename>
+        static std::false_type Test(...);
+
+    public:
+        static constexpr bool value = decltype(Test<T>(0))::value;
+    };
+
+
+    template <typename T>
     struct VuHandle2
     {
         uint32 index;
         uint32 generation;
-
-        //T* get(){return nullptr;}
     };
 
     struct ResourceCounters2
@@ -25,7 +38,7 @@ namespace Vu
     template <typename T, uint32 capacity>
     struct VuPool2
     {
-        static_assert(std::is_member_function_pointer_v<decltype(&T::uninit)>, "T must implement uninit()");
+        //static_assert(std::is_member_function_pointer_v<decltype(&T::uninit)>, "T must implement uninit()");
 
         std::array<T, capacity>                 data{};
         std::array<ResourceCounters2, capacity> counters{};
@@ -48,7 +61,7 @@ namespace Vu
         }
 
         //return true if reference count drops == 0, which meand you need to uninit the object
-        VkBool32 destroyHandle(const VuHandle2<T> handle)
+        bool destroyHandle(const VuHandle2<T> handle)
         {
             return decreaseRefCount(handle.index);
         }
@@ -65,12 +78,12 @@ namespace Vu
             return result;
         }
 
-        uint32 getUsedSlotCount() const
+        [[nodiscard]] uint32 getUsedSlotCount() const
         {
             return allocationCounter - freeListCounter;
         }
 
-        uint32 getFreeSlotCount() const
+        [[nodiscard]] uint32 getFreeSlotCount() const
         {
             return capacity - getUsedSlotCount();
         }
@@ -107,15 +120,18 @@ namespace Vu
         }
 
         //Returns true if object reference count reached zero and deallocated.
-        VkBool32 decreaseRefCount(uint32 index)
+        [[maybe_unused]] bool decreaseRefCount(uint32 index)
         {
-            VkBool32 isDeallocated = false;
+            bool isDeallocated = false;
             counters[index].referenceCounter -= 1;
 
             if (counters[index].referenceCounter == 0)
             {
                 //delete
-                data[index].uninit();
+                if constexpr (Has_uninit<T>::value) {
+                    data[index].uninit();
+                }
+
                 counters[index].generationCounter += 1;
                 isDeallocated = true;
 

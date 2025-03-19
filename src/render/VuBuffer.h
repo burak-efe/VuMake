@@ -9,7 +9,7 @@ namespace Vu {
     struct VuBufferCreateInfo {
         VkDeviceSize             length         = 1;
         VkDeviceSize             strideInBytes  = 4;
-        VkBufferUsageFlags       vkUsageFlags   = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        VkBufferUsageFlags       vkUsageFlags   = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VmaMemoryUsage           vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO;
         VmaAllocationCreateFlags vmaCreateFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
     };

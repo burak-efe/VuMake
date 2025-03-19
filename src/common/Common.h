@@ -14,6 +14,8 @@
 
 namespace Vu
 {
+    using byte  = std::byte;
+
     using uint8  = uint8_t;
     using uint16 = uint16_t;
     using uint32 = uint32_t;
@@ -29,8 +31,15 @@ namespace Vu
     using float4x4   = Math::Float4x4;
     using quaternion = Math::Quaternion;
 
-    using Path   = std::filesystem::path;
-    using String = std::string;
+    using path   = std::filesystem::path;
+    using string = std::string;
+
+    template <typename T>
+    using unique_ptr = std::unique_ptr<T>;
+
+    template <typename T>
+    using span = std::span<T>;
+
 
     __declspec(noinline) void VkCheck(VkResult res, std::source_location location = std::source_location::current());
 

@@ -7,6 +7,10 @@
 //Angle Unit: Radian
 //Euler angles order: YXZ (Yaw,Pitch,Roll)
 
+//Material System: Shader = spirv, material = pipelines, material data = bindless indices + basic data
+
+
+
 namespace Vu
 {
     struct VuBindlessConfigInfo

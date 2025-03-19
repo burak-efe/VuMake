@@ -2,6 +2,7 @@
 
 #include <set>
 
+#include "VuResourceManager.h"
 #include "VuUtils.h"
 
 void Vu::VuDevice::uninit()
@@ -45,15 +46,10 @@ void Vu::VuDevice::initDevice(const VuDeviceCreateInfo& info)
     });
 
     initVMA();
-    disposeStack.push([&]
-    {
-        vmaDestroyAllocator(vma);
-    });
+    disposeStack.push([&] { vmaDestroyAllocator(vma); });
+
     initCommandPool();
-    disposeStack.push([&]
-    {
-        vkDestroyCommandPool(device, commandPool, nullptr);
-    });
+    disposeStack.push([&] { vkDestroyCommandPool(device, commandPool, nullptr); });
 }
 
 void Vu::VuDevice::initVMA()
@@ -185,6 +181,25 @@ void Vu::VuDevice::initDescriptorSetLayout(const VuBindlessConfigInfo& info)
     globalSetLayout.pNext       = &binding_flags;
 
     VkCheck(vkCreateDescriptorSetLayout(device, &globalSetLayout, nullptr, &globalDescriptorSetLayout));
+}
+
+void Vu::VuDevice::initDefaultResources()
+{
+    debugBuffer            = bufferPool.createHandle();
+    VuBuffer* debugBufferT = bufferPool.get(debugBuffer);
+    debugBufferT->init({
+                           .length = 4096,
+                           .strideInBytes = 1,
+                           .vkUsageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                           .vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO,
+                           .vmaCreateFlags = 0
+                       });
+
+    assert(debugBuffer.index == 0);
+    VuResourceManager::registerStorageBuffer(debugBuffer.index, *debugBufferT);
+
+    materialDataPool.init(&bufferPool);
+    disposeStack.push([&] { materialDataPool.uninit(); });
 }
 
 void Vu::VuDevice::initDescriptorPool(const VuBindlessConfigInfo& info)

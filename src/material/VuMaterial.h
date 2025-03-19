@@ -3,20 +3,30 @@
 #include "Common.h"
 
 #include "VuGraphicsPipeline.h"
+#include "VuMaterialDataPool.h"
+#include "VuPools.h"
 #include "VuTypes.h"
 
 
+namespace Vu
+{
+    struct VuMaterialDataPool;
 
-namespace Vu {
-    struct VuMaterialCreateInfo {
-        VkShaderModule vertexShaderModule;
-        VkShaderModule fragmentShaderModule;
-        VkRenderPass renderPass;
+    struct VuMaterialCreateInfo
+    {
+        VkShaderModule      vertexShaderModule;
+        VkShaderModule      fragmentShaderModule;
+        VkRenderPass        renderPass;
+        VuMaterialDataPool* materialDataPool;
     };
 
-    struct VuMaterial {
-        VuGraphicsPipeline vuPipeline;
-        GPU_PBR_MaterialData* pbrMaterialData;
+    //Material owns the pipeline, uses shared material data
+    //when parent shader recompiled, it should be recompiled too
+    struct VuMaterial
+    {
+        VuMaterialCreateInfo         lastCreateInfo;
+        VuGraphicsPipeline           vuPipeline;
+        VuHandle2<uint32> materialData;
 
         void init(const VuMaterialCreateInfo& createInfo);
 
@@ -25,5 +35,8 @@ namespace Vu {
         void uninit();
 
         void bindPipeline(const VkCommandBuffer& commandBuffer) const;
+
+
+        GPU_PBR_MaterialData* getMaterialData();
     };
 }

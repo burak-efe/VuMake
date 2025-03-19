@@ -23,12 +23,11 @@ namespace Vu
                     {
                         VuHandle2<VuShader> shader = meshRenderer.shader;
                         VuMaterial          mat    = ctx::vuDevice->get(shader)->materials[meshRenderer.materialIndex];
-                        VkDeviceAddress     adr    = VuMaterialDataPool::mapAddressToBufferDeviceAddress(mat.pbrMaterialData);
                         ctx::vuRenderer->bindMaterial(mat);
                         float4x4         trs = transform.ToTRS();
                         GPU_PushConstant pc{
                             trs,
-                            adr,
+                            mat.materialData.index,
                             {
                                 meshRenderer.mesh->vertexBuffer.index,
                                 (uint32)meshRenderer.mesh->vertexCount,

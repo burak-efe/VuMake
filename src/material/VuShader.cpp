@@ -4,9 +4,9 @@
 #include "VuDevice.h"
 #include "VuIO.h"
 
-Vu::Path Vu::VuShader::compileToSpirv(const Path& shaderCodePath)
+Vu::path Vu::VuShader::compileToSpirv(const path& shaderCodePath)
 {
-    Path spirvFilePath = shaderCodePath;
+    path spirvFilePath = shaderCodePath;
     spirvFilePath.replace_extension(".spv");
 
     std::string vertCmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout  -o {2}",
@@ -70,10 +70,10 @@ void Vu::VuShader::tryRecompile()
     }
 }
 
-Vu::uint32 Vu::VuShader::createMaterial()
+Vu::uint32 Vu::VuShader::createMaterial(VuMaterialDataPool* materialDataPool)
 {
     VuMaterial material;
-    material.init({vertexShaderModule, fragmentShaderModule, lastCreateInfo.renderPass});
+    material.init({vertexShaderModule, fragmentShaderModule, lastCreateInfo.renderPass, materialDataPool});
     materials.push_back(material);
     return materials.capacity() - 1;
 }

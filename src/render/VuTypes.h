@@ -13,6 +13,7 @@ namespace Vu {
         uint32 meshFlags;
     };
 
+
     struct GPU_PBR_MaterialData {
         uint32 texture0;
         uint32 texture1;
@@ -20,8 +21,7 @@ namespace Vu {
 
     struct GPU_PushConstant {
         float4x4 trs;
-        //TODO: use index
-        uint64 materiealDataPtr;
+        uint32 materialDataIndex;
         GPU_Mesh mesh;
     };
 

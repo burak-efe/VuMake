@@ -10,13 +10,11 @@ static const float specularIntensity = 0.5f;
 [shader("fragment")]
 float4 fragmentMain(VSOutput i) : SV_Target
 {
-    //FrameConst fc = *((Ptr<FrameConst>) (globalUniformBuffers[0]));
     var fc = frameConst;
 
     float3 lightPos = fc.cameraPos;
 
-    Ptr<PBRMaterialData> ptr = (Ptr<PBRMaterialData>) pc.materialDataPtr;
-    PBRMaterialData data = ptr[0];
+    PBRMaterialData* data = getMaterialData(pc.materialDataIndex);
 
     float2 uv = i.UV;
 

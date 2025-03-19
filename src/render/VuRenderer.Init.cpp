@@ -153,8 +153,6 @@ namespace Vu
         VuResourceManager::init(config::BINDLESS_CONFIG_INFO);
         disposeStack.push([&] { VuResourceManager::uninit(); });
 
-        VuMaterialDataPool::init();
-        disposeStack.push([&] { VuMaterialDataPool::uninit(); });
 
         //init uniform buffers
         {
@@ -238,6 +236,8 @@ namespace Vu
                 }
             });
         }
+
+        vuDevice.initDefaultResources();
         initImGui();
         //init default resources
         {

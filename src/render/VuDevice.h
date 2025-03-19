@@ -17,10 +17,10 @@ namespace Vu
 {
     struct VuDeviceCreateInfo
     {
-        const VkBool32                   enableValidationLayers;
+        const VkBool32                  enableValidationLayers;
         const VkPhysicalDeviceFeatures2 physicalDeviceFeatures2;
-        const VkSurfaceKHR               surface;
-        const std::span<const char*>     deviceExtensions;
+        const VkSurfaceKHR              surface;
+        const std::span<const char*>    deviceExtensions;
     };
 
     struct VuDevice
@@ -40,10 +40,15 @@ namespace Vu
         VkPipelineLayout             globalPipelineLayout;
         VmaAllocator                 vma;
 
+
         VuPool2<VuImage, 32>   imagePool;
         VuPool2<VuSampler, 32> samplerPool;
         VuPool2<VuBuffer, 32>  bufferPool;
         VuPool2<VuShader, 32>  shaderPool;
+
+
+        VuHandle2<VuBuffer> debugBuffer{};
+        VuMaterialDataPool  materialDataPool{};
 
         VuImage*   get(const VuHandle2<VuImage> handle) { return imagePool.get(handle); }
         VuSampler* get(const VuHandle2<VuSampler> handle) { return samplerPool.get(handle); }
@@ -71,6 +76,8 @@ namespace Vu
         void initDescriptorPool(const VuBindlessConfigInfo& info);
 
         void initGlobalDescriptorSet(uint32 maxFramesInFlight);
+
+        void initDefaultResources();
 
         VkCommandBuffer BeginSingleTimeCommands();
 

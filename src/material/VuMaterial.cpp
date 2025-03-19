@@ -7,6 +7,7 @@
 
 void Vu::VuMaterial::init(const VuMaterialCreateInfo& createInfo)
 {
+    lastCreateInfo = createInfo;
     auto bindings = VuMesh::getBindingDescription();
     auto attribs  = VuMesh::getAttributeDescriptions();
     vuPipeline.initGraphicsPipeline(
@@ -18,7 +19,7 @@ void Vu::VuMaterial::init(const VuMaterialCreateInfo& createInfo)
                                     createInfo.renderPass
                                    );
 
-    pbrMaterialData = VuMaterialDataPool::allocMaterialData();
+    materialData = createInfo.materialDataPool->allocMaterialData();
 }
 
 void Vu::VuMaterial::recompile(const VuMaterialCreateInfo& createInfo)
@@ -41,10 +42,15 @@ void Vu::VuMaterial::recompile(const VuMaterialCreateInfo& createInfo)
 void Vu::VuMaterial::uninit()
 {
     vuPipeline.Dispose();
-    VuMaterialDataPool::freeMaterialData(pbrMaterialData);
+    lastCreateInfo.materialDataPool->destroyHandle(materialData);
 }
 
 void Vu::VuMaterial::bindPipeline(const VkCommandBuffer& commandBuffer) const
 {
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vuPipeline.pipeline);
+}
+
+Vu::GPU_PBR_MaterialData* Vu::VuMaterial::getMaterialData()
+{
+    return lastCreateInfo.materialDataPool->getMaterialData(materialData);
 }

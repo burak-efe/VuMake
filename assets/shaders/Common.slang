@@ -121,7 +121,7 @@ struct FrameConst
 struct PushConsts
 {
     float4x4 model;
-    uint64_t materialDataPtr;
+    uint32_t materialDataIndex;
     Mesh mesh;
 };
 
@@ -145,17 +145,26 @@ Texture2D globalSampledImages[];
 [[vk::binding(3, 0)]]
 Texture2D globalStorageImages[];
 
+//all storage buffers pointers, reside here
+//at index 0 there is empty buffer,
+//at index 1 there is material data buffer
 [[vk::binding(4, 0)]]
 StructuredBuffer<uint64_t> globalStorageBuffers;
+
+PBRMaterialData* getMaterialData(uint32_t index)
+{
+    var buffer = (PBRMaterialData *)globalStorageBuffers[1];
+    return &buffer[index];
+}
 
 
 struct VSOutput
 {
     float4 Pos : SV_POSITION;
-    [[vk::location(0)]]float3 Normal : NORMAL0;
-    [[vk::location(1)]]float3 Tangent : TANGENT0;
-    [[vk::location(2)]]float3 Bitangent : BINORMAL0;
-    [[vk::location(3)]]float2 UV : TEXCOORD0;
-    [[vk::location(4)]]float3 PosWS : TEXCOORD1;
+    [[vk::location(0)]] float3 Normal : NORMAL0;
+    [[vk::location(1)]] float3 Tangent : TANGENT0;
+    [[vk::location(2)]] float3 Bitangent : BINORMAL0;
+    [[vk::location(3)]] float2 UV : TEXCOORD0;
+    [[vk::location(4)]] float3 PosWS : TEXCOORD1;
 
 };

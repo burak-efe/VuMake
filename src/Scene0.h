@@ -120,9 +120,9 @@ namespace Vu
                             }
                            );
 
-            uint32 mat0 = shaderPtr->createMaterial();
+            uint32 mat0 = shaderPtr->createMaterial(&vuRenderer.vuDevice.materialDataPool);
 
-            GPU_PBR_MaterialData* data = shaderPtr->materials[mat0].pbrMaterialData;
+            GPU_PBR_MaterialData* data = shaderPtr->materials[mat0].getMaterialData();
 
             VuAssetLoader::LoadGltf(vuRenderer.vuDevice, gnomePath, mesh, *data);
 

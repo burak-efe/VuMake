@@ -56,7 +56,7 @@ namespace Vu
             fastgltf::sources::URI     colorPath    = std::get<fastgltf::sources::URI>(colorImage.data);
             auto                       colorTexPath = parentPath / colorPath.uri.string();
 
-            // Handle<VuTexture> colorTexture; //TODO: leak
+            // Handle<VuTexture> colorTexture;
             // colorTexture.createHandle().init({colorTexPath, VK_FORMAT_R8G8B8A8_SRGB});
             // dstMaterialData.texture0 = colorTexture.index;
 
