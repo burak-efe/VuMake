@@ -33,6 +33,7 @@
 
 /.vs/
 /build/
+/out/
 /.idea/
 /cmake-build-debug-visual-studio/
 /cmake-build-release-visual-studio/
