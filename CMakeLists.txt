@@ -37,38 +37,32 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 ####################################################################################################
 # Precompiled Headers
 set(PCH
-        src/common/pch.h
+        src/pch.h
 )
 target_precompile_headers(${PROJECT_NAME} PRIVATE
-        <chrono>
-        <iostream>
-        <print>
-        <string>
-        <format>
-        <cstdint>
-        <cassert>
-        <cstdlib>
-        <array>
-        <vector>
-        <stack>
-        <algorithm>
-        <functional>
-        <filesystem>
-        <mutex>
-        <span>
-        <ranges>
-        ${PCH}
+#        <cstdint>
+#        <cassert>
+#        <cstdlib>
+#        <chrono>
+#        <iostream>
+#        <print>
+#        <string>
+#        <format>
+#        <array>
+#        <vector>
+#        <stack>
+#        <algorithm>
+#        <functional>
+#        <filesystem>
+#        <mutex>
+#        <span>
+#        <ranges>
+#        ${PCH}
 )
 ####################################################################################################
 #Add Sources
 add_sources_recursively(${PROJECT_NAME} src)
-target_include_directories(${PROJECT_NAME} PRIVATE src/common)
-target_include_directories(${PROJECT_NAME} PRIVATE src/components)
-target_include_directories(${PROJECT_NAME} PRIVATE src/systems)
-target_include_directories(${PROJECT_NAME} PRIVATE src/render)
-target_include_directories(${PROJECT_NAME} PRIVATE src/material)
-target_include_directories(${PROJECT_NAME} PRIVATE src/math)
-target_include_directories(${PROJECT_NAME} PRIVATE src/util)
+target_include_directories(${PROJECT_NAME} PRIVATE src)
 ####################################################################################################
 #imgui
 add_sources_recursively(${PROJECT_NAME} external/imgui)
