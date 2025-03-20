@@ -40,17 +40,31 @@ namespace Vu {
         return info;
     }
 
+    //
+    // inline uint32 findMemoryType(VkPhysicalDevice physicalDevice, uint32 typeFilter, VkMemoryPropertyFlags properties) {
+    //     VkPhysicalDeviceMemoryProperties memProperties{};
+    //     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+    //     for (uint32 i = 0; i < memProperties.memoryTypeCount; i++) {
+    //         if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+    //             return i;
+    //         }
+    //     }
+    //
+    //     throw std::runtime_error("failed to find suitable memory type!");
+    // }
 
-    inline uint32 findMemoryType(VkPhysicalDevice physicalDevice, uint32 typeFilter, VkMemoryPropertyFlags properties) {
-        VkPhysicalDeviceMemoryProperties memProperties{};
-        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
-        for (uint32 i = 0; i < memProperties.memoryTypeCount; i++) {
-            if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+    inline uint32 findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memoryProperties, uint32 typeFilter, VkMemoryPropertyFlags requiredProperties) {
+
+        for (uint32 i = 0; i < memoryProperties.memoryTypeCount; ++i) {
+            const bool isTypeSuitable = (typeFilter & (1 << i)) != 0;
+            const bool hasRequiredProperties = (memoryProperties.memoryTypes[i].propertyFlags & requiredProperties) == requiredProperties;
+
+            if (isTypeSuitable && hasRequiredProperties) {
                 return i;
             }
         }
 
-        throw std::runtime_error("failed to find suitable memory type!");
+        throw std::runtime_error("Failed to find suitable memory type!");
     }
 
     static void createPipelineLayout(const VkDevice                         device,

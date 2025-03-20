@@ -1,60 +1,64 @@
 #include "VuBuffer.h"
 
-#include "11_Config/VuCtx.h"
+namespace Vu
+{
+    void VuBuffer::init(VkDevice device, VmaAllocator allocator, const VuBufferCreateInfo& info)
+    {
+        vma            = allocator;
+        this->device   = device;
+        lastCreateInfo = info;
+        stride         = info.strideInBytes;
+        length         = info.length;
 
-#include "VuDevice.h"
-
-namespace Vu{
-    void VuBuffer::init(const VuBufferCreateInfo& info) {
-
-        createInfo = info;
-        stride = info.strideInBytes;
-        length = info.length;
 
         VkBufferCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
             .size = (length * stride),
-            .usage = info.vkUsageFlags
+            .usage = info.vkUsageFlags | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
         };
 
         VmaAllocationCreateInfo allocCreateInfo = {};
-        allocCreateInfo.usage = info.vmaMemoryUsage;
-        allocCreateInfo.flags = info.vmaCreateFlags;
+        allocCreateInfo.usage                   = info.vmaMemoryUsage;
+        allocCreateInfo.flags                   = info.vmaCreateFlags;
 
-        auto vma = ctx::vuDevice->vma;
         VkCheck(vmaCreateBuffer(vma, &createInfo, &allocCreateInfo, &buffer, &allocation, &allocationInfo));
     }
 
-    void VuBuffer::uninit() {
-        if (mapPtr!= nullptr) {
+    void VuBuffer::uninit()
+    {
+        if (mapPtr != nullptr)
+        {
             unmap();
         }
-        vmaDestroyBuffer(ctx::vuDevice->vma, buffer, allocation);
+        vmaDestroyBuffer(vma, buffer, allocation);
     }
 
-    void VuBuffer::map() {
-        vmaMapMemory(ctx::vuDevice->vma, allocation, &mapPtr);
+    void VuBuffer::map()
+    {
+        vmaMapMemory(vma, allocation, &mapPtr);
     }
 
-    void VuBuffer::unmap() {
-        vmaUnmapMemory(ctx::vuDevice->vma, allocation);
+    void VuBuffer::unmap()
+    {
+        vmaUnmapMemory(vma, allocation);
         mapPtr = nullptr;
     }
 
-    VkDeviceAddress VuBuffer::getDeviceAddress() const {
+    VkDeviceAddress VuBuffer::getDeviceAddress() const
+    {
         VkBufferDeviceAddressInfo deviceAdressInfo{};
-        deviceAdressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        deviceAdressInfo.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
         deviceAdressInfo.buffer = buffer;
 
-        VkDeviceAddress address = vkGetBufferDeviceAddress(ctx::vuDevice->device, &deviceAdressInfo);
+        VkDeviceAddress address = vkGetBufferDeviceAddress(device, &deviceAdressInfo);
         return address;
     }
 
     VkResult VuBuffer::setData(const void* data, VkDeviceSize byteSize, VkDeviceSize offset) const
     {
-        return vmaCopyMemoryToAllocation(ctx::vuDevice->vma, data, allocation, offset, byteSize);
+        return vmaCopyMemoryToAllocation(vma, data, allocation, offset, byteSize);
     }
 
     VkDeviceSize VuBuffer::getSizeInBytes() const
@@ -62,24 +66,16 @@ namespace Vu{
         return length * stride;
     }
 
-    std::span<uint8> VuBuffer::getMappedSpan(VkDeviceSize start, VkDeviceSize bytelenght) const
+    std::span<byte> VuBuffer::getMappedSpan(VkDeviceSize start, VkDeviceSize bytelenght) const
     {
-        auto* ptr = static_cast<uint8 *>(mapPtr);
+        auto* ptr = static_cast<byte*>(mapPtr);
         ptr += start;
         return std::span(ptr, bytelenght);
     }
 
-    void VuBuffer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-        VkCommandBuffer commandBuffer = ctx::vuDevice->BeginSingleTimeCommands();
-        VkBufferCopy copyRegion{};
-        copyRegion.srcOffset = 0;
-        copyRegion.dstOffset = 0;
-        copyRegion.size = size;
-        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-        ctx::vuDevice->EndSingleTimeCommands(commandBuffer);
-    }
 
-    VkDeviceSize VuBuffer::alignedSize(VkDeviceSize value, VkDeviceSize alignment) {
+    VkDeviceSize VuBuffer::alignedSize(VkDeviceSize value, VkDeviceSize alignment)
+    {
         return (value + alignment - 1) & ~(alignment - 1);
     }
 }

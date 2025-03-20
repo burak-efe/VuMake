@@ -33,9 +33,8 @@ namespace Vu {
 
 
         void uninit() {
-            //lastCreateInfo.vuDevice.
-            //vertexBuffer.destroyHandle();
-            //indexBuffer.destroyHandle();
+            //TODO
+
         }
 
         VkDeviceSize totalAttributesSizePerVertex() {

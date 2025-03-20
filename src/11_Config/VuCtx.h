@@ -13,8 +13,8 @@ namespace Vu {
 
     namespace ctx {
 
-        inline VuDevice*      vuDevice   = nullptr;
-        inline VuRenderer*    vuRenderer = nullptr;
+        //inline VuDevice*      vuDevice   = nullptr;
+        //inline VuRenderer*    vuRenderer = nullptr;
         inline GPU_FrameConst frameConst;
 
         inline SDL_Window* window = nullptr;

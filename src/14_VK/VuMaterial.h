@@ -2,34 +2,29 @@
 
 #include "10_Core/VuCommon.h"
 #include "VuGraphicsPipeline.h"
-#include "VuMaterialDataPool.h"
 #include "VuPools.h"
 #include "VuTypes.h"
 
 
 namespace Vu
 {
-    struct VuMaterialDataPool;
-
-    struct VuMaterialCreateInfo
-    {
-        VkShaderModule      vertexShaderModule;
-        VkShaderModule      fragmentShaderModule;
-        VkRenderPass        renderPass;
-        VuMaterialDataPool* materialDataPool;
-    };
+    struct VuDevice;
 
     //Material owns the pipeline, uses shared material data
     //when parent shader recompiled, it should be recompiled too
     struct VuMaterial
     {
-        VuMaterialCreateInfo         lastCreateInfo;
-        VuGraphicsPipeline           vuPipeline;
-        VuHandle2<uint32> materialData;
+        VuDevice*      vuDevice;
+        VkShaderModule vertexShaderModule;
+        VkShaderModule fragmentShaderModule;
+        VkRenderPass   renderPass;
 
-        void init(const VuMaterialCreateInfo& createInfo);
+        VuGraphicsPipeline vuPipeline;
+        VuHandle2<uint32>  materialData;
 
-        void recompile(const VuMaterialCreateInfo& createInfo);
+        void init(VuDevice* vuDevice, VkShaderModule vertexShaderModule, VkShaderModule fragmentShaderModule, VkRenderPass renderPass);
+
+        //void recompile();
 
         void uninit();
 

@@ -19,29 +19,32 @@ Vu::path Vu::VuShader::compileToSpirv(const path& shaderCodePath)
     return spirvFilePath;
 }
 
-void Vu::VuShader::init(const VuGraphicsShaderCreateInfo& createInfo)
+void Vu::VuShader::init(VuDevice* vuDevice, path vertexShaderPath, path fragmentShaderPath, VkRenderPass renderPass)
 {
     ZoneScoped;
-    this->lastCreateInfo = createInfo;
+    this->vuDevice           = vuDevice;
+    this->vertexShaderPath   = vertexShaderPath;
+    this->fragmentShaderPath = fragmentShaderPath;
+    this->renderPass         = renderPass;
 
 
-    lastModifiedTime = std::max(getlastModifiedTime(createInfo.vertexShaderPath),
-                                getlastModifiedTime(createInfo.fragmentShaderPath));
+    lastModifiedTime = std::max(getlastModifiedTime(vertexShaderPath),
+                                getlastModifiedTime(fragmentShaderPath));
 
-    auto vertOutPath = compileToSpirv(createInfo.vertexShaderPath);
-    auto fragOutPath = compileToSpirv(createInfo.fragmentShaderPath);
+    auto vertOutPath = compileToSpirv(vertexShaderPath);
+    auto fragOutPath = compileToSpirv(fragmentShaderPath);
 
     const auto vertSpv = Vu::readFile(vertOutPath);
     const auto fragSpv = Vu::readFile(fragOutPath);
 
-    vertexShaderModule   = createShaderModule(vertSpv.data(), vertSpv.size());
-    fragmentShaderModule = createShaderModule(fragSpv.data(), fragSpv.size());
+    fragmentShaderModule = createShaderModule(vuDevice, fragSpv.data(), fragSpv.size());
+    vertexShaderModule   = createShaderModule(vuDevice, vertSpv.data(), vertSpv.size());
 }
 
 void Vu::VuShader::uninit()
 {
-    vkDestroyShaderModule(ctx::vuDevice->device, vertexShaderModule, nullptr);
-    vkDestroyShaderModule(ctx::vuDevice->device, fragmentShaderModule, nullptr);
+    vkDestroyShaderModule(vuDevice->device, vertexShaderModule, nullptr);
+    vkDestroyShaderModule(vuDevice->device, fragmentShaderModule, nullptr);
 
     for (auto& material : materials)
     {
@@ -51,42 +54,48 @@ void Vu::VuShader::uninit()
 
 void Vu::VuShader::tryRecompile()
 {
-    auto maxTime = std::max(getlastModifiedTime(lastCreateInfo.vertexShaderPath),
-                            getlastModifiedTime(lastCreateInfo.fragmentShaderPath));
+    auto maxTime = std::max(getlastModifiedTime(vertexShaderPath),
+                            getlastModifiedTime(fragmentShaderPath));
     if (maxTime <= lastModifiedTime)
     {
         return;
     }
 
-    vkDeviceWaitIdle(ctx::vuDevice->device);
-    vkDestroyShaderModule(ctx::vuDevice->device, vertexShaderModule, nullptr);
-    vkDestroyShaderModule(ctx::vuDevice->device, fragmentShaderModule, nullptr);
+    vkDeviceWaitIdle(vuDevice->device);
+    vkDestroyShaderModule(vuDevice->device, vertexShaderModule, nullptr);
+    vkDestroyShaderModule(vuDevice->device, fragmentShaderModule, nullptr);
 
-    init(lastCreateInfo);
+    init(
+         vuDevice,
+         vertexShaderPath,
+         fragmentShaderPath,
+         renderPass
+        );
 
     for (auto& material : materials)
     {
-        material.recompile({vertexShaderModule, fragmentShaderModule, lastCreateInfo.renderPass});
+        //TODO
+        //material.recompile({vertexShaderModule, fragmentShaderModule, lastCreateInfo.renderPass});
     }
 }
 
-Vu::uint32 Vu::VuShader::createMaterial(VuMaterialDataPool* materialDataPool)
+Vu::uint32 Vu::VuShader::createMaterial()
 {
     VuMaterial material;
-    material.init({vertexShaderModule, fragmentShaderModule, lastCreateInfo.renderPass, materialDataPool});
+    material.init(vuDevice, vertexShaderModule, fragmentShaderModule, renderPass);
     materials.push_back(material);
     return materials.capacity() - 1;
 }
 
-VkShaderModule Vu::VuShader::createShaderModule(const void* code, size_t size)
+VkShaderModule Vu::VuShader::createShaderModule(VuDevice* vuDevice, const void* code, size_t size)
 {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = size;
-    createInfo.pCode    = reinterpret_cast<const uint32*>(code);
+    createInfo.pCode    = static_cast<const uint32*>(code);
     createInfo.pNext    = nullptr;
 
     VkShaderModule shaderModule;
-    VkCheck(vkCreateShaderModule(ctx::vuDevice->device, &createInfo, nullptr, &shaderModule));
+    VkCheck(vkCreateShaderModule(vuDevice->device, &createInfo, nullptr, &shaderModule));
     return shaderModule;
 }

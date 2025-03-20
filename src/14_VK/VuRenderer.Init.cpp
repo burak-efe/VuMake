@@ -138,16 +138,36 @@ namespace Vu
                                     config::DEVICE_EXTENSIONS
                                 });
         }
+        vuDevice.initBindlessDescriptor(config::BINDLESS_CONFIG_INFO, config::MAX_FRAMES_IN_FLIGHT);
+        vuDevice.initBindlessManager(config::BINDLESS_CONFIG_INFO);
+        vuDevice.initDefaultResources();
+        //init default resources
+        {
+            defaultImageHandle    = vuDevice.imagePool.createHandle();
+            assert(defaultImageHandle.index == 0);
+            auto* defaultImagePtr = vuDevice.imagePool.get(defaultImageHandle);
+            defaultImagePtr->initFromAsset(vuDevice,
+                                           std::filesystem::path("assets/textures/error.png"),
+                                           VK_FORMAT_R8G8B8A8_UNORM);
+            vuDevice.registerToBindless(defaultImagePtr->imageView, defaultImageHandle.index);
+
+
+            defaultSamplerHandle    = vuDevice.samplerPool.createHandle();
+            assert(defaultSamplerHandle.index == 0);
+            auto* defaultSamplerPtr = vuDevice.samplerPool.get(defaultSamplerHandle);
+            defaultSamplerPtr->init({.device = vuDevice.device, .physicalDevice = vuDevice.physicalDevice});
+            vuDevice.registerToBindless(defaultSamplerPtr->vkSampler, defaultSamplerHandle.index);
+
+        }
         //init swapchain
         {
             swapChain = VuSwapChain{};
-            swapChain.init({vuDevice.device, vuDevice.physicalDevice, surface});
+            swapChain.init(&vuDevice, surface);
             disposeStack.push([&] { swapChain.uninit(); });
         }
 
-        vuDevice.initBindless(config::BINDLESS_CONFIG_INFO, config::MAX_FRAMES_IN_FLIGHT);
-        VuResourceManager::init(config::BINDLESS_CONFIG_INFO);
-        disposeStack.push([&] { VuResourceManager::uninit(); });
+        //VuResourceManager::init(config::BINDLESS_CONFIG_INFO);
+        //disposeStack.push([&] { VuResourceManager::uninit(); });
 
 
         //init uniform buffers
@@ -158,7 +178,7 @@ namespace Vu
                 VkDeviceSize bufferSize = sizeof(GPU_FrameConst);
 
                 uniformBuffers[i] = VuBuffer();
-                uniformBuffers[i].init({
+                uniformBuffers[i].init(vuDevice.device, vuDevice.vma, {
                                            .length = 1,
                                            .strideInBytes = bufferSize,
                                            .vkUsageFlags =
@@ -171,10 +191,8 @@ namespace Vu
             }
             for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
             {
-                VuResourceManager::writeUBO_ToGlobalPool(0, i, uniformBuffers[i]);
+               vuDevice.writeUBO_ToGlobalPool(uniformBuffers[i], 0, i);
             }
-
-            //VuResourceManager::registerUniformBuffer(0, uniformBuffers[0]);
 
             disposeStack.push([vr = *this]
             {
@@ -233,26 +251,8 @@ namespace Vu
             });
         }
 
-        vuDevice.initDefaultResources();
+
         initImGui();
-        //init default resources
-        {
-            defaultImageHandle    = vuDevice.imagePool.createHandle();
-            auto* defaultImagePtr = vuDevice.imagePool.get(defaultImageHandle);
-            defaultImagePtr->initFromAsset(vuDevice,
-                                           std::filesystem::path("assets/textures/error.png"),
-                                           VK_FORMAT_R8G8B8A8_UNORM);
-
-            VuResourceManager::writeSampledImageToGlobalPool(defaultImageHandle.index, defaultImagePtr->imageView);
-            //disposeStack.push([&] { debugTexture.destroyHandle(); });
-
-            defaultSamplerHandle    = vuDevice.samplerPool.createHandle();
-            auto* defaultSamplerPtr = vuDevice.samplerPool.get(defaultSamplerHandle);
-            defaultSamplerPtr->init({.device = vuDevice.device, .physicalDevice = vuDevice.physicalDevice});
-
-            VuResourceManager::writeSamplerToGlobalPool(defaultSamplerHandle.index, defaultSamplerPtr->vkSampler);
-            //disposeStack.push([&] { debugSampler.destroyHandle(); });
-        }
     }
 
     void VuRenderer::initImGui()

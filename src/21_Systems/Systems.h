@@ -13,14 +13,16 @@
 
 namespace Vu
 {
+    static VuRenderer* ECS_VU_RENDERER;
+
     inline flecs::system AddRenderingSystem(flecs::world& world)
     {
         return world.system<Transform, const MeshRenderer>("Rendering")
                     .each([](Transform& transform, const MeshRenderer& meshRenderer)
                     {
                         VuHandle2<VuShader> shader = meshRenderer.shader;
-                        VuMaterial          mat    = ctx::vuDevice->get(shader)->materials[meshRenderer.materialIndex];
-                        ctx::vuRenderer->bindMaterial(mat);
+                        VuMaterial          mat    = ECS_VU_RENDERER->vuDevice.get(shader)->materials[meshRenderer.materialIndex];
+                        ECS_VU_RENDERER->bindMaterial(mat);
                         float4x4         trs = transform.ToTRS();
                         GPU_PushConstant pc{
                             trs,
@@ -31,9 +33,9 @@ namespace Vu
                                 0
                             }
                         };
-                        ctx::vuRenderer->pushConstants(pc);
-                        ctx::vuRenderer->bindMesh(*meshRenderer.mesh);
-                        ctx::vuRenderer->drawIndexed(ctx::vuDevice->get(meshRenderer.mesh->indexBuffer)->length);
+                        ECS_VU_RENDERER->pushConstants(pc);
+                        ECS_VU_RENDERER->bindMesh(*meshRenderer.mesh);
+                        ECS_VU_RENDERER->drawIndexed(ECS_VU_RENDERER->vuDevice.get(meshRenderer.mesh->indexBuffer)->length);
                     });
     }
 
@@ -204,15 +206,14 @@ namespace Vu
 
 
                         ctx::frameConst.view = inverse(trs.ToTRS());
-                        ctx::frameConst.proj = createPerspectiveProjectionMatrix(
-                                                                                 cam.fov,
-                                                                                 static_cast<float>(ctx::vuRenderer->swapChain.
-                                                                                     swapChainExtent.width),
-                                                                                 static_cast<float>(ctx::vuRenderer->swapChain.
-                                                                                     swapChainExtent.height),
-                                                                                 cam.near,
-                                                                                 cam.far
-                                                                                );
+                        ctx::frameConst.proj = createPerspectiveProjectionMatrix
+                            (
+                             cam.fov,
+                             static_cast<float>(ECS_VU_RENDERER->swapChain.swapChainExtent.width),
+                             static_cast<float>(ECS_VU_RENDERER->swapChain.swapChainExtent.height),
+                             cam.near,
+                             cam.far
+                            );
 
                         ctx::frameConst.cameraPos = float4(trs.position, 0);
                         ctx::frameConst.cameraDir = float4(float3(cam.yaw, cam.pitch, cam.roll), 0);
@@ -245,7 +246,7 @@ namespace Vu
                         // }
 
 
-                        ctx::vuRenderer->updateFrameConstantBuffer(ctx::frameConst);
+                        ECS_VU_RENDERER->updateFrameConstantBuffer(ctx::frameConst);
                     });
     }
 }

@@ -69,10 +69,8 @@ namespace Vu
             // dstMaterialData.texture1 = normalTexture.index;
 
 
-            dstMesh.vertexBuffer = vuDevice.bufferPool.createHandle();
-            dstMesh.indexBuffer  = vuDevice.bufferPool.createHandle();
-            auto* vertexBuffer   = vuDevice.bufferPool.get(dstMesh.vertexBuffer);
-            auto* indexBuffer    = vuDevice.bufferPool.get(dstMesh.indexBuffer);
+            //dstMesh.vertexBuffer = vuDevice.createBuffer();
+
 
 
             //Indices
@@ -84,7 +82,11 @@ namespace Vu
             }
             auto&  indexAccesor = asset->accessors[primitive.indicesAccessor.value()];
             uint32 indexCount   = (uint32)indexAccesor.count;
-            indexBuffer->init({.length = indexCount, .strideInBytes = sizeof(uint32), .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT});
+
+            dstMesh.indexBuffer  = vuDevice.createBuffer({.length = indexCount, .strideInBytes = sizeof(uint32), .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT});
+            auto* indexBuffer    = vuDevice.get(dstMesh.indexBuffer);
+
+            //indexBuffer->init({.length = indexCount, .strideInBytes = sizeof(uint32), .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT});
             indexBuffer->map();
             auto              indexSpanByte = indexBuffer->getMappedSpan(0, indexCount * sizeof(uint32));
             std::span<uint32> indexSpan     = std::span(reinterpret_cast<uint32*>(indexSpanByte.data()), indexCount);
@@ -100,36 +102,43 @@ namespace Vu
             fastgltf::Accessor&  positionAccessor = asset->accessors[positionIt->accessorIndex];
 
             dstMesh.vertexCount = positionAccessor.count;
-            vertexBuffer->init({
+            dstMesh.vertexBuffer = vuDevice.createBuffer({
                                    .length = dstMesh.vertexCount * dstMesh.totalAttributesSizePerVertex(),
                                    .strideInBytes = 1u,
                                    .vkUsageFlags =
                                    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
                                });
-            VuResourceManager::registerStorageBuffer(dstMesh.vertexBuffer.index, *vertexBuffer);
+            VuBuffer* vertexBuffer = vuDevice.get(dstMesh.vertexBuffer);
+            // vertexBuffer->init({
+            //                        .length = dstMesh.vertexCount * dstMesh.totalAttributesSizePerVertex(),
+            //                        .strideInBytes = 1u,
+            //                        .vkUsageFlags =
+            //                        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+            //                    });
+            //VuResourceManager::registerStorageBuffer(dstMesh.vertexBuffer.index, *vertexBuffer);
             vertexBuffer->map();
 
-            std::span<uint8> vertexSpanByte =
+            std::span<byte> vertexSpanByte =
                 vertexBuffer->getMappedSpan(0, sizeof(fastgltf::math::f32vec3) * dstMesh.vertexCount);
             std::span<fastgltf::math::f32vec3> vertexSpan =
                 std::span(reinterpret_cast<fastgltf::math::f32vec3*>(vertexSpanByte.data()), dstMesh.vertexCount);
 
 
-            std::span<uint8> normalSpanByte =
+            std::span<byte> normalSpanByte =
                 vertexBuffer->getMappedSpan(dstMesh.getNormalOffsetAsByte(),
                                             sizeof(fastgltf::math::f32vec3) * dstMesh.vertexCount);
             std::span<fastgltf::math::f32vec3> normalSpan =
                 std::span(reinterpret_cast<fastgltf::math::f32vec3*>(normalSpanByte.data()), dstMesh.vertexCount);
 
 
-            std::span<uint8> tangentSpanByte =
+            std::span<byte> tangentSpanByte =
                 vertexBuffer->getMappedSpan(dstMesh.getTangentOffsetAsByte(),
                                             sizeof(fastgltf::math::f32vec4) * dstMesh.vertexCount);
             std::span<fastgltf::math::f32vec4> tangentSpan =
                 std::span(reinterpret_cast<fastgltf::math::f32vec4*>(tangentSpanByte.data()), dstMesh.vertexCount);
 
 
-            std::span<uint8> uvSpanByte =
+            std::span<byte> uvSpanByte =
                 vertexBuffer->getMappedSpan(dstMesh.getUV_OffsetAsByte(),
                                             sizeof(fastgltf::math::f32vec2) * dstMesh.vertexCount);
             std::span<fastgltf::math::f32vec2> uvSpan =

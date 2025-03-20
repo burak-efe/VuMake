@@ -2,47 +2,43 @@
 
 #include "11_Config/VuCtx.h"
 #include "VuDevice.h"
-#include "VuMaterialDataPool.h"
-#include "VuMesh.h"
 
-void Vu::VuMaterial::init(const VuMaterialCreateInfo& createInfo)
+void Vu::VuMaterial::init(VuDevice*    vuDevice, VkShaderModule vertexShaderModule, VkShaderModule fragmentShaderModule,
+                          VkRenderPass renderPass)
 {
-    lastCreateInfo = createInfo;
-    auto bindings = VuMesh::getBindingDescription();
-    auto attribs  = VuMesh::getAttributeDescriptions();
+    this->vuDevice             = vuDevice;
+    this->vertexShaderModule   = vertexShaderModule;
+    this->fragmentShaderModule = fragmentShaderModule;
+    this->renderPass           = renderPass;
+
     vuPipeline.initGraphicsPipeline(
-                                    ctx::vuDevice->globalPipelineLayout,
-                                    createInfo.vertexShaderModule,
-                                    createInfo.fragmentShaderModule,
-                                    bindings,
-                                    attribs,
-                                    createInfo.renderPass
+                                    vuDevice->device,
+                                    vuDevice->globalPipelineLayout,
+                                    vertexShaderModule,
+                                    fragmentShaderModule,
+                                    renderPass
                                    );
 
-    materialData = createInfo.materialDataPool->allocMaterialData();
+    materialData = vuDevice->materialDataPool.allocMaterialData();
 }
 
-void Vu::VuMaterial::recompile(const VuMaterialCreateInfo& createInfo)
-{
-    vuPipeline.Dispose();
-
-    auto bindings = VuMesh::getBindingDescription();
-    auto attribs  = VuMesh::getAttributeDescriptions();
-    vuPipeline.initGraphicsPipeline(
-                                    ctx::vuDevice->globalPipelineLayout,
-                                    createInfo.vertexShaderModule,
-                                    createInfo.fragmentShaderModule,
-                                    bindings,
-                                    attribs,
-                                    createInfo.renderPass
-                                   );
-
-}
+// void Vu::VuMaterial::recompile(const VuMaterialCreateInfo& createInfo)
+// {
+//     vuPipeline.uninit();
+//     vuPipeline.initGraphicsPipeline(
+//                                     ctx::vuDevice->globalPipelineLayout,
+//                                     createInfo.vertexShaderModule,
+//                                     createInfo.fragmentShaderModule,
+//                                     bindings,
+//                                     attribs,
+//                                     createInfo.renderPass
+//                                    );
+// }
 
 void Vu::VuMaterial::uninit()
 {
-    vuPipeline.Dispose();
-    lastCreateInfo.materialDataPool->destroyHandle(materialData);
+    vuPipeline.uninit();
+    vuDevice->materialDataPool.destroyHandle(materialData);
 }
 
 void Vu::VuMaterial::bindPipeline(const VkCommandBuffer& commandBuffer) const
@@ -52,5 +48,5 @@ void Vu::VuMaterial::bindPipeline(const VkCommandBuffer& commandBuffer) const
 
 Vu::GPU_PBR_MaterialData* Vu::VuMaterial::getMaterialData()
 {
-    return lastCreateInfo.materialDataPool->getMaterialData(materialData);
+    return vuDevice->materialDataPool.getMaterialData(materialData);
 }

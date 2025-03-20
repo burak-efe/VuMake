@@ -6,11 +6,14 @@
 #include "VuDevice.h"
 #include "VuUtils.h"
 
-void Vu::VuImage::init(const VuTextureCreateInfo& createInfo)
+void Vu::VuImage::init(VkDevice device, const VkPhysicalDeviceMemoryProperties& memProps, const VuImageCreateInfo& createInfo)
 {
+    this->device         = device;
+    this->physicalDevice = physicalDevice;
+
     lastCreateInfo = createInfo;
-    createImage(createInfo.device,
-                createInfo.physicalDevice,
+    createImage(device,
+                memProps,
                 createInfo.width, createInfo.height,
                 createInfo.format,
                 createInfo.tiling,
@@ -19,7 +22,7 @@ void Vu::VuImage::init(const VuTextureCreateInfo& createInfo)
                 image,
                 imageMemory);
 
-    createImageView(createInfo.device, createInfo.format, image, createInfo.aspectMask, imageView);
+    createImageView(device, createInfo.format, image, createInfo.aspectMask, imageView);
 }
 
 void Vu::VuImage::initFromAsset(VuDevice& vuDevice, const path& path, VkFormat format)
@@ -30,48 +33,43 @@ void Vu::VuImage::initFromAsset(VuDevice& vuDevice, const path& path, VkFormat f
     int texHeight;
     int texChannels;
 
-    stbi_uc* pixels;
-    loadImageFile(path, texWidth, texHeight, texChannels, pixels);
-    const auto imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
+    byte* pixels;
+    loadImageFile(path, texWidth, texHeight, texChannels, reinterpret_cast<stbi_uc*&>(pixels));
+    const auto imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4U);
 
     if (pixels == nullptr)
     {
         throw std::runtime_error("failed to load texture image!");
     }
 
-    ZoneNamedN(zone2, "staging", true);
-    VuBuffer     staging{};
-    VkDeviceSize size = texWidth * texHeight;
-    staging.init({
-                     .length = size,
-                     .strideInBytes = 4,
-                     .vkUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-                 });
-    staging.setData(pixels, imageSize);
-    stbi_image_free(pixels);
+    //VuBuffer     staging{};
+    //VkDeviceSize size = texWidth * texHeight;
+    //TODO staging
+    // staging.init({
+    //                  .length = size,
+    //                  .strideInBytes = 4,
+    //                  .vkUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+    //              });
+    // staging.setData(pixels, imageSize);
 
     uint32 w = texWidth;
     uint32 h = texHeight;
 
-    init({vuDevice.device, vuDevice.physicalDevice, w, h, format});
-    // createImage(vuDevice.device,
-    //             vuDevice.physicalDevice,
-    //             texWidth, texHeight,
-    //             format,
-    //             VK_IMAGE_TILING_OPTIMAL,
-    //             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-    //             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
+    init(vuDevice.device, vuDevice.memProperties, {.width = w, .height = h, .format = format});
 
-    transitionImageLayout(vuDevice, image,
-                          VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
-    copyBufferToImage(vuDevice, staging.buffer, image, static_cast<uint32>(texWidth), static_cast<uint32>(texHeight));
-
-    transitionImageLayout(vuDevice, image,
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vuDevice.uploadToImage(*this, pixels, imageSize);
+    //init({vuDevice.device, vuDevice.physicalDevice, w, h, format});
+    // transitionImageLayout(vuDevice, image,
+    //                       VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    //
+    // //copyBufferToImage(vuDevice, staging.buffer, image, static_cast<uint32>(texWidth), static_cast<uint32>(texHeight));
+    //
+    // transitionImageLayout(vuDevice, image,
+    //                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 
-    staging.uninit();
+    stbi_image_free(pixels);
+    //staging.uninit();
 }
 
 void Vu::VuImage::loadImageFile(const path& path, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& pixels)
@@ -82,22 +80,21 @@ void Vu::VuImage::loadImageFile(const path& path, int& texWidth, int& texHeight,
 
 void Vu::VuImage::uninit()
 {
-    std::cout << "VuTexture::uninit()" << std::endl;
-    vkDestroyImage(lastCreateInfo.device, image, nullptr);
-    vkFreeMemory(lastCreateInfo.device, imageMemory, nullptr);
-    vkDestroyImageView(lastCreateInfo.device, imageView, nullptr);
+    vkDestroyImage(device, image, nullptr);
+    vkFreeMemory(device, imageMemory, nullptr);
+    vkDestroyImageView(device, imageView, nullptr);
 }
 
-void Vu::VuImage::createImage(const VkDevice              device,
-                              const VkPhysicalDevice      physicalDevice,
-                              const uint32_t              width,
-                              const uint32_t              height,
-                              const VkFormat              format,
-                              const VkImageTiling         tiling,
-                              const VkImageUsageFlags     usage,
-                              const VkMemoryPropertyFlags properties,
-                              VkImage&                    image,
-                              VkDeviceMemory&             imageMemory)
+void Vu::VuImage::createImage(const VkDevice                          device,
+                              const VkPhysicalDeviceMemoryProperties& memProps,
+                              const uint32_t                          width,
+                              const uint32_t                          height,
+                              const VkFormat                          format,
+                              const VkImageTiling                     tiling,
+                              const VkImageUsageFlags                 usage,
+                              const VkMemoryPropertyFlags             properties,
+                              VkImage&                                image,
+                              VkDeviceMemory&                         imageMemory)
 {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -125,7 +122,7 @@ void Vu::VuImage::createImage(const VkDevice              device,
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize  = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = findMemoryTypeIndex(memProps, memRequirements.memoryTypeBits, properties);
 
     if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
     {

@@ -1,13 +1,15 @@
 #include "VuGraphicsPipeline.h"
 
-#include "VuDevice.h"
 #include "11_Config/VuCtx.h"
 
-void Vu::VuGraphicsPipeline::initGraphicsPipeline(const VkPipelineLayout pipelineLayout, const VkShaderModule vertShaderModule,
-                                                  const VkShaderModule fragShaderModule, const std::span<VkVertexInputBindingDescription> bindingDescriptions,
-                                                  const std::span<VkVertexInputAttributeDescription> attributeDescriptions, const VkRenderPass renderPass)
+void Vu::VuGraphicsPipeline::initGraphicsPipeline(
+    const VkDevice device,
+    const VkPipelineLayout pipelineLayout,
+    const VkShaderModule   vertShaderModule,
+    const VkShaderModule   fragShaderModule,
+    const VkRenderPass     renderPass)
 {
-
+    this->device = device;
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
         .stage = VK_SHADER_STAGE_VERTEX_BIT,
@@ -107,16 +109,16 @@ void Vu::VuGraphicsPipeline::initGraphicsPipeline(const VkPipelineLayout pipelin
                                                                              true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
     pipelineInfo.pDepthStencilState = &depth;
 
-    VkCheck(vkCreateGraphicsPipelines(ctx::vuDevice->device,VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
+    VkCheck(vkCreateGraphicsPipelines(device,VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
 }
 
-void Vu::VuGraphicsPipeline::Dispose() const
+void Vu::VuGraphicsPipeline::uninit() const
 {
-    vkDestroyPipeline(ctx::vuDevice->device, pipeline, nullptr);
+    vkDestroyPipeline(device, pipeline, nullptr);
 }
 
-VkPipelineDepthStencilStateCreateInfo Vu::VuGraphicsPipeline::fillDepthStencilCreateInfo(bool bDepthTest, bool bDepthWrite,
-    VkCompareOp compareOp)
+VkPipelineDepthStencilStateCreateInfo Vu::VuGraphicsPipeline::fillDepthStencilCreateInfo(bool        bDepthTest, bool bDepthWrite,
+                                                                                         VkCompareOp compareOp)
 {
     VkPipelineDepthStencilStateCreateInfo info = {};
     info.sType                                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;

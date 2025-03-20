@@ -101,29 +101,18 @@ namespace Vu
         void Run()
         {
             ZoneScoped;
-            //auto device   = VuDevice{};
-            //ctx::vuDevice = &device;
-            //std::cout << "Scene init" << std::endl;
-
-            ctx::vuRenderer = &vuRenderer;
-            ctx::vuDevice   = &vuRenderer.vuDevice;
-
             vuRenderer.init();
+            ECS_VU_RENDERER = &vuRenderer;
 
             VuMesh mesh{};
 
-            shader          = vuRenderer.vuDevice.shaderPool.createHandle();
-            auto* shaderPtr = vuRenderer.vuDevice.shaderPool.get(shader);
+            shader = vuRenderer.vuDevice.createShader("assets/shaders/vert.slang",
+                                                      "assets/shaders/frag.slang",
+                                                      vuRenderer.swapChain.renderPass.renderPass);
 
-            shaderPtr->init(
-                            {
-                                "assets/shaders/vert.slang",
-                                "assets/shaders/frag.slang",
-                                vuRenderer.swapChain.renderPass.renderPass
-                            }
-                           );
+            VuShader* shaderPtr = vuRenderer.vuDevice.get(shader);
 
-            uint32 mat0 = shaderPtr->createMaterial(&vuRenderer.vuDevice.materialDataPool);
+            uint32 mat0 = shaderPtr->createMaterial();
 
             GPU_PBR_MaterialData* data = shaderPtr->materials[mat0].getMaterialData();
 

@@ -10,16 +10,16 @@ void Vu::VuDevice::uninit()
     disposeStack.disposeAll();
 }
 
-void Vu::VuDevice::initInstance(VkBool32               enableValidationLayers, std::span<const char*> validationLayers,
+void Vu::VuDevice::initInstance(VkBool32               enableValidation, std::span<const char*> validationLayers,
                                 std::span<const char*> instanceExtensions)
 {
-    createInstance(enableValidationLayers, validationLayers, instanceExtensions, instance);
+    createInstance(enableValidation, validationLayers, instanceExtensions, instance);
     disposeStack.push([&]
     {
         vkDestroyInstance(instance, nullptr);
     });
 
-    if (enableValidationLayers)
+    if (enableValidation)
     {
         createDebugMessenger(instance, debugMessenger);
         disposeStack.push([&]
@@ -33,6 +33,8 @@ void Vu::VuDevice::initDevice(const VuDeviceCreateInfo& info)
 {
     createPhysicalDevice(instance, info.surface, info.deviceExtensions, physicalDevice);
     queueFamilyIndices = QueueFamilyIndices::findQueueFamilies(physicalDevice, info.surface);
+
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
     createDevice(info.physicalDeviceFeatures2,
                  queueFamilyIndices,
@@ -96,7 +98,7 @@ void Vu::VuDevice::initCommandPool()
     VkCheck(vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool));
 }
 
-void Vu::VuDevice::initBindless(const VuBindlessConfigInfo& info, uint32 maxFramesInFligth)
+void Vu::VuDevice::initBindlessDescriptor(const VuBindlessConfigInfo& info, uint32 maxFramesInFligth)
 {
     initDescriptorSetLayout(info);
     disposeStack.push([&]
@@ -185,20 +187,25 @@ void Vu::VuDevice::initDescriptorSetLayout(const VuBindlessConfigInfo& info)
 
 void Vu::VuDevice::initDefaultResources()
 {
-    debugBuffer            = bufferPool.createHandle();
-    VuBuffer* debugBufferT = bufferPool.get(debugBuffer);
-    debugBufferT->init({
-                           .length = 4096,
-                           .strideInBytes = 1,
-                           .vkUsageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                           .vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO,
-                           .vmaCreateFlags = 0
+    stagingBuffer.init(device, vma, {
+                           .length = 1024 * 1024 * 64,
+                           .vkUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                           .vmaCreateFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
                        });
+    stagingBuffer.map();
+    disposeStack.push([&] { stagingBuffer.uninit(); });
+
+    debugBuffer = createBuffer({
+                                   .length = 4096,
+                                   .strideInBytes = 1,
+                                   .vkUsageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                                   .vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO,
+                                   .vmaCreateFlags = 0
+                               });
 
     assert(debugBuffer.index == 0);
-    VuResourceManager::registerStorageBuffer(debugBuffer.index, *debugBufferT);
 
-    materialDataPool.init(&bufferPool);
+    materialDataPool.init(this);
     disposeStack.push([&] { materialDataPool.uninit(); });
 }
 
@@ -364,8 +371,8 @@ bool Vu::VuDevice::checkDeviceExtensionSupport(VkPhysicalDevice device, std::spa
     return false;
 }
 
-bool Vu::VuDevice::isDeviceSuitable(VkPhysicalDevice       device, VkSurfaceKHR surface,
-                                    std::span<const char*> enabledExtensions)
+bool Vu::VuDevice::isDeviceSupportExtensions(VkPhysicalDevice       device, VkSurfaceKHR surface,
+                                             std::span<const char*> enabledExtensions)
 {
     QueueFamilyIndices indices             = QueueFamilyIndices::findQueueFamilies(device, surface);
     bool               extensionsSupported = checkDeviceExtensionSupport(device, enabledExtensions);
@@ -473,7 +480,7 @@ void Vu::VuDevice::createPhysicalDevice(const VkInstance&      instance, const V
 
     for (const auto& device : devices)
     {
-        if (isDeviceSuitable(device, surface, enabledExtensions))
+        if (isDeviceSupportExtensions(device, surface, enabledExtensions))
         {
             outPhysicalDevice = device;
             break;

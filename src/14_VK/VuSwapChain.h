@@ -4,25 +4,19 @@
 #include "VuTypes.h"
 #include "VuRenderPass.h"
 #include "VuImage.h"
+#include "VuPools.h"
 
 namespace Vu
 {
-    struct VuSwapChainCreateInfo
-    {
-        //VuDevice*        vuDevice;
-        VkDevice         device;
-        VkPhysicalDevice physicalDevice;
-        VkSurfaceKHR     surface;
-    };
-
     struct VuSwapChain
     {
     public:
-        VuSwapChainCreateInfo lastCreateInfo;
-        VkSwapchainKHR        swapChain;
-        VuRenderPass          renderPass;
-        VuImage               depthStencil;
-        //VuDepthStencil depthStencil;
+        VuDevice*          vuDevice;
+        VkSurfaceKHR       surface;
+        VkSwapchainKHR     swapChain;
+        VuRenderPass       renderPass;
+        VuHandle2<VuImage> depthStencilH;
+
 
         std::vector<VkImage>       swapChainImages;
         std::vector<VkImageView>   swapChainImageViews;
@@ -35,7 +29,7 @@ namespace Vu
         uint32_t        imageCount;
         uint32_t        queueNodeIndex = UINT32_MAX;
 
-        void init(const VuSwapChainCreateInfo& createInfo);
+        void init(VuDevice* vuDevice, VkSurfaceKHR surface);
 
         void uninit();
 

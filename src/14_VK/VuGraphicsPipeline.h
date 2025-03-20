@@ -4,19 +4,21 @@
 #include "10_Core/VuCommon.h"
 
 
-namespace Vu {
-    struct VuGraphicsPipeline {
+namespace Vu
+{
+    struct VuGraphicsPipeline
+    {
+        VkDevice device;
         VkPipeline pipeline;
 
         void initGraphicsPipeline(
+            const VkDevice         device,
             const VkPipelineLayout pipelineLayout,
-            const VkShaderModule vertShaderModule,
-            const VkShaderModule fragShaderModule,
-            const std::span<VkVertexInputBindingDescription> bindingDescriptions,
-            const std::span<VkVertexInputAttributeDescription> attributeDescriptions,
-            const VkRenderPass renderPass);
+            const VkShaderModule   vertShaderModule,
+            const VkShaderModule   fragShaderModule,
+            const VkRenderPass     renderPass);
 
-        void Dispose() const;
+        void uninit() const;
 
         static VkPipelineDepthStencilStateCreateInfo fillDepthStencilCreateInfo(bool        bDepthTest,
                                                                                 bool        bDepthWrite,

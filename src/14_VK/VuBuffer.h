@@ -3,18 +3,23 @@
 
 #include "10_Core/VuCommon.h"
 
-namespace Vu {
-
-    struct VuBufferCreateInfo {
+namespace Vu
+{
+    struct VuBufferCreateInfo
+    {
         VkDeviceSize             length         = 1;
-        VkDeviceSize             strideInBytes  = 4;
+        VkDeviceSize             strideInBytes  = 1;
         VkBufferUsageFlags       vkUsageFlags   = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VmaMemoryUsage           vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO;
         VmaAllocationCreateFlags vmaCreateFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
     };
 
-    struct VuBuffer {
-        VuBufferCreateInfo createInfo;
+    struct VuBuffer
+    {
+        VkDevice           device;
+        VmaAllocator       vma;
+        VuBufferCreateInfo lastCreateInfo;
+
         VkBuffer           buffer;
         VmaAllocation      allocation;
         VmaAllocationInfo  allocationInfo;
@@ -22,8 +27,7 @@ namespace Vu {
         VkDeviceSize       stride;
         void*              mapPtr;
 
-
-        void init(const VuBufferCreateInfo& info);
+        void init(VkDevice device, VmaAllocator allocator, const VuBufferCreateInfo& info);
 
         void uninit();
 
@@ -37,9 +41,7 @@ namespace Vu {
 
         [[nodiscard]] VkDeviceSize getSizeInBytes() const;
 
-        [[nodiscard]] std::span<uint8> getMappedSpan(VkDeviceSize start, VkDeviceSize bytelenght) const;
-
-        static void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+        [[nodiscard]] std::span<byte> getMappedSpan(VkDeviceSize start, VkDeviceSize bytelenght) const;
 
         static VkDeviceSize alignedSize(VkDeviceSize value, VkDeviceSize alignment);
     };
