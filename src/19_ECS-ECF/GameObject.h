@@ -4,7 +4,6 @@
 #include <unordered_map>
 
 #include "10_Core/VuCommon.h"
-
 #include "Component.h"
 
 namespace Vu

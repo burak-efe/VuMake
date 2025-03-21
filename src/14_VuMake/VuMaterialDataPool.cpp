@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include "VuDevice.h"
-#include "VuResourceManager.h"
 
 void Vu::VuMaterialDataPool::init(VuDevice* vuDevice)
 {

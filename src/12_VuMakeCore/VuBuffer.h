@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-
 #include "10_Core/VuCommon.h"
 
 namespace Vu

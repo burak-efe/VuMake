@@ -2,12 +2,10 @@
 
 #include "10_Core/VuCommon.h"
 
-void Vu::VuSampler::init(const VuSamplerCreateInfo& createInfo)
+void Vu::VuSampler::init(const VkDevice device,const VuSamplerCreateInfo& createInfo)
 {
+    this->device = device;
     lastCreateInfo = createInfo;
-
-    VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(createInfo.physicalDevice, &properties);
 
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -17,7 +15,7 @@ void Vu::VuSampler::init(const VuSamplerCreateInfo& createInfo)
     samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.anisotropyEnable        = VK_TRUE;
-    samplerInfo.maxAnisotropy           = properties.limits.maxSamplerAnisotropy;
+    samplerInfo.maxAnisotropy           = createInfo.maxAnisotropy;
     samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
     samplerInfo.compareEnable           = VK_FALSE;
@@ -27,10 +25,10 @@ void Vu::VuSampler::init(const VuSamplerCreateInfo& createInfo)
     samplerInfo.minLod                  = 0.0f;
     samplerInfo.maxLod                  = 0.0f;
 
-    VkCheck(vkCreateSampler(createInfo.device, &samplerInfo, nullptr, &vkSampler));
+    VkCheck(vkCreateSampler(device, &samplerInfo, nullptr, &vkSampler));
 }
 
 void Vu::VuSampler::uninit() const
 {
-    vkDestroySampler(lastCreateInfo.device, vkSampler, nullptr);
+    vkDestroySampler(device, vkSampler, nullptr);
 }

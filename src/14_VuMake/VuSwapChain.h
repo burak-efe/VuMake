@@ -1,10 +1,11 @@
 #pragma once
-#include "10_Core/VuCommon.h"
 
-#include "VuTypes.h"
+#include "10_Core/VuCommon.h"
+#include "12_VuMakeCore/VuTypes.h"
+#include "12_VuMakeCore/VuImage.h"
+#include "12_VuMakeCore/VuPools.h"
+
 #include "VuRenderPass.h"
-#include "VuImage.h"
-#include "VuPools.h"
 
 namespace Vu
 {

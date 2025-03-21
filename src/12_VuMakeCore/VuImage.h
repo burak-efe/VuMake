@@ -19,7 +19,6 @@ namespace Vu
         VkImageAspectFlags    aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     };
 
-
     struct VuImage
     {
         VkDevice         device;
@@ -31,8 +30,6 @@ namespace Vu
         VkImageView       imageView;
 
         void init(VkDevice device, const VkPhysicalDeviceMemoryProperties& memProps, const VuImageCreateInfo& createInfo);
-
-        void initFromAsset(VuDevice& vuDevice, const Path& path, VkFormat format = VK_FORMAT_R8G8B8A8_SRGB);
 
         void uninit();
 
@@ -52,8 +49,5 @@ namespace Vu
         static void createImageView(VkDevice     device, VkFormat format, VkImage image, VkImageAspectFlags imageAspect,
                                     VkImageView& outImageView);
 
-        static void transitionImageLayout(VuDevice& vuDevice, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
-
-        static void copyBufferToImage(VuDevice& vuDevice, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
     };
 }

@@ -3,8 +3,9 @@
 #include <algorithm>
 #include <iostream>
 
-#include "VuDevice.h"
 #include "11_Config/VuCtx.h"
+
+#include "VuDevice.h"
 
 namespace Vu
 {
@@ -211,7 +212,7 @@ namespace Vu
         //
         {
             VkCheck(vkCreateSwapchainKHR(vuDevice->device, &createInfo, nullptr, &swapChain));
-            giveDebugName(vuDevice->device, VK_OBJECT_TYPE_SWAPCHAIN_KHR, swapChain, "Swapcahin");
+            Utils::giveDebugName(vuDevice->device, VK_OBJECT_TYPE_SWAPCHAIN_KHR, swapChain, "Swapcahin");
         }
 
         //
@@ -277,7 +278,7 @@ namespace Vu
             VkCheck(vkCreateFramebuffer(vuDevice->device, &framebufferInfo, nullptr, &framebuffers[i]));
 
             auto name = std::format("framebuffer [{}]", i);
-            giveDebugName(vuDevice->device, VK_OBJECT_TYPE_FRAMEBUFFER, framebuffers[i], name.c_str());
+            Utils::giveDebugName(vuDevice->device, VK_OBJECT_TYPE_FRAMEBUFFER, framebuffers[i], name.c_str());
         }
     }
 }

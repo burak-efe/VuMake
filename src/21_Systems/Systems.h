@@ -6,8 +6,8 @@
 #include "10_Core/VuCommon.h"
 #include "10_Core/math/VuMathMatrix.h"
 #include "11_Config/VuCtx.h"
-#include "14_VK/VuRenderer.h"
-#include "14_VK/VuShader.h"
+#include "14_VuMake/VuRenderer.h"
+#include "14_VuMake/VuShader.h"
 #include "20_Components/Components.h"
 #include "20_Components/Transform.h"
 

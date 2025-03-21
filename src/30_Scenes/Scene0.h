@@ -7,9 +7,9 @@
 #include "imgui_internal.h"
 
 #include "11_Config/VuCtx.h"
-#include "14_VK/VuAssetLoader.h"
-#include "14_VK/VuPools.h"
-#include "14_VK/VuRenderer.h"
+#include "14_VuMake/VuAssetLoader.h"
+#include "../12_VuMakeCore/VuPools.h"
+#include "14_VuMake/VuRenderer.h"
 #include "20_Components/Camera.h"
 #include "20_Components/Components.h"
 #include "20_Components/Transform.h"
@@ -118,6 +118,8 @@ namespace Vu
 
             VuAssetLoader::LoadGltf(vuRenderer.vuDevice, gnomePath, mesh, *data);
 
+            data->texture0             = 0;
+            data->texture1             = 1;
 
             flecs::world world;
             //Add Systems

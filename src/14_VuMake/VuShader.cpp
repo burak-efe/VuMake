@@ -2,9 +2,10 @@
 
 #include <iostream>
 
-#include "VuDevice.h"
-#include "11_Config/VuCtx.h"
 #include "10_Core/VuIO.h"
+#include "11_Config/VuCtx.h"
+
+#include "VuDevice.h"
 
 Vu::Path Vu::VuShader::compileToSpirv(const Path& shaderCodePath)
 {

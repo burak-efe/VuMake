@@ -1,22 +1,19 @@
 #pragma once
 
-#include <span>
 #include "10_Core/VuCommon.h"
-
 
 namespace Vu
 {
     struct VuGraphicsPipeline
     {
-        VkDevice device;
+        VkDevice   device;
         VkPipeline pipeline;
 
-        void initGraphicsPipeline(
-            const VkDevice         device,
-            const VkPipelineLayout pipelineLayout,
-            const VkShaderModule   vertShaderModule,
-            const VkShaderModule   fragShaderModule,
-            const VkRenderPass     renderPass);
+        void initGraphicsPipeline(const VkDevice         device,
+                                  const VkPipelineLayout pipelineLayout,
+                                  const VkShaderModule   vertShaderModule,
+                                  const VkShaderModule   fragShaderModule,
+                                  const VkRenderPass     renderPass);
 
         void uninit() const;
 

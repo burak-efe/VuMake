@@ -8,9 +8,9 @@
 #include "imgui_impl_sdl3.h"
 
 #include "10_Core/VuCommon.h"
+
 #include "VuMesh.h"
 #include "VuSwapChain.h"
-#include "VuBuffer.h"
 #include "VuMaterial.h"
 #include "VuDevice.h"
 
@@ -36,8 +36,7 @@ namespace Vu
         uint32 currentFrame           = 0;
         uint32 currentFrameImageIndex = 0;
 
-        VuHandle2<VuImage> defaultImageHandle;
-        VuHandle2<VuSampler> defaultSamplerHandle;
+
 
         std::stack<std::function<void()>> disposeStack;
 

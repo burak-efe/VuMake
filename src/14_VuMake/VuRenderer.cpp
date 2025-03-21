@@ -1,8 +1,10 @@
 #include "VuRenderer.h"
 
 #include <iostream>
+
 #include "11_Config/VuConfig.h"
 #include "11_Config/VuCtx.h"
+
 #include "VuDevice.h"
 
 namespace Vu

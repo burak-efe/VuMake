@@ -1,9 +1,8 @@
 #pragma once
+
 #include <vector>
-#include "VuMaterial.h"
-
 #include "10_Core/VuCommon.h"
-
+#include "VuMaterial.h"
 
 namespace Vu
 {

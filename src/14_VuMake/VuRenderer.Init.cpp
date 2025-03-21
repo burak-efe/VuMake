@@ -3,14 +3,12 @@
 #include <filesystem>
 #include <format>
 
-
 #include "SDL3/SDL_vulkan.h"
+
 #include "10_Core/VuCommon.h"
 #include "11_Config/VuCtx.h"
+
 #include "VuDevice.h"
-#include "VuResourceManager.h"
-
-
 
 namespace Vu
 {
@@ -145,34 +143,13 @@ namespace Vu
         vuDevice.initBindlessDescriptor(config::BINDLESS_CONFIG_INFO, config::MAX_FRAMES_IN_FLIGHT);
         vuDevice.initBindlessManager(config::BINDLESS_CONFIG_INFO);
         vuDevice.initDefaultResources();
-        //init default resources
-        {
-            defaultImageHandle    = vuDevice.imagePool.createHandle();
-            assert(defaultImageHandle.index == 0);
-            auto* defaultImagePtr = vuDevice.imagePool.get(defaultImageHandle);
-            defaultImagePtr->initFromAsset(vuDevice,
-                                           Path("assets/textures/error.png"),
-                                           VK_FORMAT_R8G8B8A8_UNORM);
-            vuDevice.registerToBindless(defaultImagePtr->imageView, defaultImageHandle.index);
 
-
-            defaultSamplerHandle    = vuDevice.samplerPool.createHandle();
-            assert(defaultSamplerHandle.index == 0);
-            auto* defaultSamplerPtr = vuDevice.samplerPool.get(defaultSamplerHandle);
-            defaultSamplerPtr->init({.device = vuDevice.device, .physicalDevice = vuDevice.physicalDevice});
-            vuDevice.registerToBindless(defaultSamplerPtr->vkSampler, defaultSamplerHandle.index);
-
-        }
         //init swapchain
         {
             swapChain = VuSwapChain{};
             swapChain.init(&vuDevice, surface);
             disposeStack.push([&] { swapChain.uninit(); });
         }
-
-        //VuResourceManager::init(config::BINDLESS_CONFIG_INFO);
-        //disposeStack.push([&] { VuResourceManager::uninit(); });
-
 
         //init uniform buffers
         {
@@ -195,7 +172,7 @@ namespace Vu
             }
             for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
             {
-               vuDevice.writeUBO_ToGlobalPool(uniformBuffers[i], 0, i);
+                vuDevice.writeUBO_ToGlobalPool(uniformBuffers[i], 0, i);
             }
 
             disposeStack.push([vr = *this]
@@ -219,7 +196,7 @@ namespace Vu
             for (uint32 i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
             {
                 std::string name = std::format("Command Buffer {}", i);
-                giveDebugName(vuDevice.device, VK_OBJECT_TYPE_COMMAND_BUFFER, commandBuffers[i], name.c_str());
+                Utils::giveDebugName(vuDevice.device, VK_OBJECT_TYPE_COMMAND_BUFFER, commandBuffers[i], name.c_str());
             }
         }
         //init sync objects
@@ -237,10 +214,8 @@ namespace Vu
 
             for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
             {
-                VkCheck(vkCreateSemaphore(vuDevice.device, &semaphoreInfo, nullptr,
-                                          &imageAvailableSemaphores[i]));
-                VkCheck(vkCreateSemaphore(vuDevice.device, &semaphoreInfo, nullptr,
-                                          &renderFinishedSemaphores[i]));
+                VkCheck(vkCreateSemaphore(vuDevice.device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]));
+                VkCheck(vkCreateSemaphore(vuDevice.device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]));
                 VkCheck(vkCreateFence(vuDevice.device, &fenceInfo, nullptr, &inFlightFences[i]));
             }
 
@@ -254,7 +229,6 @@ namespace Vu
                 }
             });
         }
-
 
         initImGui();
     }

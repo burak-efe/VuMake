@@ -4,49 +4,62 @@
 #include <optional>
 #include <stack>
 #include <vector>
+
 #include "10_Core/VuCommon.h"
 
 
-namespace Vu {
-
-    struct GPU_Mesh {
+namespace Vu
+{
+    struct GPU_Mesh
+    {
         uint32 vertexBufferHandle;
         uint32 vertexCount;
         uint32 meshFlags;
     };
 
 
-    struct GPU_PBR_MaterialData {
+    struct GPU_PBR_MaterialData
+    {
         uint32 texture0;
         uint32 texture1;
+
+        byte padding[56];
     };
 
-    struct GPU_PushConstant {
+    static_assert(sizeof(GPU_PBR_MaterialData) == 64);
+
+
+    struct GPU_PushConstant
+    {
         float4x4 trs;
-        uint32 materialDataIndex;
+        uint32   materialDataIndex;
         GPU_Mesh mesh;
     };
 
-    struct GPU_FrameConst {
+    struct GPU_FrameConst
+    {
         float4x4 view;
         float4x4 proj;
-        float4 cameraPos;
-        float4 cameraDir;
-        float time;
-        float debugIndex;
+        float4   cameraPos;
+        float4   cameraDir;
+        float    time;
+        float    debugIndex;
     };
 
 
-    struct VuDisposeStack {
-        std::stack<std::function<void()> > disposeStack;
+    struct VuDisposeStack
+    {
+        std::stack<std::function<void()>> disposeStack;
 
-        void push(const std::function<void()>& func) {
+        void push(const std::function<void()>& func)
+        {
             disposeStack.push(func);
         }
 
-        void disposeAll() {
-
-            while (!disposeStack.empty()) {
+        void disposeAll()
+        {
+            while (!disposeStack.empty())
+            {
                 std::function<void()> disposeFunc = disposeStack.top();
                 disposeFunc();
                 disposeStack.pop();
@@ -54,15 +67,18 @@ namespace Vu {
         }
     };
 
-    struct QueueFamilyIndices {
+    struct QueueFamilyIndices
+    {
         std::optional<uint32> graphicsFamily;
         std::optional<uint32> presentFamily;
 
-        bool isComplete() {
+        bool isComplete()
+        {
             return graphicsFamily.has_value() && presentFamily.has_value();
         }
 
-        static QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice device, const VkSurfaceKHR surface) {
+        static QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice device, const VkSurfaceKHR surface)
+        {
             ZoneScoped;
             //Logic to find graphics queue family
             QueueFamilyIndices indices;
@@ -75,19 +91,23 @@ namespace Vu {
 
             int i = 0;
 
-            for (const auto& queuefamily: queueFamilies) {
-                if (queuefamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            for (const auto& queuefamily : queueFamilies)
+            {
+                if (queuefamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+                {
                     indices.graphicsFamily = i;
                 }
 
                 VkBool32 presentSupport = false;
                 vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
 
-                if (presentSupport) {
+                if (presentSupport)
+                {
                     indices.presentFamily = i;
                 }
 
-                if (indices.isComplete()) {
+                if (indices.isComplete())
+                {
                     break;
                 }
 
@@ -98,12 +118,14 @@ namespace Vu {
         }
     };
 
-    struct SwapChainSupportDetails {
-        VkSurfaceCapabilitiesKHR capabilities;
+    struct SwapChainSupportDetails
+    {
+        VkSurfaceCapabilitiesKHR        capabilities;
         std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR> presentModes;
+        std::vector<VkPresentModeKHR>   presentModes;
 
-        static SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface) {
+        static SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface)
+        {
             ZoneScoped;
             SwapChainSupportDetails details;
             vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
@@ -111,7 +133,8 @@ namespace Vu {
             uint32 formatCount;
             vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
 
-            if (formatCount != 0) {
+            if (formatCount != 0)
+            {
                 details.formats.resize(formatCount);
                 vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, details.formats.data());
             }
@@ -119,7 +142,8 @@ namespace Vu {
             uint32 presentModeCount;
             vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
 
-            if (presentModeCount != 0) {
+            if (presentModeCount != 0)
+            {
                 details.presentModes.resize(presentModeCount);
                 vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount,
                                                           details.presentModes.data());
@@ -128,6 +152,4 @@ namespace Vu {
             return details;
         }
     };
-
-
 }

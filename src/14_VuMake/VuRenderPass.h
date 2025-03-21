@@ -1,7 +1,7 @@
 #pragma once
 
 #include "10_Core/VuCommon.h"
-#include "VuUtils.h"
+#include "12_VuMakeCore/VuUtils.h"
 
 namespace Vu {
 
@@ -79,7 +79,7 @@ namespace Vu {
             renderPassInfo.pDependencies   = &dependency;
 
             VkCheck(vkCreateRenderPass(createInfo.device, &renderPassInfo, nullptr, &renderPass));
-            giveDebugName(createInfo.device, VK_OBJECT_TYPE_RENDER_PASS, renderPass, "Render Pass");
+            Utils::giveDebugName(createInfo.device, VK_OBJECT_TYPE_RENDER_PASS, renderPass, "Render Pass");
         }
     };
 }

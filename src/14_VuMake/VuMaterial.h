@@ -1,9 +1,9 @@
 #pragma once
 
 #include "10_Core/VuCommon.h"
-#include "VuGraphicsPipeline.h"
-#include "VuPools.h"
-#include "VuTypes.h"
+#include "12_VuMakeCore/VuGraphicsPipeline.h"
+#include "12_VuMakeCore/VuPools.h"
+#include "12_VuMakeCore/VuTypes.h"
 
 
 namespace Vu
