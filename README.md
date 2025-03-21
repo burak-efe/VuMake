@@ -103,7 +103,6 @@ Some non-optimal things in this project, that should be avioded in normal circum
 - IMGUI
 - FastGLTF
 - SDL3
-- GLM
 - flecs
 - SLang
 - Tracy
