@@ -25,7 +25,7 @@ void Vu::VuImage::init(VkDevice device, const VkPhysicalDeviceMemoryProperties& 
     createImageView(device, createInfo.format, image, createInfo.aspectMask, imageView);
 }
 
-void Vu::VuImage::initFromAsset(VuDevice& vuDevice, const path& path, VkFormat format)
+void Vu::VuImage::initFromAsset(VuDevice& vuDevice, const Path& path, VkFormat format)
 {
     ZoneScoped;
     //Image
@@ -72,7 +72,7 @@ void Vu::VuImage::initFromAsset(VuDevice& vuDevice, const path& path, VkFormat f
     //staging.uninit();
 }
 
-void Vu::VuImage::loadImageFile(const path& path, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& pixels)
+void Vu::VuImage::loadImageFile(const Path& path, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& pixels)
 {
     ZoneScoped;
     pixels = stbi_load(path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);

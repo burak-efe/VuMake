@@ -1,11 +1,13 @@
 #pragma once
 #include <cmath>
 
-namespace Vu::Math {
+namespace Vu::Math
+{
     struct Float3;
     struct Float4;
 
-    struct Quaternion {
+    struct Quaternion
+    {
         float x;
         float y;
         float z;
@@ -14,15 +16,15 @@ namespace Vu::Math {
         // Constructors
         Quaternion();
 
-        constexpr Quaternion(float x, float y, float z, float w);
+        constexpr Quaternion(float x, float y, float z, float w)
+            : x(x), y(y), z(z), w(w)
+        {
+        }
 
         // Create identity quaternion (no rotation)
-        static constexpr Quaternion identity() {
-            Quaternion q;
-            q.x = 0.0f;
-            q.y = 0.0f;
-            q.z = 0.0f;
-            q.w = 1.0f;
+        static constexpr Quaternion identity()
+        {
+            Quaternion q(0.0f, 0.0f, 0.0f, 1.0f);
             return q;
         };
 
@@ -49,7 +51,6 @@ namespace Vu::Math {
 
         // Convert to Euler angles in YXZ order (radians)
         Float3 toEulerYXZ() const;
-
     };
 
     // Non-member operators
@@ -73,5 +74,4 @@ namespace Vu::Math {
     Quaternion rotateOnAxis(const Quaternion& inputQuat, const Float3& axis, float angleRadians);
 
     Float3 rotate(const Quaternion& q, const Float3& v);
-
 }

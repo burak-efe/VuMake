@@ -23,7 +23,7 @@ namespace Vu
     struct Scene0
     {
     private:
-        std::filesystem::path gnomePath = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
+        Path gnomePath = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
 
         VuHandle2<VuShader> shader{};
         VuRenderer          vuRenderer{};

@@ -5,10 +5,6 @@
 #include "VuPools.h"
 
 
-namespace std::filesystem {
-    class path;
-}
-
 namespace Vu {
     struct VuDevice;
     struct VuBuffer;

@@ -4,9 +4,9 @@
 #include "11_Config/VuCtx.h"
 #include "../10_Core/VuIO.h"
 
-Vu::path Vu::VuShader::compileToSpirv(const path& shaderCodePath)
+Vu::Path Vu::VuShader::compileToSpirv(const Path& shaderCodePath)
 {
-    path spirvFilePath = shaderCodePath;
+    Path spirvFilePath = shaderCodePath;
     spirvFilePath.replace_extension(".spv");
 
     std::string vertCmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout  -o {2}",
@@ -19,7 +19,7 @@ Vu::path Vu::VuShader::compileToSpirv(const path& shaderCodePath)
     return spirvFilePath;
 }
 
-void Vu::VuShader::init(VuDevice* vuDevice, path vertexShaderPath, path fragmentShaderPath, VkRenderPass renderPass)
+void Vu::VuShader::init(VuDevice* vuDevice, Path vertexShaderPath, Path fragmentShaderPath, VkRenderPass renderPass)
 {
     ZoneScoped;
     this->vuDevice           = vuDevice;

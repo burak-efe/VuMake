@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <filesystem>
 #include <span>
+#include <vector>
+#include <format>
 
 #include "volk.h"
 #include "vk_mem_alloc.h"
@@ -36,16 +38,19 @@ namespace Vu
     using quaternion = Math::Quaternion;
 
 
-    using path   = std::filesystem::path;
-    using string = std::string;
+    using Path   = std::filesystem::path;
+    using String = std::string;
 
     template <typename T>
     using unique_ptr = std::unique_ptr<T>;
 
     template <typename T>
-    using span = std::span<T>;
+    using Span = std::span<T>;
 
-    __declspec(noinline) void VkCheck(VkResult res, std::source_location location = std::source_location::current());
+    template <typename T>
+    using Vector = std::vector<T>;
+
+    void VkCheck(VkResult res, std::source_location location = std::source_location::current());
 
     template <typename T_From, typename T_To>
     std::span<T_To> rpCastSpan(std::span<T_From> source)
