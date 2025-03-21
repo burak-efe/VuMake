@@ -32,7 +32,7 @@ jobs:
           cmake-build-${{ runner.os }}-${{ env.BUILD_TYPE }}-
 
     - name: Prepare Vulkan SDK
-      uses: burak-efe/setup-vulkan-sdk@v1.2.1
+      uses: burak-efe/setup-vulkan-sdk@0.0.1
       with:
        vulkan-query-version: 1.4.304.1
        vulkan-components: Vulkan-Headers, Vulkan-Loader
