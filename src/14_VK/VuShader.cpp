@@ -1,20 +1,32 @@
 #include "VuShader.h"
 
+#include <iostream>
+
 #include "VuDevice.h"
 #include "11_Config/VuCtx.h"
-#include "../10_Core/VuIO.h"
+#include "10_Core/VuIO.h"
 
 Vu::Path Vu::VuShader::compileToSpirv(const Path& shaderCodePath)
 {
+    Path shaderPath = shaderCodePath;
+    shaderPath.make_preferred();
+
     Path spirvFilePath = shaderCodePath;
+    spirvFilePath.make_preferred();
     spirvFilePath.replace_extension(".spv");
 
-    std::string vertCmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout  -o {2}",
-                                      config::SHADER_COMPILER_PATH,
-                                      shaderCodePath.generic_string(),
-                                      spirvFilePath.generic_string());
 
-    uint32 compileResult = system(vertCmd.c_str());
+    Path compilerPath = config::SHADER_COMPILER_PATH;
+    compilerPath.make_preferred();
+
+
+    std::string cmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout  -o {2}",
+                                  compilerPath.string(),
+                                  shaderPath.string(),
+                                  spirvFilePath.string());
+
+
+    int compileResult = system(cmd.c_str());
     assert(compileResult == 0);
     return spirvFilePath;
 }

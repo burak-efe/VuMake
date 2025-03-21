@@ -54,7 +54,7 @@ namespace Vu
         void beginImgui();
         void endImgui();
         void updateFrameConstantBuffer(GPU_FrameConst ubo);
-        void reloadShaders();
+        //void reloadShaders();
 
     private:
         void waitForFences();

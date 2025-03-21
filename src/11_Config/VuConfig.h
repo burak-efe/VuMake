@@ -1,5 +1,6 @@
 #pragma once
 #include "10_Core/VuCommon.h"
+#include "10_Core/VuPlatform.h"
 
 //Matrix Layout : Column Major
 //Coordinate System : Left handed, +Y up, +Z forward, +X right
@@ -77,5 +78,6 @@ namespace Vu::config
         VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
     };
 
-    constexpr char SHADER_COMPILER_PATH[] = "bin\\slang\\slangc.exe";
+    constexpr char SHADER_COMPILER_PATH[] = "bin" PLATFORM_SPECIFIC_PATH "/slang/slangc.exe";
+    //constexpr char SHADER_COMPILER_PATH[] = "bin\\windows-x86_64\\slang\\slangc.exe";
 }

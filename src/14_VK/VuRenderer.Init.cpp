@@ -317,10 +317,10 @@ namespace Vu
         disposeStack.push([] { ImGui_ImplVulkan_DestroyFontsTexture(); });
     }
 
-    void VuRenderer::reloadShaders()
-    {
-        //TODO:
-    }
+    // void VuRenderer::reloadShaders()
+    // {
+    //     //TODO:
+    // }
 
     void VuRenderer::bindGlobalBindlessSet(const VkCommandBuffer& commandBuffer)
     {

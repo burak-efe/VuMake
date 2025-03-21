@@ -27,6 +27,8 @@ namespace Vu
 
         std::vector<VuMaterial> materials = {};
 
+
+
         static Path compileToSpirv(const Path& shaderCodePath);
 
         void init(VuDevice* vuDevice, Path vertexShaderPath, Path fragmentShaderPath, VkRenderPass renderPass);
