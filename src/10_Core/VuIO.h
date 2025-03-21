@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <fstream>
 #include <span>
+#include <chrono>
 
 namespace Vu
 {

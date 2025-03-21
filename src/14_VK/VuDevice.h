@@ -122,7 +122,7 @@ namespace Vu
             return handle;
         }
 
-        VuHandle2<VuShader> createShader(path vertexPath, path fragPath, VkRenderPass renderPass)
+        VuHandle2<VuShader> createShader(Path vertexPath, Path fragPath, VkRenderPass renderPass)
         {
             VuHandle2<VuShader> handle = shaderPool.createHandle();
             VuShader*           shader = get(handle);

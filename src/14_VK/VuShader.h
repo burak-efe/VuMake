@@ -9,16 +9,16 @@ namespace Vu
 {
     struct VuGraphicsShaderCreateInfo
     {
-        path         vertexShaderPath   = {};
-        path         fragmentShaderPath = {};
+        Path         vertexShaderPath   = {};
+        Path         fragmentShaderPath = {};
         VkRenderPass renderPass         = {};
     };
 
     struct VuShader
     {
         VuDevice*    vuDevice;
-        path         vertexShaderPath;
-        path         fragmentShaderPath;
+        Path         vertexShaderPath;
+        Path         fragmentShaderPath;
         VkRenderPass renderPass;
 
         time_t         lastModifiedTime     = 0;
@@ -27,9 +27,9 @@ namespace Vu
 
         std::vector<VuMaterial> materials = {};
 
-        static path compileToSpirv(const path& shaderCodePath);
+        static Path compileToSpirv(const Path& shaderCodePath);
 
-        void init(VuDevice* vuDevice, path vertexShaderPath, path fragmentShaderPath, VkRenderPass renderPass);
+        void init(VuDevice* vuDevice, Path vertexShaderPath, Path fragmentShaderPath, VkRenderPass renderPass);
 
         void uninit();
 

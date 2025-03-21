@@ -32,11 +32,11 @@ namespace Vu
 
         void init(VkDevice device, const VkPhysicalDeviceMemoryProperties& memProps, const VuImageCreateInfo& createInfo);
 
-        void initFromAsset(VuDevice& vuDevice, const path& path, VkFormat format = VK_FORMAT_R8G8B8A8_SRGB);
+        void initFromAsset(VuDevice& vuDevice, const Path& path, VkFormat format = VK_FORMAT_R8G8B8A8_SRGB);
 
         void uninit();
 
-        static void loadImageFile(const path& path, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& pixels);
+        static void loadImageFile(const Path& path, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& pixels);
 
         static void createImage(VkDevice                                device,
                                 const VkPhysicalDeviceMemoryProperties& memProps,

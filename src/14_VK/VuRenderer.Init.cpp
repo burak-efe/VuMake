@@ -1,11 +1,15 @@
 #include "VuRenderer.h"
 
 #include <filesystem>
+#include <format>
+
+
 #include "SDL3/SDL_vulkan.h"
+#include "10_Core/VuCommon.h"
 #include "11_Config/VuCtx.h"
 #include "VuDevice.h"
 #include "VuResourceManager.h"
-#include "VuShader.h"
+
 
 
 namespace Vu
@@ -147,7 +151,7 @@ namespace Vu
             assert(defaultImageHandle.index == 0);
             auto* defaultImagePtr = vuDevice.imagePool.get(defaultImageHandle);
             defaultImagePtr->initFromAsset(vuDevice,
-                                           std::filesystem::path("assets/textures/error.png"),
+                                           Path("assets/textures/error.png"),
                                            VK_FORMAT_R8G8B8A8_UNORM);
             vuDevice.registerToBindless(defaultImagePtr->imageView, defaultImageHandle.index);
 

@@ -61,7 +61,7 @@ namespace Vu::config
     constexpr bool ENABLE_VALIDATION_LAYERS_LAYERS = true;
 #endif
 
-    inline static std::vector<const char*> VALIDATION_LAYERS = {
+    inline static Vector<const char*> VALIDATION_LAYERS = {
         "VK_LAYER_KHRONOS_validation"
     };
 
