@@ -3,11 +3,11 @@
 
 int main(int argc, char* argv[])
 {
-    Vu::Scene0* scen = new Vu::Scene0();
+    Vu::Scene0* scene0 = new Vu::Scene0();
 
     try
     {
-        scen->Run();
+        scene0->Run();
     }
     catch (const std::exception& e)
     {

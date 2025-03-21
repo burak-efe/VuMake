@@ -46,6 +46,6 @@ float4 fragmentMain(VSOutput i) : SV_Target
     // Final color
     float3 color = (ambient + diffuse + specular);
 
-    return float4(normalWS.xyz,1);
+    return float4(color.xyz,1);
 
 }

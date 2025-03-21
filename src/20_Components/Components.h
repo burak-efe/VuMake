@@ -1,8 +1,7 @@
 #pragma once
 
 #include "10_Core/VuCommon.h"
-#include "14_VK/VuPools.h"
-
+#include "12_VuMakeCore/VuPools.h"
 
 namespace Vu {
     struct VuMesh;

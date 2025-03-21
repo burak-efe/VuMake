@@ -1,4 +1,5 @@
 #pragma once
+
 #include <bit>
 #include <climits>
 #include <cstdint>
@@ -20,3 +21,5 @@ static_assert(std::endian::native == std::endian::little, "[INSANE ENVIRONMENT]:
 static_assert((~uint32_t(0)) == UINT32_MAX, "[INSANE ENVIRONMENT]: not two's complement");
 static_assert(alignof(void*) == alignof(std::uintptr_t), "[INSANE ENVIRONMENT]: void* alignment mismatch");
 static_assert(sizeof(time_t) >= 8, "[INSANE ENVIRONMENT]: time_t smaller than 8 byte (year 2038 problem?)");
+
+

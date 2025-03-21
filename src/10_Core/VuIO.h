@@ -55,4 +55,23 @@ namespace Vu
         const auto time       = std::chrono::system_clock::to_time_t(systemTime);
         return time;
     }
+
+
+    std::string exec(const char* cmd) {
+        std::array<char, 128> buffer;
+        std::string result;
+
+        // _popen runs the command and opens a pipe for reading its stdout
+        std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(cmd, "r"), _pclose);
+        if (!pipe) {
+            throw std::runtime_error("_popen() failed!");
+        }
+
+        // Read the output of the command line by line
+        while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe.get()) != nullptr) {
+            result += buffer.data();
+        }
+
+        return result;
+    }
 }

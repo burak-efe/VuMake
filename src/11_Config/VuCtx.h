@@ -4,7 +4,7 @@
 #include "10_Core/VuCommon.h"
 
 //TODO
-#include "14_VK/VuTypes.h"
+#include "../12_VuMakeCore/VuTypes.h"
 
 namespace Vu {
 
