@@ -35,7 +35,7 @@ jobs:
       uses: burak-efe/setup-vulkan-sdk@0.0.1
       with:
        vulkan-query-version: 1.4.304.1
-       vulkan-components: Vulkan-Headers, Vulkan-Loader
+       vulkan-components: Vulkan-Headers, Vulkan-Loader, Vulkan-Utility-Libraries
        vulkan-use-cache: true
 
     - name: Configure CMake
