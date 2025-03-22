@@ -75,6 +75,7 @@ namespace Vu
             uint32 indexCount   = (uint32)indexAccesor.count;
 
             dstMesh.indexBuffer = vuDevice.createBuffer({
+                                                            .name = "IndexBuffer",
                                                             .length = indexCount, .strideInBytes = sizeof(uint32),
                                                             .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT
                                                         });
@@ -97,6 +98,7 @@ namespace Vu
 
             dstMesh.vertexCount  = positionAccessor.count;
             dstMesh.vertexBuffer = vuDevice.createBuffer({
+                                                             .name = "VertexBuffer",
                                                              .length = dstMesh.vertexCount * dstMesh.totalAttributesSizePerVertex(),
                                                              .strideInBytes = 1u,
                                                              .vkUsageFlags =

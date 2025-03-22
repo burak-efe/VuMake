@@ -38,27 +38,26 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 ####################################################################################################
 # Precompiled Headers
 set(PCH
-        src/pch.h
+        src/10_Core/pch.h
 )
 target_precompile_headers(${PROJECT_NAME} PRIVATE
-#        <cstdint>
-#        <cassert>
-#        <cstdlib>
-#        <chrono>
-#        <iostream>
-#        <print>
-#        <string>
-#        <format>
-#        <array>
-#        <vector>
-#        <stack>
-#        <algorithm>
-#        <functional>
-#        <filesystem>
-#        <mutex>
-#        <span>
-#        <ranges>
-#        ${PCH}
+        <cstdint>
+        <cassert>
+        <cstdlib>
+        <chrono>
+        <iostream>
+        <filesystem>
+        <format>
+        <algorithm>
+        <functional>
+        <mutex>
+        <ranges>
+        <array>
+        <span>
+        <vector>
+        <stack>
+        <string>
+        ${PCH}
 )
 ####################################################################################################
 #Add Sources

@@ -5,11 +5,14 @@
 #include <stack>
 #include <vector>
 
+#include "10_Core/FixedString.h"
 #include "10_Core/VuCommon.h"
 
 
 namespace Vu
 {
+    using VuName = FixedString64;
+
     struct GPU_Mesh
     {
         uint32 vertexBufferHandle;

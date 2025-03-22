@@ -38,6 +38,7 @@ namespace Vu
                 extensions.push_back(extension);
             }
             vuDevice.initInstance(config::ENABLE_VALIDATION_LAYERS_LAYERS, config::VALIDATION_LAYERS, extensions);
+            disposeStack.push([this]() { vuDevice.uninit(); });
 
             volkLoadInstance(vuDevice.instance);
         }
@@ -160,6 +161,7 @@ namespace Vu
 
                 uniformBuffers[i] = VuBuffer();
                 uniformBuffers[i].init(vuDevice.device, vuDevice.vma, {
+                                           .name = "UniformBuffer",
                                            .length = 1,
                                            .strideInBytes = bufferSize,
                                            .vkUsageFlags =
@@ -312,12 +314,8 @@ namespace Vu
 
     void VuRenderer::uninit()
     {
+        std::cout << "VuRenderer::uninit" << std::endl;
         vkDeviceWaitIdle(vuDevice.device);
-        while (!disposeStack.empty())
-        {
-            std::function<void()> disposeFunc = disposeStack.top();
-            disposeFunc();
-            disposeStack.pop();
-        }
+        disposeStack.disposeAll();
     }
 }

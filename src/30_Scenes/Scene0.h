@@ -40,22 +40,20 @@ namespace Vu
         void Run()
         {
             ZoneScoped;
+            Logger::SetLevel(LogLevel::Trace);
             vuRenderer.init();
-            ECS_VU_RENDERER = &vuRenderer;
+            VuDevice* device = &vuRenderer.vuDevice;
+            ECS_VU_RENDERER  = &vuRenderer;
 
             VuMesh mesh{};
 
-            shaderHnd = vuRenderer.vuDevice.createShader("assets/shaders/vert.slang",
-                                                         "assets/shaders/frag.slang",
-                                                         vuRenderer.swapChain.renderPass.renderPass);
+            shaderHnd = device->createShader("assets/shaders/vert.slang",
+                                             "assets/shaders/frag.slang",
+                                             vuRenderer.swapChain.renderPass.renderPass);
 
             auto matDataIndexHnd = vuRenderer.vuDevice.createMaterialDataIndex();
 
-            VuShader* shaderPtr = vuRenderer.vuDevice.getShader(shaderHnd);
-
             auto matHnd = vuRenderer.vuDevice.createMaterial({}, shaderHnd, matDataIndexHnd);
-
-            //uint32 mat0 = shaderPtr->createMaterial();
 
             GPU_PBR_MaterialData* data = vuRenderer.vuDevice.getMaterialData(matDataIndexHnd);
 
@@ -74,15 +72,20 @@ namespace Vu
             camUI           = AddCameraUISystem(world);
 
             //Add Entities
-            auto ent = world.entity("Obj1").set(Transform{
-                                                    .position = float3(0, 0, 0), .rotation = quaternion::identity(),
-                                                    .scale = float3(10.0F, 10.0F, 10.0F)
-                                                }).set(MeshRenderer{.mesh = &mesh, .materialHnd = matHnd}).set(Spinn{});
+            world.entity("Obj1")
+                 .set(Transform{
+                          .position = float3(0, 0, 0),
+                          .rotation = quaternion::identity(),
+                          .scale = float3(10.0F, 10.0F, 10.0F)
+                      })
+                 .set(MeshRenderer{.mesh = &mesh, .materialHnd = matHnd})
+                 .set(Spinn{});
 
-            world.entity("Cam").set(Transform(float3(0.0f, 0.0f, 3.5f),
-                                              quaternion::identity(),
-                                              float3(1, 1, 1))
-                                   ).set(Camera{});
+            world.entity("Cam")
+                 .set(Transform(float3(0.0f, 0.0f, 3.5f),
+                                quaternion::identity(),
+                                float3(1, 1, 1))
+                     ).set(Camera{});
 
 
             //Update Loop
@@ -92,7 +95,7 @@ namespace Vu
                 ctx::UpdateInput();
 
                 //Pre-Render Begins
-                //auto runner0 = spinningSystem.run();
+                auto runner0 = spinningSystem.run();
                 auto runner1 = flyCameraSystem.run();
 
                 //Rendering
@@ -142,7 +145,9 @@ namespace Vu
             }
 
             vuRenderer.waitIdle();
-            //shader.destroyHandle();
+            device->destroyHandle(shaderHnd);
+            device->destroyHandle(matHnd);
+            device->destroyHandle(matDataIndexHnd);
             mesh.uninit();
             vuRenderer.uninit();
         }
