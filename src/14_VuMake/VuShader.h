@@ -1,7 +1,10 @@
 #pragma once
 
-#include <vector>
+#include <unordered_map>
+
 #include "10_Core/VuCommon.h"
+#include "12_VuMakeCore/VuGraphicsPipeline.h"
+
 #include "VuMaterial.h"
 
 namespace Vu
@@ -24,11 +27,7 @@ namespace Vu
         VkShaderModule vertexShaderModule   = {};
         VkShaderModule fragmentShaderModule = {};
 
-        std::vector<VuMaterial> materials = {};
-
-
-
-        static Path compileToSpirv(const Path& shaderCodePath);
+        std::unordered_map<MaterialSettings, VuGraphicsPipeline> compiledPipelines;
 
         void init(VuDevice* vuDevice, Path vertexShaderPath, Path fragmentShaderPath, VkRenderPass renderPass);
 
@@ -36,9 +35,10 @@ namespace Vu
 
         void tryRecompile();
 
-        //returns material Index
-        uint32 createMaterial();
+        //get compiled pipeline handle if present, id not, compile and get
+        VuGraphicsPipeline& requestPipeline(MaterialSettings materialSettings);
 
+        static Path compileToSpirv(const Path& shaderCodePath);
 
         static VkShaderModule createShaderModule(VuDevice* vuDevice, const void* code, size_t size);
     };

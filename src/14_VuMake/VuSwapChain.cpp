@@ -27,7 +27,7 @@ namespace Vu
                                   }
                                  );
 
-        VuImage* dsImage = vuDevice->get(depthStencilH);
+        VuImage* dsImage = vuDevice->getImage(depthStencilH);
         renderPass.init({vuDevice->device, swapChainImageFormat, dsImage->lastCreateInfo.format});
         createFramebuffers();
     }
@@ -263,7 +263,7 @@ namespace Vu
         {
             std::array<VkImageView, 2> attachments = {
                 swapChainImageViews[i],
-                vuDevice->get(depthStencilH)->imageView
+                vuDevice->getImage(depthStencilH)->imageView
             };
 
             VkFramebufferCreateInfo framebufferInfo{};

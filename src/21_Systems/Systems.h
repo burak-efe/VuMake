@@ -20,13 +20,20 @@ namespace Vu
         return world.system<Transform, const MeshRenderer>("Rendering")
                     .each([](Transform& transform, const MeshRenderer& meshRenderer)
                     {
-                        VuHandle2<VuShader> shader = meshRenderer.shader;
-                        VuMaterial          mat    = ECS_VU_RENDERER->vuDevice.get(shader)->materials[meshRenderer.materialIndex];
-                        ECS_VU_RENDERER->bindMaterial(mat);
-                        float4x4         trs = transform.ToTRS();
+                        VuDevice* vuDevice = &ECS_VU_RENDERER->vuDevice;
+
+                        auto materialHnd = meshRenderer.materialHnd;
+
+                        auto* matPtr = vuDevice->getMaterial(materialHnd);
+
+                        //bind pipeline
+                        ECS_VU_RENDERER->bindMaterial(materialHnd);
+
+                        //push constant
+                        float4x4 trs = transform.ToTRS();
                         GPU_PushConstant pc{
                             trs,
-                            mat.materialData.index,
+                            matPtr->materialDataHnd.index,
                             {
                                 meshRenderer.mesh->vertexBuffer.index,
                                 (uint32)meshRenderer.mesh->vertexCount,
@@ -35,7 +42,7 @@ namespace Vu
                         };
                         ECS_VU_RENDERER->pushConstants(pc);
                         ECS_VU_RENDERER->bindMesh(*meshRenderer.mesh);
-                        ECS_VU_RENDERER->drawIndexed(ECS_VU_RENDERER->vuDevice.get(meshRenderer.mesh->indexBuffer)->length);
+                        ECS_VU_RENDERER->drawIndexed(vuDevice->getBuffer(meshRenderer.mesh->indexBuffer)->length);
                     });
     }
 

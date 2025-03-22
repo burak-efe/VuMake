@@ -9,6 +9,7 @@ namespace Vu
         lastCreateInfo = info;
         stride         = info.strideInBytes;
         length         = info.length;
+        this->name     = info.name;
 
 
         VkBufferCreateInfo createInfo{
@@ -24,6 +25,7 @@ namespace Vu
         allocCreateInfo.flags                   = info.vmaCreateFlags;
 
         VkCheck(vmaCreateBuffer(vma, &createInfo, &allocCreateInfo, &buffer, &allocation, &allocationInfo));
+        Logger::Trace("{} init", name.c_str());
     }
 
     void VuBuffer::uninit()
@@ -33,6 +35,7 @@ namespace Vu
             unmap();
         }
         vmaDestroyBuffer(vma, buffer, allocation);
+        Logger::Trace("{} uninit", name.c_str());
     }
 
     void VuBuffer::map()

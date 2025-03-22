@@ -1,55 +1,58 @@
 #pragma once
 
+#include "VuDevice.h"
 #include "10_Core/VuCommon.h"
 #include "12_VuMakeCore/VuPools.h"
 
 
-namespace Vu {
+namespace Vu
+{
     struct VuDevice;
     struct VuBuffer;
 
-    struct VuMeshCreateInfo
+    struct VuMesh
     {
-        VuDevice* vuDevice;
-    };
-
-    struct VuMesh {
-
-        VuMeshCreateInfo lastCreateInfo;
-        uint32    vertexCount;
-        VuHandle2<VuBuffer> indexBuffer;
-        VuHandle2<VuBuffer> vertexBuffer;
+        VuDevice*       vuDevice;
+        uint32          vertexCount;
+        VuHnd<VuBuffer> indexBuffer;
+        VuHnd<VuBuffer> vertexBuffer;
 
 
-        void init()
+        void init(VuDevice* vuDevice)
         {
-
+            this->vuDevice = vuDevice;
         }
 
 
-        void uninit() {
-            //TODO
-
+        void uninit()
+        {
+            vuDevice->destroyHandle(indexBuffer);
+            vuDevice->destroyHandle(vertexBuffer);
         }
 
-        VkDeviceSize totalAttributesSizePerVertex() {
+        VkDeviceSize totalAttributesSizePerVertex()
+        {
             //pos, norm, tan , uv
             return sizeof(float3) + sizeof(float3) + sizeof(float4) + sizeof(float2);
         }
 
-        VkDeviceSize getNormalOffsetAsByte() const {
+        VkDeviceSize getNormalOffsetAsByte() const
+        {
             return sizeof(float3) * vertexCount;
         }
 
-        VkDeviceSize getTangentOffsetAsByte() const {
+        VkDeviceSize getTangentOffsetAsByte() const
+        {
             return (sizeof(float3) + sizeof(float3)) * vertexCount;
         }
 
-        VkDeviceSize getUV_OffsetAsByte() const {
+        VkDeviceSize getUV_OffsetAsByte() const
+        {
             return (sizeof(float3) + sizeof(float3) + sizeof(float4)) * vertexCount;
         }
 
-        static std::array<VkVertexInputBindingDescription, 4> getBindingDescription() {
+        static std::array<VkVertexInputBindingDescription, 4> getBindingDescription()
+        {
             std::array<VkVertexInputBindingDescription, 4> bindingDescriptions{};
             bindingDescriptions[0].binding   = 0;
             bindingDescriptions[0].stride    = sizeof(float3);
@@ -70,7 +73,8 @@ namespace Vu {
             return bindingDescriptions;
         }
 
-        static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
+        static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions()
+        {
             std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
             attributeDescriptions[0].binding  = 0;
             attributeDescriptions[0].location = 0;
@@ -100,7 +104,8 @@ namespace Vu {
             const std::span<float3> positions,
             const std::span<float3> normals,
             const std::span<float2> uvs,
-            std::span<float4>       tangents) {
+            std::span<float4>       tangents)
+        {
             ZoneScoped;
 
             uint32 vertexCount   = positions.size();
@@ -109,7 +114,8 @@ namespace Vu {
             std::vector<float3> tan1(vertexCount);
             std::vector<float3> tan2(vertexCount);
 
-            for (uint32 a = 0; a < triangleCount; a++) {
+            for (uint32 a = 0; a < triangleCount; a++)
+            {
                 uint32 i1 = indices[a * 3 + 0];
                 uint32 i2 = indices[a * 3 + 1];
                 uint32 i3 = indices[a * 3 + 2];
@@ -136,11 +142,11 @@ namespace Vu {
 
                 float r = 1.0f / (s1 * t2 - s2 * t1);
 
-               float3 sdir((t2 * x1 - t1 * x2) * r,
+                float3 sdir((t2 * x1 - t1 * x2) * r,
                             (t2 * y1 - t1 * y2) * r,
                             (t2 * z1 - t1 * z2) * r);
 
-               float3 tdir((s1 * x2 - s2 * x1) * r,
+                float3 tdir((s1 * x2 - s2 * x1) * r,
                             (s1 * y2 - s2 * y1) * r,
                             (s1 * z2 - s2 * z1) * r);
 
@@ -153,11 +159,12 @@ namespace Vu {
                 tan2[i3] += tdir;
             }
 
-            for (uint32 a = 0; a < vertexCount; a++) {
-               float3 n = normals[a];
-               float3 t = tan1[a];
+            for (uint32 a = 0; a < vertexCount; a++)
+            {
+                float3 n = normals[a];
+                float3 t = tan1[a];
                 // Gram-Schmidt orthogonalize
-               float3 vec = Math::normalize(t - n * Math::dot(n, t));
+                float3 vec = Math::normalize(t - n * Math::dot(n, t));
                 float  sign;
                 float  handedness = Math::dot(Math::cross(n, t), tan2[a]);
                 if (handedness < 0.0F)

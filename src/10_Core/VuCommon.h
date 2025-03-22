@@ -17,6 +17,7 @@
 #include "math/VuFloat4x4.h"
 #include "math/VuQuaternion.h"
 
+#include "VuLogger.h"
 
 namespace Vu
 {

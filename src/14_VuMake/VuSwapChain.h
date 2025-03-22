@@ -16,7 +16,7 @@ namespace Vu
         VkSurfaceKHR       surface;
         VkSwapchainKHR     swapChain;
         VuRenderPass       renderPass;
-        VuHandle2<VuImage> depthStencilH;
+        VuHnd<VuImage> depthStencilH;
 
 
         std::vector<VkImage>       swapChainImages;

@@ -25,8 +25,8 @@ namespace Vu
     private:
         Path gnomePath = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
 
-        VuHandle2<VuShader> shader{};
-        VuRenderer          vuRenderer{};
+        VuHnd<VuShader> shaderHnd;
+        VuRenderer      vuRenderer{};
 
         flecs::system spinningSystem;
         flecs::system flyCameraSystem;
@@ -34,92 +34,34 @@ namespace Vu
         flecs::system spinUI;
         flecs::system trsUI;
         flecs::system camUI;
-
-        bool uiNeedBuild = true;
-
-        void UpdateLoop()
-        {
-            ZoneScoped;
-
-            //Update Loop
-            while (!vuRenderer.shouldWindowClose())
-            {
-                ctx::PreUpdate();
-                ctx::UpdateInput();
-
-                //Pre-Render Begins
-                //auto runner0 = spinningSystem.run();
-                auto runner1 = flyCameraSystem.run();
-
-                //Rendering
-                {
-                    //shader.get()->tryRecompile();
-
-                    vuRenderer.beginFrame();
-                    drawMeshSystem.run();
-
-                    // //UI
-                    // {
-                    //     vuRenderer.beginImgui();
-                    //
-                    //     ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-                    //     auto vPort = ImGui::DockSpaceOverViewport(dockspace_id, nullptr, ImGuiDockNodeFlags_PassthruCentralNode, nullptr);
-                    //
-                    //     auto wRes = ImGui::Begin("Info");
-                    //     ImGui::Text("Texture Count: %u", VuPool<VuTexture>::getUsedSlotCount());
-                    //     ImGui::Text("Sampler Count: %u", VuPool<VuSampler>::getUsedSlotCount());
-                    //     ImGui::Text("Buffer Count: %u", VuPool<VuBuffer>::getUsedSlotCount());
-                    //     ImGui::End();
-                    //
-                    //     if (uiNeedBuild) {
-                    //         int32 dockspace_flags = 0;
-                    //         uiNeedBuild           = false;
-                    //
-                    //         ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
-                    //         ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
-                    //         ImGui::DockBuilderSetNodeSize(dockspace_id, {
-                    //                                           static_cast<float>(vuRenderer.swapChain.swapChainExtent.width),
-                    //                                           static_cast<float>(vuRenderer.swapChain.swapChainExtent.height)
-                    //                                       });
-                    //
-                    //         auto mainR = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.25f, nullptr, &dockspace_id);
-                    //         auto mainL = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.33f, nullptr, &dockspace_id);
-                    //         ImGui::DockBuilderDockWindow("Info", mainL);
-                    //
-                    //         ImGui::DockBuilderFinish(dockspace_id);
-                    //     }
-                    //
-                    //     vuRenderer.endImgui();
-                    // }
-
-                    vuRenderer.endFrame();
-                }
-            }
-        }
+        bool          uiNeedBuild = true;
 
     public:
         void Run()
         {
             ZoneScoped;
+            Logger::SetLevel(LogLevel::Trace);
             vuRenderer.init();
-            ECS_VU_RENDERER = &vuRenderer;
+            VuDevice* device = &vuRenderer.vuDevice;
+            ECS_VU_RENDERER  = &vuRenderer;
 
             VuMesh mesh{};
+            mesh.init(device);
 
-            shader = vuRenderer.vuDevice.createShader("assets/shaders/vert.slang",
-                                                      "assets/shaders/frag.slang",
-                                                      vuRenderer.swapChain.renderPass.renderPass);
+            shaderHnd = device->createShader("assets/shaders/vert.slang",
+                                             "assets/shaders/frag.slang",
+                                             vuRenderer.swapChain.renderPass.renderPass);
 
-            VuShader* shaderPtr = vuRenderer.vuDevice.get(shader);
+            auto matDataIndexHnd = vuRenderer.vuDevice.createMaterialDataIndex();
 
-            uint32 mat0 = shaderPtr->createMaterial();
+            auto matHnd = vuRenderer.vuDevice.createMaterial({}, shaderHnd, matDataIndexHnd);
 
-            GPU_PBR_MaterialData* data = shaderPtr->materials[mat0].getMaterialData();
+            GPU_PBR_MaterialData* data = vuRenderer.vuDevice.getMaterialData(matDataIndexHnd);
 
             VuAssetLoader::LoadGltf(vuRenderer.vuDevice, gnomePath, mesh, *data);
 
-            data->texture0             = 0;
-            data->texture1             = 1;
+            data->texture0 = 0;
+            data->texture1 = 1;
 
             flecs::world world;
             //Add Systems
@@ -131,20 +73,82 @@ namespace Vu
             camUI           = AddCameraUISystem(world);
 
             //Add Entities
-            auto ent = world.entity("Obj1").set(Transform{
-                                                    .position = float3(0, 0, 0), .rotation = quaternion::identity(),
-                                                    .scale = float3(10.0F, 10.0F, 10.0F)
-                                                }).set(MeshRenderer{&mesh, shader, mat0}).set(Spinn{});
+            world.entity("Obj1")
+                 .set(Transform{
+                          .position = float3(0, 0, 0),
+                          .rotation = quaternion::identity(),
+                          .scale = float3(10.0F, 10.0F, 10.0F)
+                      })
+                 .set(MeshRenderer{.mesh = &mesh, .materialHnd = matHnd})
+                 .set(Spinn{});
 
-            world.entity("Cam").set(Transform(float3(0.0f, 0.0f, 3.5f),
-                                              quaternion::identity(),
-                                              float3(1, 1, 1))
-                                   ).set(Camera{});
+            world.entity("Cam")
+                 .set(Transform(float3(0.0f, 0.0f, 3.5f),
+                                quaternion::identity(),
+                                float3(1, 1, 1))
+                     ).set(Camera{});
 
-            UpdateLoop();
+
+            //Update Loop
+            while (!vuRenderer.shouldWindowClose())
+            {
+                ctx::PreUpdate();
+                ctx::UpdateInput();
+
+                //Pre-Render Begins
+                auto runner0 = spinningSystem.run();
+                auto runner1 = flyCameraSystem.run();
+
+                //Rendering
+                {
+                    vuRenderer.vuDevice.getShader(shaderHnd)->tryRecompile();
+
+                    vuRenderer.beginFrame();
+                    drawMeshSystem.run();
+
+                    //UI
+                    {
+                        vuRenderer.beginImgui();
+
+                        ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+                        auto vPort = ImGui::DockSpaceOverViewport(dockspace_id, nullptr, ImGuiDockNodeFlags_PassthruCentralNode, nullptr);
+
+                        auto wRes = ImGui::Begin("Info");
+                        ImGui::Text("Image Count: %u", vuRenderer.vuDevice.imagePool.getUsedSlotCount());
+                        ImGui::Text("Sampler Count: %u", vuRenderer.vuDevice.samplerPool.getUsedSlotCount());
+                        ImGui::Text("Buffer Count: %u", vuRenderer.vuDevice.bufferPool.getUsedSlotCount());
+                        ImGui::End();
+
+                        if (uiNeedBuild)
+                        {
+                            int32 dockspace_flags = 0;
+                            uiNeedBuild           = false;
+
+                            ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
+                            ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
+                            ImGui::DockBuilderSetNodeSize(dockspace_id, {
+                                                              static_cast<float>(vuRenderer.swapChain.swapChainExtent.width),
+                                                              static_cast<float>(vuRenderer.swapChain.swapChainExtent.height)
+                                                          });
+
+                            auto mainR = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.25f, nullptr, &dockspace_id);
+                            auto mainL = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.33f, nullptr, &dockspace_id);
+                            ImGui::DockBuilderDockWindow("Info", mainL);
+
+                            ImGui::DockBuilderFinish(dockspace_id);
+                        }
+
+                        vuRenderer.endImgui();
+                    }
+
+                    vuRenderer.endFrame();
+                }
+            }
 
             vuRenderer.waitIdle();
-            //shader.destroyHandle();
+            device->destroyHandle(shaderHnd);
+            device->destroyHandle(matHnd);
+            device->destroyHandle(matDataIndexHnd);
             mesh.uninit();
             vuRenderer.uninit();
         }

@@ -75,10 +75,11 @@ namespace Vu
             uint32 indexCount   = (uint32)indexAccesor.count;
 
             dstMesh.indexBuffer = vuDevice.createBuffer({
+                                                            .name = "IndexBuffer",
                                                             .length = indexCount, .strideInBytes = sizeof(uint32),
                                                             .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT
                                                         });
-            auto* indexBuffer = vuDevice.get(dstMesh.indexBuffer);
+            auto* indexBuffer = vuDevice.getBuffer(dstMesh.indexBuffer);
 
             //indexBuffer->init({.length = indexCount, .strideInBytes = sizeof(uint32), .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT});
             indexBuffer->map();
@@ -97,12 +98,13 @@ namespace Vu
 
             dstMesh.vertexCount  = positionAccessor.count;
             dstMesh.vertexBuffer = vuDevice.createBuffer({
+                                                             .name = "VertexBuffer",
                                                              .length = dstMesh.vertexCount * dstMesh.totalAttributesSizePerVertex(),
                                                              .strideInBytes = 1u,
                                                              .vkUsageFlags =
                                                              VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
                                                          });
-            VuBuffer* vertexBuffer = vuDevice.get(dstMesh.vertexBuffer);
+            VuBuffer* vertexBuffer = vuDevice.getBuffer(dstMesh.vertexBuffer);
             // vertexBuffer->init({
             //                        .length = dstMesh.vertexCount * dstMesh.totalAttributesSizePerVertex(),
             //                        .strideInBytes = 1u,

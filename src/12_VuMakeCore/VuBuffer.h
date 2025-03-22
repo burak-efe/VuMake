@@ -1,11 +1,13 @@
 ﻿#pragma once
 
+#include "VuTypes.h"
 #include "10_Core/VuCommon.h"
 
 namespace Vu
 {
     struct VuBufferCreateInfo
     {
+        VuName                   name           = "VuBuffer";
         VkDeviceSize             length         = 1;
         VkDeviceSize             strideInBytes  = 1;
         VkBufferUsageFlags       vkUsageFlags   = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -19,12 +21,13 @@ namespace Vu
         VmaAllocator       vma;
         VuBufferCreateInfo lastCreateInfo;
 
-        VkBuffer           buffer;
-        VmaAllocation      allocation;
-        VmaAllocationInfo  allocationInfo;
-        VkDeviceSize       length;
-        VkDeviceSize       stride;
-        void*              mapPtr;
+        VuName            name;
+        VkBuffer          buffer;
+        VmaAllocation     allocation;
+        VmaAllocationInfo allocationInfo;
+        VkDeviceSize      length;
+        VkDeviceSize      stride;
+        void*             mapPtr;
 
         void init(VkDevice device, VmaAllocator allocator, const VuBufferCreateInfo& info);
 
