@@ -156,13 +156,12 @@ void Vu::VuDevice::registerToBindless(const VkSampler& sampler, uint32 bindlessI
 void Vu::VuDevice::uninit()
 {
     disposeStack.disposeAll();
-    std::cout << "VuDevice::uninit()" << std::endl;
-    std::cout << imagePool.getUsedSlotCount() << std::endl;
-    std::cout << samplerPool.getUsedSlotCount() << std::endl;
-    std::cout << bufferPool.getUsedSlotCount() << std::endl;
-    std::cout << shaderPool.getUsedSlotCount() << std::endl;
-    std::cout << materialPool.getUsedSlotCount() << std::endl;
-    std::cout << materialDataIndexPool.getUsedSlotCount() << std::endl;
+    Logger::Trace("Image Pool destroyed, leaked resource count: {}", imagePool.getUsedSlotCount());
+    Logger::Trace("Sampler Pool destroyed, leaked resource count: {}", samplerPool.getUsedSlotCount());
+    Logger::Trace("Buffer Pool destroyed, leaked resource count: {}", bufferPool.getUsedSlotCount());
+    Logger::Trace("Shader Pool destroyed, leaked resource count: {}", shaderPool.getUsedSlotCount());
+    Logger::Trace("Material Pool destroyed, leaked resource count: {}", materialPool.getUsedSlotCount());
+    Logger::Trace("MaterialDataIndex Pool destroyed, leaked resource count: {}", materialDataIndexPool.getUsedSlotCount());
 }
 
 void Vu::VuDevice::initInstance(VkBool32               enableValidation,
@@ -375,11 +374,11 @@ void Vu::VuDevice::initDefaultResources()
                                                 .name = "materialDataBuffer",
                                                 .length = config::MAX_MATERIAL_DATA,
                                                 .strideInBytes = config::MATERIAL_DATA_SIZE,
-                                                .vkUsageFlags =
-                                                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                .vkUsageFlags = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+                                                                | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                                 .vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO,
-                                                .vmaCreateFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                                                                  VMA_ALLOCATION_CREATE_MAPPED_BIT,
+                                                .vmaCreateFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+                                                                  | VMA_ALLOCATION_CREATE_MAPPED_BIT,
                                             });
     disposeStack.push([&] { destroyHandle(materialDataBufferHandle); });
     assert(materialDataBufferHandle.index == 1);

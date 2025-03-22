@@ -51,16 +51,15 @@ namespace Vu
         VuResourcePool<VuMaterial, 32> materialPool;
         VuResourcePool<uint32, 32>     materialDataIndexPool;
 
-        //holds the address of all other buffers
-        VuBuffer             bdaBuffer;
-        VuBuffer             stagingBuffer;
+
+        VuBuffer         bdaBuffer; //holds the address of all other buffers
+        VuBuffer         stagingBuffer;
         VuHnd<VuBuffer>  debugBufferHnd;
         VuHnd<VuBuffer>  materialDataBufferHandle;
         VuHnd<VuImage>   defaultImageHandle;
         VuHnd<VuImage>   defaultNormalImageHandle;
         VuHnd<VuSampler> defaultSamplerHandle;
-        //VuMaterialDataPool   materialDataPool{};
-        VuDisposeStack disposeStack;
+        VuDisposeStack   disposeStack;
 
     public:
         //RESOURCES
@@ -95,7 +94,7 @@ namespace Vu
         //INIT
 
         void uninit();
-    //private:
+        //private:
         void initInstance(VkBool32 enableValidation, std::span<const char*> validationLayers, std::span<const char*> instanceExtensions);
 
         void initDevice(const VuDeviceCreateInfo& info);
@@ -141,6 +140,5 @@ namespace Vu
         void registerToBindless(const VkImageView& imageView, uint32 bindlessIndex);
 
         void registerToBindless(const VkSampler& sampler, uint32 bindlessIndex);
-
     };
 }

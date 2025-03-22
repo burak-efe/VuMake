@@ -46,6 +46,7 @@ namespace Vu
             ECS_VU_RENDERER  = &vuRenderer;
 
             VuMesh mesh{};
+            mesh.init(device);
 
             shaderHnd = device->createShader("assets/shaders/vert.slang",
                                              "assets/shaders/frag.slang",
