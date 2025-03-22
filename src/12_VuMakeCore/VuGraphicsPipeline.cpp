@@ -3,7 +3,7 @@
 #include "11_Config/VuCtx.h"
 
 void Vu::VuGraphicsPipeline::initGraphicsPipeline(
-    const VkDevice device,
+    const VkDevice         device,
     const VkPipelineLayout pipelineLayout,
     const VkShaderModule   vertShaderModule,
     const VkShaderModule   fragShaderModule,
@@ -28,10 +28,10 @@ void Vu::VuGraphicsPipeline::initGraphicsPipeline(
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount = 0,      //static_cast<uint32>(bindingDescriptions.size()),
-        .pVertexBindingDescriptions = nullptr,   //bindingDescriptions.data(),
-        .vertexAttributeDescriptionCount = 0,    // static_cast<uint32>(attributeDescriptions.size()),
-        .pVertexAttributeDescriptions = nullptr, //attributeDescriptions.data(),
+        .vertexBindingDescriptionCount = 0,
+        .pVertexBindingDescriptions = nullptr,
+        .vertexAttributeDescriptionCount = 0,
+        .pVertexAttributeDescriptions = nullptr,
     };
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{
@@ -105,10 +105,8 @@ void Vu::VuGraphicsPipeline::initGraphicsPipeline(
         .basePipelineHandle = VK_NULL_HANDLE
     };
 
-    VkPipelineDepthStencilStateCreateInfo depth = fillDepthStencilCreateInfo(
-                                                                             true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
-    pipelineInfo.pDepthStencilState = &depth;
-
+    VkPipelineDepthStencilStateCreateInfo depth = fillDepthStencilCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
+    pipelineInfo.pDepthStencilState             = &depth;
     VkCheck(vkCreateGraphicsPipelines(device,VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
 }
 

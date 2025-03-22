@@ -5,30 +5,16 @@
 
 namespace Vu
 {
-    template <typename T>
-    class Has_uninit
-    {
-    private:
-        // We use SFINAE to detect Uninit()
-        template <typename U>
-        static auto Test(int) -> decltype(std::declval<U>().uninit(), std::true_type());
-
-        template <typename>
-        static std::false_type Test(...);
-
-    public:
-        static constexpr bool value = decltype(Test<T>(0))::value;
-    };
 
 
     template <typename T>
-    struct VuHandle2
+    struct VuHnd
     {
         uint32 index;
         uint32 generation;
     };
 
-    struct ResourceCounters2
+    struct ResourceCounters
     {
         //counter of total references
         uint32 referenceCounter;
@@ -36,33 +22,54 @@ namespace Vu
         uint32 generationCounter;
     };
 
-    template <typename T, uint32 capacity>
-    struct VuPool2
-    {
-        //static_assert(std::is_member_function_pointer_v<decltype(&T::uninit)>, "T must implement uninit()");
+    //util for check if T has a function named uninit
+    // template <typename T>
+    // class Has_uninit
+    // {
+    // private:
+    //     // We use SFINAE to detect Uninit()
+    //     template <typename U>
+    //     static auto Test(int) -> decltype(std::declval<U>().uninit(), std::true_type());
+    //
+    //     template <typename>
+    //     static std::false_type Test(...);
+    //
+    // public:
+    //     static constexpr bool value = decltype(Test<T>(0))::value;
+    // };
 
+    // Concept for types that have a member function uninit()
+    template <typename T>
+    concept Has_uninit = requires(T t) {
+        { t.uninit() };  // Expression that must be valid
+    };
+
+    //Calls uninit when zero ref count IF T implements it
+    template <typename T, uint32 capacity>
+    struct VuResourcePool
+    {
         std::array<T, capacity>                 data{};
-        std::array<ResourceCounters2, capacity> counters{};
+        std::array<ResourceCounters, capacity> counters{};
         std::array<uint32, capacity>            freeList{};
         uint32                                  allocationCounter = 0;
         uint32                                  freeListCounter   = 0;
 
         //Handle functions
-        T* get(const VuHandle2<T> handle)
+        T* getResource(const VuHnd<T> handle)
         {
             return get(handle.index, handle.generation);
         }
 
         //alloc a slot from pool and return the unitialized object
-        VuHandle2<T> createHandle()
+        VuHnd<T> createHandle()
         {
-            VuHandle2<T> handle{};
+            VuHnd<T> handle{};
             allocate(handle.index, handle.generation);
             return handle;
         }
 
         //return true if reference count drops == 0, which meand you need to uninit the object
-        bool destroyHandle(const VuHandle2<T> handle)
+        bool destroyHandle(const VuHnd<T> handle)
         {
             return decreaseRefCount(handle.index);
         }
@@ -129,7 +136,7 @@ namespace Vu
             if (counters[index].referenceCounter == 0)
             {
                 //delete
-                if constexpr (Has_uninit<T>::value) {
+                if constexpr (Has_uninit<T>) {
                     data[index].uninit();
                 }
 

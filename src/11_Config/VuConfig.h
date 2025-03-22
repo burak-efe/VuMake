@@ -5,11 +5,13 @@
 //Matrix Layout : Column Major
 //Coordinate System : Left handed, +Y up, +Z forward, +X right
 //Unit Scale: 1 unit = 1 meter
-//Angle Unit: Radian
+//Angle Unit: Radian, Degree in UI but immediately converted to Radian on fetch
 //Euler angles order: YXZ (Yaw,Pitch,Roll)
 
-//Material System: Shader = spirv, material = pipelines, material data = bindless indices + basic data
-
+//Material System:
+//Shader = spirv, and contains hashmap of compiled pipelines
+//material data = bindless indices + basic data
+//material = contain handle shader, and handle to material data
 
 
 namespace Vu
@@ -34,6 +36,9 @@ namespace Vu::config
 {
     constexpr uint32 MAX_FRAMES_IN_FLIGHT = 2;
 
+    constexpr VkDeviceSize MATERIAL_DATA_SIZE = 64;
+    constexpr uint32       MAX_MATERIAL_DATA  = 1024;
+
     // constexpr uint32 MAX_STORAGE_BUFFER_COUNT = 2;
     // constexpr uint32 MAX_SAMPLER_COUNT = 2;
     // constexpr uint32 MAX_SAMPLED_IMAGE_COUNT = 2;
@@ -45,11 +50,11 @@ namespace Vu::config
         .sampledImageBinding = 2,
         .storageImageBinding = 3,
         .storageBufferBinding = 4,
-        .uboCount = 1 ,
-        .samplerCount = 4096 ,
-        .sampledImageCount = 4096 ,
-        .storageImageCount = 4096 ,
-        .storageBufferCount = 4096 ,
+        .uboCount = 1,
+        .samplerCount = 4096,
+        .sampledImageCount = 4096,
+        .storageImageCount = 4096,
+        .storageBufferCount = 4096,
     };
 
     constexpr uint32 SHADER_COUNT    = 256;

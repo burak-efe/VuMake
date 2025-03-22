@@ -47,7 +47,7 @@ namespace Vu
         void beginFrame();
         void endFrame();
         void bindMesh(VuMesh& mesh);
-        void bindMaterial(const VuMaterial& material);
+        void bindMaterial(VuHnd<VuMaterial> material);
         void pushConstants(const GPU_PushConstant& pushConstant);
         void drawIndexed(uint32 indexCount);
         void beginImgui();

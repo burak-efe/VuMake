@@ -12,6 +12,7 @@
 
 #include "VuMaterialDataPool.h"
 #include "VuShader.h"
+#include "12_VuMakeCore/VuGraphicsPipeline.h"
 
 namespace Vu
 {
@@ -43,39 +44,80 @@ namespace Vu
         VkPhysicalDeviceMemoryProperties memProperties;
 
         //private:
-        VuPool2<VuImage, 32>   imagePool;
-        VuPool2<VuSampler, 32> samplerPool;
-        VuPool2<VuBuffer, 32>  bufferPool;
-        VuPool2<VuShader, 32>  shaderPool;
+        VuResourcePool<VuImage, 32>    imagePool;
+        VuResourcePool<VuSampler, 32>  samplerPool;
+        VuResourcePool<VuBuffer, 32>   bufferPool;
+        VuResourcePool<VuShader, 32>   shaderPool;
+        VuResourcePool<VuMaterial, 32> materialPool;
+        VuResourcePool<uint32, 32>     materialDataIndexPool;
 
         //holds the address of all other buffers
         VuBuffer             bdaBuffer;
         VuBuffer             stagingBuffer;
-        VuHandle2<VuBuffer>  debugBuffer;
-        VuHandle2<VuImage>   defaultImageHandle;
-        VuHandle2<VuImage>   defaultNormalImageHandle;
-        VuHandle2<VuSampler> defaultSamplerHandle;
-        VuMaterialDataPool   materialDataPool{};
-        VuDisposeStack       disposeStack;
+        VuHnd<VuBuffer>  debugBuffer;
+        VuHnd<VuBuffer>  materialDataBufferHandle;
+        VuHnd<VuImage>   defaultImageHandle;
+        VuHnd<VuImage>   defaultNormalImageHandle;
+        VuHnd<VuSampler> defaultSamplerHandle;
+        //VuMaterialDataPool   materialDataPool{};
+        VuDisposeStack disposeStack;
 
     public:
         //RESOURCES
-        VuHandle2<VuImage>   createImage(const VuImageCreateInfo& info);
-        VuHandle2<VuImage>   createImageFromAsset(const Path& path, VkFormat format);
-        VuHandle2<VuSampler> createSampler(const VuSamplerCreateInfo& info);
-        VuHandle2<VuBuffer>  createBuffer(const VuBufferCreateInfo& info);
-        VuHandle2<VuShader>  createShader(Path vertexPath, Path fragPath, VkRenderPass renderPass);
+        VuImage*    getImage(const VuHnd<VuImage> handle);
+        VuSampler*  getSampler(const VuHnd<VuSampler> handle);
+        VuBuffer*   getBuffer(const VuHnd<VuBuffer> handle);
+        VuShader*   getShader(const VuHnd<VuShader> handle);
+        VuMaterial* getMaterial(const VuHnd<VuMaterial> handle);
+        uint32*     getMaterialDataIndex(const VuHnd<uint32> handle);
 
+        void destroyHandle(VuHnd<VuImage> handle);
+        void destroyHandle(VuHnd<VuSampler> handle);
+        void destroyHandle(VuHnd<VuBuffer> handle);
+        void destroyHandle(VuHnd<VuShader> handle);
+        void destroyHandle(VuHnd<VuMaterial> handle);
+        void destroyHandle(VuHnd<uint32> handle);
 
-        VuImage*   get(const VuHandle2<VuImage> handle);
-        VuSampler* get(const VuHandle2<VuSampler> handle);
-        VuBuffer*  get(const VuHandle2<VuBuffer> handle);
-        VuShader*  get(const VuHandle2<VuShader> handle);
+        VuHnd<VuImage>   createImage(const VuImageCreateInfo& info);
+        VuHnd<VuImage>   createImageFromAsset(const Path& path, VkFormat format);
+        VuHnd<VuSampler> createSampler(const VuSamplerCreateInfo& info);
+        VuHnd<VuBuffer>  createBuffer(const VuBufferCreateInfo& info);
+        VuHnd<VuShader>  createShader(Path vertexPath, Path fragPath, VkRenderPass renderPass);
 
-        void destroyHandle(VuHandle2<VuImage> handle);
-        void destroyHandle(VuHandle2<VuSampler> handle);
-        void destroyHandle(VuHandle2<VuBuffer> handle);
-        void destroyHandle(VuHandle2<VuShader> handle);
+        VuHnd<uint32> createMaterialDataIndex()
+        {
+            VuHnd<uint32> handle   = materialDataIndexPool.createHandle();
+            uint32*           resource = getMaterialDataIndex(handle);
+            assert(resource != nullptr);
+            *resource = handle.index;
+            return handle;
+        }
+
+        VuHnd<VuMaterial> createMaterial(MaterialSettings matSettings, VuHnd<VuShader> shaderHnd, VuHnd<uint32> materialDataHnd)
+        {
+            VuHnd<VuMaterial> handle   = materialPool.createHandle();
+            VuMaterial*           resource = getMaterial(handle);
+            assert(resource != nullptr);
+            resource->init(this, matSettings, shaderHnd, materialDataHnd);
+            return handle;
+        }
+
+        GPU_PBR_MaterialData* getMaterialData(VuHnd<uint32> handle)
+        {
+            VuBuffer* matDataBuffer = getBuffer(materialDataBufferHandle);
+            byte*     dataPtr       = static_cast<byte*>(matDataBuffer->mapPtr) + config::MATERIAL_DATA_SIZE * handle.index;
+            return reinterpret_cast<GPU_PBR_MaterialData*>(dataPtr);
+        }
+
+        void bindMaterial(VkCommandBuffer cb, VuHnd<VuMaterial> material)
+        {
+            auto*              mat      = getMaterial(material);
+            auto*              shader   = getShader(mat->shaderHnd);
+            VuGraphicsPipeline pipeline = shader->requestPipeline(mat->materialSettings);
+
+            vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
+        }
+
 
         //INIT
         void uninit();

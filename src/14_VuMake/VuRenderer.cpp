@@ -135,15 +135,15 @@ namespace Vu
         ZoneScoped;
         //we are using vertex pulling, so only index buffers we need to bind
         auto commandBuffer = commandBuffers[currentFrame];
-        auto indexBuffer   = vuDevice.bufferPool.get(mesh.indexBuffer);
+        auto indexBuffer   = vuDevice.bufferPool.getResource(mesh.indexBuffer);
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
-    void VuRenderer::bindMaterial(const VuMaterial& material)
+    void VuRenderer::bindMaterial(VuHnd<VuMaterial> material)
     {
         ZoneScoped;
         auto commandBuffer = commandBuffers[currentFrame];
-        material.bindPipeline(commandBuffer);
+        vuDevice.bindMaterial(commandBuffer,material);
     }
 
     void VuRenderer::drawIndexed(uint32 indexCount)

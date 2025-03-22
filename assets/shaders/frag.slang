@@ -1,7 +1,6 @@
 #include "Common.slang"
 
 
-//static const float3 lightPos = float3(0.0, 0.0, -1.0);
 static const float3 lightColor = float3(1.0, 1.0, 1.0);
 
 static const float3 ambient = float3(0.01f, 0.01f, 0.01f);

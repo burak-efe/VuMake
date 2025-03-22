@@ -17,8 +17,8 @@ namespace Vu {
 
         VuMeshCreateInfo lastCreateInfo;
         uint32    vertexCount;
-        VuHandle2<VuBuffer> indexBuffer;
-        VuHandle2<VuBuffer> vertexBuffer;
+        VuHnd<VuBuffer> indexBuffer;
+        VuHnd<VuBuffer> vertexBuffer;
 
 
         void init()
