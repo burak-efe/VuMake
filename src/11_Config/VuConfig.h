@@ -14,58 +14,34 @@
 //material = contain handle shader, and handle to material data
 
 
-namespace Vu
-{
-    struct VuBindlessConfigInfo
-    {
-        uint32 uboBinding;
-        uint32 samplerBinding;
-        uint32 sampledImageBinding;
-        uint32 storageImageBinding;
-        uint32 storageBufferBinding;
-
-        uint32 uboCount;
-        uint32 samplerCount;
-        uint32 sampledImageCount;
-        uint32 storageImageCount;
-        uint32 storageBufferCount;
-    };
-}
-
 namespace Vu::config
 {
-    constexpr uint32 MAX_FRAMES_IN_FLIGHT = 2;
+    constexpr uint32 START_WIDTH  = 1280u;
+    constexpr uint32 START_HEIGHT = 720u;
 
-    constexpr VkDeviceSize MATERIAL_DATA_SIZE = 64;
-    constexpr uint32       MAX_MATERIAL_DATA  = 1024;
+    constexpr uint32 MAX_FRAMES_IN_FLIGHT = 2u;
 
-    // constexpr uint32 MAX_STORAGE_BUFFER_COUNT = 2;
-    // constexpr uint32 MAX_SAMPLER_COUNT = 2;
-    // constexpr uint32 MAX_SAMPLED_IMAGE_COUNT = 2;
+    constexpr VkDeviceSize MATERIAL_DATA_SIZE = 64u;
+    constexpr uint32       PUSH_CONST_SIZE    = 256u;
 
+    constexpr uint32 DEVICE_MAX_IMAGE_COUNT         = 256u;
+    constexpr uint32 DEVICE_MAX_SAMPLER_COUNT       = 256u;
+    constexpr uint32 DEVICE_MAX_BUFFER_COUNT        = 256u;
+    constexpr uint32 DEVICE_MAX_SHADER_COUNT        = 256u;
+    constexpr uint32 DEVICE_MAX_MATERIAL_DATA_COUNT = 256u;
+    constexpr uint32 DEVICE_MAX_MATERIAL_COUNT      = 256u;
 
-    constexpr VuBindlessConfigInfo BINDLESS_CONFIG_INFO{
-        .uboBinding = 0,
-        .samplerBinding = 1,
-        .sampledImageBinding = 2,
-        .storageImageBinding = 3,
-        .storageBufferBinding = 4,
-        .uboCount = 1,
-        .samplerCount = 4096,
-        .sampledImageCount = 4096,
-        .storageImageCount = 4096,
-        .storageBufferCount = 4096,
-    };
+    constexpr uint32 BINDLESS_UNIFORM_BUFFER_COUNT = 1u;
+    constexpr uint32 BINDLESS_SAMPLER_COUNT        = 256u;
+    constexpr uint32 BINDLESS_SAMPLED_IMAGE_COUNT  = 256u;
+    constexpr uint32 BINDLESS_STORAGE_IMAGE_COUNT  = 256u;
+    constexpr uint32 BINDLESS_STORAGE_BUFFER_COUNT = 256u;
 
-    constexpr uint32 SHADER_COUNT    = 256;
-    constexpr uint32 MATERIAL_COUNT  = 1024;
-    constexpr uint32 PUSH_CONST_SIZE = 256;
-
-#ifdef NDEBUG
-    constexpr bool ENABLE_VALIDATION_LAYERS_LAYERS = false;
-#else
-    constexpr bool ENABLE_VALIDATION_LAYERS_LAYERS = true;
-#endif
+    constexpr uint32 BINDLESS_UNIFORM_BUFFER_BINDING = 0u;
+    constexpr uint32 BINDLESS_SAMPLER_BINDING        = 1u;
+    constexpr uint32 BINDLESS_SAMPLED_IMAGE_BINDING  = 2u;
+    constexpr uint32 BINDLESS_STORAGE_IMAGE_BINDING  = 3u;
+    constexpr uint32 BINDLESS_STORAGE_BUFFER_BINDING = 4u;
 
     inline static Vector<const char*> VALIDATION_LAYERS = {
         "VK_LAYER_KHRONOS_validation"
@@ -83,6 +59,12 @@ namespace Vu::config
         VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
     };
 
+#ifdef NDEBUG
+    constexpr bool ENABLE_VALIDATION_LAYERS_LAYERS = false;
+#else
+    constexpr bool ENABLE_VALIDATION_LAYERS_LAYERS = true;
+#endif
+
+
     constexpr char SHADER_COMPILER_PATH[] = "bin" PLATFORM_SPECIFIC_PATH "/slang/slangc.exe";
-    //constexpr char SHADER_COMPILER_PATH[] = "bin\\windows-x86_64\\slang\\slangc.exe";
 }

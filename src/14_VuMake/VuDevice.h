@@ -3,32 +3,42 @@
 #include <span>
 
 #include "10_Core/VuCommon.h"
-#include "11_Config/VuConfig.h"
 #include "12_VuMakeCore/VuBuffer.h"
 #include "12_VuMakeCore/VuTypes.h"
 #include "12_VuMakeCore/VuPools.h"
 #include "12_VuMakeCore/VuImage.h"
 #include "12_VuMakeCore/VuSampler.h"
 
-#include "VuMaterialDataPool.h"
 #include "VuShader.h"
-#include "12_VuMakeCore/VuGraphicsPipeline.h"
 
 namespace Vu
 {
     struct VuDeviceCreateInfo
     {
-        const VkBool32                  enableValidationLayers;
-        const VkPhysicalDeviceFeatures2 physicalDeviceFeatures2;
-        const VkSurfaceKHR              surface;
-        const std::span<const char*>    deviceExtensions;
+        VkInstance                instance;
+        VkPhysicalDevice          physicalDevice;
+        VkBool32                  enableValidationLayers;
+        VkPhysicalDeviceFeatures2 physicalDeviceFeatures2;
+        VkSurfaceKHR              surface;
+        std::span<const char*>    deviceExtensions;
+        //bindless
+        uint32 uboBinding;
+        uint32 samplerBinding;
+        uint32 sampledImageBinding;
+        uint32 storageImageBinding;
+        uint32 storageBufferBinding;
+        uint32 uboCount;
+        uint32 samplerCount;
+        uint32 sampledImageCount;
+        uint32 storageImageCount;
+        uint32 storageBufferCount;
     };
 
     struct VuDevice
     {
-        VkInstance                   instance;
-        VkDebugUtilsMessengerEXT     debugMessenger;
-        VkPhysicalDevice             physicalDevice;
+        VkInstance       instance;
+        VkPhysicalDevice physicalDevice;
+
         QueueFamilyIndices           queueFamilyIndices;
         VkDevice                     device;
         VkQueue                      graphicsQueue;
@@ -43,7 +53,6 @@ namespace Vu
 
         VkPhysicalDeviceMemoryProperties memProperties;
 
-        //private:
         VuResourcePool<VuImage, 32>    imagePool;
         VuResourcePool<VuSampler, 32>  samplerPool;
         VuResourcePool<VuBuffer, 32>   bufferPool;
@@ -51,7 +60,7 @@ namespace Vu
         VuResourcePool<VuMaterial, 32> materialPool;
         VuResourcePool<uint32, 32>     materialDataIndexPool;
 
-
+    private:
         VuBuffer         bdaBuffer; //holds the address of all other buffers
         VuBuffer         stagingBuffer;
         VuHnd<VuBuffer>  debugBufferHnd;
@@ -93,27 +102,19 @@ namespace Vu
 
         //INIT
 
+        void init(const VuDeviceCreateInfo& info);
+
         void uninit();
-        //private:
-        void initInstance(VkBool32 enableValidation, std::span<const char*> validationLayers, std::span<const char*> instanceExtensions);
 
-        void initDevice(const VuDeviceCreateInfo& info);
+        void registerBindlessBDA_Buffer(const VuBuffer& buffer);
 
-        void initVMA();
+        void writeUBO_ToGlobalPool(const VuBuffer& buffer, uint32 writeIndex, uint32 setIndex);
 
-        void initCommandPool();
+        void registerToBindless(const VuBuffer& buffer, uint32 bindlessIndex);
 
-        void initBindlessDescriptor(const VuBindlessConfigInfo& info, uint32 maxFramesInFlight);
+        void registerToBindless(const VkImageView& imageView, uint32 bindlessIndex);
 
-        void initDescriptorSetLayout(const VuBindlessConfigInfo& info);
-
-        void initDescriptorPool(const VuBindlessConfigInfo& info);
-
-        void initGlobalDescriptorSet(uint32 maxFramesInFlight);
-
-        void initBindlessManager(const VuBindlessConfigInfo& info);
-
-        void initDefaultResources();
+        void registerToBindless(const VkSampler& sampler, uint32 bindlessIndex);
 
         VkCommandBuffer BeginSingleTimeCommands();
 
@@ -127,18 +128,25 @@ namespace Vu
 
         void transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
 
-        //Decriptor Management
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        void waitIdle();
 
-        //Register the buffer that holds BDA's of all other buffers
-        void registerBindlessBDA_Buffer(const VuBuffer& buffer);
+    private:
+        void initDevice(const VuDeviceCreateInfo& info);
 
-        void writeUBO_ToGlobalPool(const VuBuffer& buffer, uint32 writeIndex, uint32 setIndex);
+        void initVMA();
 
-        void registerToBindless(const VuBuffer& buffer, uint32 bindlessIndex);
+        void initCommandPool(const VuDeviceCreateInfo& info);
 
-        void registerToBindless(const VkImageView& imageView, uint32 bindlessIndex);
+        void initBindlessDescriptorSetLayout(const VuDeviceCreateInfo& info);
 
-        void registerToBindless(const VkSampler& sampler, uint32 bindlessIndex);
+        void initDescriptorPool(const VuDeviceCreateInfo& info);
+
+        void initBindlessDescriptorSet();
+
+        void initPipelineLayout();
+
+        void initBindlessResourceManager(const VuDeviceCreateInfo& info);
+
+        void initDefaultResources();
     };
 }

@@ -1,5 +1,4 @@
-#include "Common.slang"
-
+#include "shader_common.slang"
 
 [shader("vertex")]
 VSOutput vertexMain(uint32_t id :SV_VertexID )//VSInput input)

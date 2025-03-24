@@ -1,4 +1,4 @@
-#include "Common.slang"
+#include "shader_common.slang"
 
 
 static const float3 lightColor = float3(1.0, 1.0, 1.0);
@@ -6,6 +6,7 @@ static const float3 lightColor = float3(1.0, 1.0, 1.0);
 static const float3 ambient = float3(0.01f, 0.01f, 0.01f);
 static const float roughness = 0.5f;
 static const float specularIntensity = 0.5f;
+
 [shader("fragment")]
 float4 fragmentMain(VSOutput i) : SV_Target
 {

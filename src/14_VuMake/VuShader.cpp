@@ -4,9 +4,10 @@
 
 #include "10_Core/VuIO.h"
 #include "11_Config/VuCtx.h"
+#include "11_Config/VuConfig.h"
+#include "12_VuMakeCore/VuGraphicsPipeline.h"
 
 #include "VuDevice.h"
-#include "12_VuMakeCore/VuGraphicsPipeline.h"
 
 void Vu::VuShader::init(VuDevice* vuDevice, Path vertexShaderPath, Path fragmentShaderPath, VkRenderPass renderPass)
 {

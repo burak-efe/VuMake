@@ -1,30 +1,31 @@
 #pragma once
 
 #include "10_Core/VuCommon.h"
-#include "12_VuMakeCore/VuUtils.h"
 
-namespace Vu {
+#include "VuUtils.h"
 
-    struct VuRenderPassCreateInfo
+namespace Vu
+{
+    struct VuRenderPass
     {
         VkDevice device;
         VkFormat colorFormat;
         VkFormat depthStencilFormat;
-    };
-    struct VuRenderPass {
-        VuRenderPassCreateInfo lastCreateInfo;
+
         VkRenderPass renderPass;
 
-        void uninit() {
-            vkDestroyRenderPass(lastCreateInfo.device, renderPass, nullptr);
-        }
-
-        void init(const VuRenderPassCreateInfo& createInfo) {
+        void init(VkDevice device,
+                  VkFormat colorFormat,
+                  VkFormat depthStencilFormat
+        )
+        {
             ZoneScoped;
-            lastCreateInfo = createInfo;
+            this->device             = device;
+            this->colorFormat        = colorFormat;
+            this->depthStencilFormat = depthStencilFormat;
 
             VkAttachmentDescription colorAttachment{};
-            colorAttachment.format         = createInfo.colorFormat;
+            colorAttachment.format         = colorFormat;
             colorAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
             colorAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
             colorAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
@@ -34,7 +35,7 @@ namespace Vu {
             colorAttachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
             VkAttachmentDescription depthAttachment{};
-            depthAttachment.format         = createInfo.depthStencilFormat;
+            depthAttachment.format         = depthStencilFormat;
             depthAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
             depthAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
             depthAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -69,17 +70,24 @@ namespace Vu {
 
             std::array attachments = {colorAttachment, depthAttachment};
 
-            VkRenderPassCreateInfo renderPassInfo{};
-            renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-            renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-            renderPassInfo.pAttachments    = attachments.data();
-            renderPassInfo.subpassCount    = 1;
-            renderPassInfo.pSubpasses      = &subpass;
-            renderPassInfo.dependencyCount = 1;
-            renderPassInfo.pDependencies   = &dependency;
+            VkRenderPassCreateInfo renderPassInfo{
+                .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+                .attachmentCount = static_cast<uint32_t>(attachments.size()),
+                .pAttachments = attachments.data(),
+                .subpassCount = 1,
+                .pSubpasses = &subpass,
+                .dependencyCount = 1,
+                .pDependencies = &dependency
+            };
 
-            VkCheck(vkCreateRenderPass(createInfo.device, &renderPassInfo, nullptr, &renderPass));
-            Utils::giveDebugName(createInfo.device, VK_OBJECT_TYPE_RENDER_PASS, renderPass, "Render Pass");
+
+            VkCheck(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
+            Utils::giveDebugName(device, VK_OBJECT_TYPE_RENDER_PASS, renderPass, "Render Pass");
+        }
+
+        void uninit()
+        {
+            vkDestroyRenderPass(device, renderPass, nullptr);
         }
     };
 }

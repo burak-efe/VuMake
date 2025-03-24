@@ -71,8 +71,8 @@ namespace Vu
                 std::cout << "Primitive index accessor has not been set!" << "\n";
                 return;
             }
-            auto&  indexAccesor = asset->accessors[primitive.indicesAccessor.value()];
-            uint32 indexCount   = (uint32)indexAccesor.count;
+            fastgltf::Accessor& indexAccesor = asset->accessors[primitive.indicesAccessor.value()];
+            uint32              indexCount   = (uint32)indexAccesor.count;
 
             dstMesh.indexBuffer = vuDevice.createBuffer({
                                                             .name = "IndexBuffer",
@@ -81,16 +81,14 @@ namespace Vu
                                                         });
             auto* indexBuffer = vuDevice.getBuffer(dstMesh.indexBuffer);
 
-            //indexBuffer->init({.length = indexCount, .strideInBytes = sizeof(uint32), .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT});
             indexBuffer->map();
-            auto              indexSpanByte = indexBuffer->getMappedSpan(0, indexCount * sizeof(uint32));
+            std::span<byte>   indexSpanByte = indexBuffer->getMappedSpan(0, indexCount * sizeof(uint32));
             std::span<uint32> indexSpan     = std::span(reinterpret_cast<uint32*>(indexSpanByte.data()), indexCount);
             fastgltf::iterateAccessorWithIndex<uint32>(
                                                        asset.get(), indexAccesor,
                                                        [&](uint32 index, std::size_t idx) { indexSpan[idx] = index; }
                                                       );
             indexBuffer->unmap();
-
 
             //Position
             fastgltf::Attribute* positionIt       = primitive.findAttribute("POSITION");
@@ -105,13 +103,6 @@ namespace Vu
                                                              VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
                                                          });
             VuBuffer* vertexBuffer = vuDevice.getBuffer(dstMesh.vertexBuffer);
-            // vertexBuffer->init({
-            //                        .length = dstMesh.vertexCount * dstMesh.totalAttributesSizePerVertex(),
-            //                        .strideInBytes = 1u,
-            //                        .vkUsageFlags =
-            //                        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
-            //                    });
-            //VuResourceManager::registerStorageBuffer(dstMesh.vertexBuffer.index, *vertexBuffer);
             vertexBuffer->map();
 
             std::span<byte> vertexSpanByte =
@@ -128,8 +119,8 @@ namespace Vu
 
 
             std::span<byte> tangentSpanByte =
-                vertexBuffer->getMappedSpan(dstMesh.getTangentOffsetAsByte(),
-                                            sizeof(fastgltf::math::f32vec4) * dstMesh.vertexCount);
+                vertexBuffer->getMappedSpan(dstMesh.getTangentOffsetAsByte(), sizeof(fastgltf::math::f32vec4) * dstMesh.vertexCount);
+
             std::span<fastgltf::math::f32vec4> tangentSpan =
                 std::span(reinterpret_cast<fastgltf::math::f32vec4*>(tangentSpanByte.data()), dstMesh.vertexCount);
 
@@ -137,19 +128,18 @@ namespace Vu
             std::span<byte> uvSpanByte =
                 vertexBuffer->getMappedSpan(dstMesh.getUV_OffsetAsByte(),
                                             sizeof(fastgltf::math::f32vec2) * dstMesh.vertexCount);
+
             std::span<fastgltf::math::f32vec2> uvSpan =
                 std::span(reinterpret_cast<fastgltf::math::f32vec2*>(uvSpanByte.data()), dstMesh.vertexCount);
 
             //pos
             {
                 ZoneScopedN("Positions");
-                fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec3>(
-                                                                            asset.get(), positionAccessor,
+                fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec3>(asset.get(), positionAccessor,
                                                                             [&](fastgltf::math::f32vec3 pos, std::size_t idx)
                                                                             {
                                                                                 vertexSpan[idx] = pos;
-                                                                            }
-                                                                           );
+                                                                            });
             }
 
             //normal
@@ -158,13 +148,11 @@ namespace Vu
                 auto* normalIt       = primitive.findAttribute("NORMAL");
                 auto& normalAccessor = asset->accessors[normalIt->accessorIndex];
 
-                fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec3>(
-                                                                            asset.get(), normalAccessor,
+                fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec3>(asset.get(), normalAccessor,
                                                                             [&](fastgltf::math::f32vec3 normal, std::size_t idx)
                                                                             {
                                                                                 normalSpan[idx] = normal;
-                                                                            }
-                                                                           );
+                                                                            });
             }
             //uv
             {
@@ -172,13 +160,11 @@ namespace Vu
                 auto* uvIter     = primitive.findAttribute("TEXCOORD_0");
                 auto& uvAccessor = asset->accessors[uvIter->accessorIndex];
 
-                fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec2>(
-                                                                            asset.get(), uvAccessor,
+                fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec2>(asset.get(), uvAccessor,
                                                                             [&](fastgltf::math::f32vec2 uv, std::size_t idx)
                                                                             {
                                                                                 uvSpan[idx] = uv;
-                                                                            }
-                                                                           );
+                                                                            });
             }
 
             //tangent
