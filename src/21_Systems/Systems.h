@@ -103,9 +103,6 @@ namespace Vu
                     });
     }
 
-    // inline flecs::system System(flecs::world& world) {
-    // }
-
 
     inline flecs::system AddFlyCameraSystem(flecs::world& world)
     {

@@ -13,6 +13,7 @@ namespace Vu
     {
         this->vuDevice = vuDevice;
         this->surface  = surface;
+
         createSwapChain(surface);
         createImageViews(vuDevice->device);
 
@@ -28,7 +29,7 @@ namespace Vu
                                  );
 
         VuImage* dsImage = vuDevice->getImage(depthStencilH);
-        renderPass.init({vuDevice->device, swapChainImageFormat, dsImage->lastCreateInfo.format});
+        renderPass0.init(vuDevice->device, swapChainImageFormat, dsImage->lastCreateInfo.format);
         createFramebuffers();
     }
 
@@ -43,7 +44,7 @@ namespace Vu
             vkDestroyFramebuffer(vuDevice->device, framebuffer, nullptr);
         }
 
-        renderPass.uninit();
+        renderPass0.uninit();
         vuDevice->destroyHandle(depthStencilH);
         vkDestroySwapchainKHR(vuDevice->device, swapChain, nullptr);
     }
@@ -150,7 +151,7 @@ namespace Vu
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass        = renderPass.renderPass;
+        renderPassInfo.renderPass        = renderPass0.renderPass;
         renderPassInfo.framebuffer       = framebuffers[frameIndex];
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
@@ -268,7 +269,7 @@ namespace Vu
 
             VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass      = renderPass.renderPass;
+            framebufferInfo.renderPass      = renderPass0.renderPass;
             framebufferInfo.attachmentCount = attachments.size();
             framebufferInfo.pAttachments    = attachments.data();
             framebufferInfo.width           = swapChainExtent.width;

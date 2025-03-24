@@ -2,8 +2,9 @@
 
 #include <span>
 
-#include "VuTypes.h"
 #include "10_Core/VuCommon.h"
+
+#include "VuTypes.h"
 
 namespace Vu::CreateUtils
 {

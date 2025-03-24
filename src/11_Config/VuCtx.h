@@ -4,7 +4,7 @@
 #include "10_Core/VuCommon.h"
 
 //TODO
-#include "../12_VuMakeCore/VuTypes.h"
+#include "12_VuMakeCore/VuTypes.h"
 
 namespace Vu {
 
@@ -13,8 +13,6 @@ namespace Vu {
 
     namespace ctx {
 
-        //inline VuDevice*      vuDevice   = nullptr;
-        //inline VuRenderer*    vuRenderer = nullptr;
         inline GPU_FrameConst frameConst;
 
         inline SDL_Window* window = nullptr;

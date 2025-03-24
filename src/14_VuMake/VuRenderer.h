@@ -10,30 +10,32 @@
 #include "VuSwapChain.h"
 #include "VuMaterial.h"
 #include "VuDevice.h"
+#include "11_Config/VuConfig.h"
 
 
 namespace Vu
 {
-    constexpr uint32 WIDTH  = 1280;
-    constexpr uint32 HEIGHT = 720;
-
     struct VuRenderer
     {
-        VuDevice vuDevice{};
-        std::vector<VkCommandBuffer> commandBuffers;
-        std::vector<VkSemaphore>     imageAvailableSemaphores;
-        std::vector<VkSemaphore>     renderFinishedSemaphores;
-        std::vector<VkFence>         inFlightFences;
-        std::vector<VuBuffer>        uniformBuffers;
-
+        VkInstance               instance;
+        VkPhysicalDevice         physicalDevice;
+        VkDebugUtilsMessengerEXT debugMessenger;
         VkSurfaceKHR             surface;
+
+        VuDevice vuDevice;
+
+        std::array<VkCommandBuffer, config::MAX_FRAMES_IN_FLIGHT> commandBuffers;
+        std::array<VkSemaphore, config::MAX_FRAMES_IN_FLIGHT>     imageAvailableSemaphores;
+        std::array<VkSemaphore, config::MAX_FRAMES_IN_FLIGHT>     renderFinishedSemaphores;
+        std::array<VkFence, config::MAX_FRAMES_IN_FLIGHT>         inFlightFences;
+
+        std::array<VuBuffer, config::MAX_FRAMES_IN_FLIGHT> uniformBuffers;
+
         VuSwapChain              swapChain;
         ImGui_ImplVulkanH_Window imguiMainWindowData;
 
         uint32 currentFrame           = 0;
         uint32 currentFrameImageIndex = 0;
-
-
 
         VuDisposeStack disposeStack;
 
@@ -50,6 +52,7 @@ namespace Vu
         void beginImgui();
         void endImgui();
         void updateFrameConstantBuffer(GPU_FrameConst ubo);
+
         //void reloadShaders();
 
     private:

@@ -5,8 +5,6 @@
 
 namespace Vu
 {
-
-
     template <typename T>
     struct VuHnd
     {
@@ -22,21 +20,6 @@ namespace Vu
         uint32 generationCounter;
     };
 
-    //util for check if T has a function named uninit
-    // template <typename T>
-    // class Has_uninit
-    // {
-    // private:
-    //     // We use SFINAE to detect Uninit()
-    //     template <typename U>
-    //     static auto Test(int) -> decltype(std::declval<U>().uninit(), std::true_type());
-    //
-    //     template <typename>
-    //     static std::false_type Test(...);
-    //
-    // public:
-    //     static constexpr bool value = decltype(Test<T>(0))::value;
-    // };
 
     // Concept for types that have a member function uninit()
     template <typename T>

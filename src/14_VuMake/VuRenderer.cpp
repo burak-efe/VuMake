@@ -16,8 +16,7 @@ namespace Vu
 
     void VuRenderer::waitIdle()
     {
-        ZoneScoped;
-        vkDeviceWaitIdle(vuDevice.device);
+        vuDevice.waitIdle();
     }
 
     void VuRenderer::beginFrame()

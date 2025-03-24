@@ -1,9 +1,10 @@
 #include "VuDevice.h"
 
-#include <iostream>
 #include <set>
 
 #include "10_Core/Color32.h"
+#include "10_Core/VuScopeTimer.h"
+#include "11_Config/VuConfig.h"
 #include "12_VuMakeCore/VuCreateUtils.h"
 
 Vu::VuImage* Vu::VuDevice::getImage(const VuHnd<VuImage> handle)
@@ -77,7 +78,7 @@ void Vu::VuDevice::registerBindlessBDA_Buffer(const VuBuffer& buffer)
         VkWriteDescriptorSet descriptorWrite{};
         descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrite.dstSet          = globalDescriptorSets[i];
-        descriptorWrite.dstBinding      = config::BINDLESS_CONFIG_INFO.storageBufferBinding;
+        descriptorWrite.dstBinding      = config::BINDLESS_STORAGE_BUFFER_BINDING;
         descriptorWrite.dstArrayElement = 0;
         descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         descriptorWrite.descriptorCount = 1;
@@ -124,7 +125,7 @@ void Vu::VuDevice::registerToBindless(const VkImageView& imageView, uint32 bindl
         VkWriteDescriptorSet descriptorWrite{};
         descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrite.dstSet          = globalDescriptorSets[i];
-        descriptorWrite.dstBinding      = config::BINDLESS_CONFIG_INFO.sampledImageBinding;
+        descriptorWrite.dstBinding      = config::BINDLESS_SAMPLED_IMAGE_BINDING;
         descriptorWrite.dstArrayElement = bindlessIndex;
         descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         descriptorWrite.descriptorCount = 1;
@@ -144,7 +145,7 @@ void Vu::VuDevice::registerToBindless(const VkSampler& sampler, uint32 bindlessI
         VkWriteDescriptorSet samplerWrite{};
         samplerWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         samplerWrite.dstSet          = globalDescriptorSets[i];
-        samplerWrite.dstBinding      = config::BINDLESS_CONFIG_INFO.samplerBinding;
+        samplerWrite.dstBinding      = config::BINDLESS_SAMPLER_BINDING;
         samplerWrite.dstArrayElement = bindlessIndex;
         samplerWrite.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
         samplerWrite.descriptorCount = 1;
@@ -164,29 +165,29 @@ void Vu::VuDevice::uninit()
     Logger::Trace("MaterialDataIndex Pool destroyed, leaked resource count: {}", materialDataIndexPool.getUsedSlotCount());
 }
 
-void Vu::VuDevice::initInstance(VkBool32               enableValidation,
-                                std::span<const char*> validationLayers,
-                                std::span<const char*> instanceExtensions)
-{
-    CreateUtils::createInstance(enableValidation, validationLayers, instanceExtensions, instance);
-    disposeStack.push([&]
-    {
-        vkDestroyInstance(instance, nullptr);
-    });
-
-    if (enableValidation)
-    {
-        CreateUtils::createDebugMessenger(instance, debugMessenger);
-        disposeStack.push([&]
-        {
-            CreateUtils::destroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-        });
-    }
-}
+// void Vu::VuDevice::initInstance(const VuDeviceCreateInfo& info)
+// {
+//     CreateUtils::createInstance(enableValidation, validationLayers, instanceExtensions, instance);
+//     disposeStack.push([&]
+//     {
+//         vkDestroyInstance(instance, nullptr);
+//     });
+//
+//     if (enableValidation)
+//     {
+//         CreateUtils::createDebugMessenger(instance, debugMessenger);
+//         disposeStack.push([&]
+//         {
+//             CreateUtils::destroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+//         });
+//     }
+// }
 
 void Vu::VuDevice::initDevice(const VuDeviceCreateInfo& info)
 {
-    CreateUtils::createPhysicalDevice(instance, info.surface, info.deviceExtensions, physicalDevice);
+    this->instance       = info.instance;
+    this->physicalDevice = info.physicalDevice;
+
     queueFamilyIndices = QueueFamilyIndices::findQueueFamilies(physicalDevice, info.surface);
 
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
@@ -198,10 +199,6 @@ void Vu::VuDevice::initDevice(const VuDeviceCreateInfo& info)
                               device, graphicsQueue, presentQueue
                              );
     disposeStack.push([&] { vkDestroyDevice(device, nullptr); });
-
-    initVMA();
-
-    initCommandPool();
 }
 
 void Vu::VuDevice::initVMA()
@@ -239,7 +236,7 @@ void Vu::VuDevice::initVMA()
     disposeStack.push([&] { vmaDestroyAllocator(vma); });
 }
 
-void Vu::VuDevice::initCommandPool()
+void Vu::VuDevice::initCommandPool(const VuDeviceCreateInfo& info)
 {
     ZoneScoped;
     VkCommandPoolCreateInfo poolInfo{};
@@ -250,18 +247,14 @@ void Vu::VuDevice::initCommandPool()
     disposeStack.push([&] { vkDestroyCommandPool(device, commandPool, nullptr); });
 }
 
-void Vu::VuDevice::initBindlessDescriptor(const VuBindlessConfigInfo& info, uint32 maxFramesInFlight)
+void Vu::VuDevice::initPipelineLayout()
 {
-    initDescriptorSetLayout(info);
-    initDescriptorPool(info);
-    initGlobalDescriptorSet(maxFramesInFlight);
-
     std::array descSetLayouts{globalDescriptorSetLayout};
     CreateUtils::createPipelineLayout(device, descSetLayouts, config::PUSH_CONST_SIZE, globalPipelineLayout);
     disposeStack.push([&] { vkDestroyPipelineLayout(device, globalPipelineLayout, nullptr); });
 }
 
-void Vu::VuDevice::initDescriptorSetLayout(const VuBindlessConfigInfo& info)
+void Vu::VuDevice::initBindlessDescriptorSetLayout(const VuDeviceCreateInfo& info)
 {
     ZoneScoped;
     VkDescriptorSetLayoutBinding ubo{
@@ -372,7 +365,7 @@ void Vu::VuDevice::initDefaultResources()
 
     materialDataBufferHandle = createBuffer({
                                                 .name = "materialDataBuffer",
-                                                .length = config::MAX_MATERIAL_DATA,
+                                                .length = config::DEVICE_MAX_MATERIAL_DATA_COUNT,
                                                 .strideInBytes = config::MATERIAL_DATA_SIZE,
                                                 .vkUsageFlags = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
                                                                 | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -386,10 +379,9 @@ void Vu::VuDevice::initDefaultResources()
     matDataBuffer->map();
 }
 
-void Vu::VuDevice::initDescriptorPool(const VuBindlessConfigInfo& info)
+void Vu::VuDevice::initDescriptorPool(const VuDeviceCreateInfo& info)
 {
     ZoneScoped;
-
     std::array<VkDescriptorPoolSize, 5> poolSizes{
         {
             {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = info.uboCount * config::MAX_FRAMES_IN_FLIGHT},
@@ -410,19 +402,20 @@ void Vu::VuDevice::initDescriptorPool(const VuBindlessConfigInfo& info)
     VkCheck(vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool));
 }
 
-void Vu::VuDevice::initGlobalDescriptorSet(uint32 maxFramesInFlight)
+void Vu::VuDevice::initBindlessDescriptorSet()
 {
     ZoneScoped;
-    std::vector globalLayouts(maxFramesInFlight, globalDescriptorSetLayout);
+    std::array<VkDescriptorSetLayout, config::MAX_FRAMES_IN_FLIGHT> globalDescLayout;
+    globalDescLayout.fill(globalDescriptorSetLayout);
 
     VkDescriptorSetAllocateInfo globalSetsAllocInfo{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .descriptorPool = descriptorPool,
-        .descriptorSetCount = maxFramesInFlight,
-        .pSetLayouts = globalLayouts.data(),
+        .descriptorSetCount = globalDescLayout.size(),
+        .pSetLayouts = globalDescLayout.data(),
     };
 
-    globalDescriptorSets.resize(maxFramesInFlight);
+    globalDescriptorSets.resize(config::MAX_FRAMES_IN_FLIGHT);
     VkCheck(vkAllocateDescriptorSets(device, &globalSetsAllocInfo, globalDescriptorSets.data()));
     disposeStack.push([&] { vkDestroyDescriptorPool(device, descriptorPool, nullptr); });
 }
@@ -524,6 +517,20 @@ void Vu::VuDevice::bindMaterial(VkCommandBuffer cb, VuHnd<VuMaterial> material)
     VuGraphicsPipeline pipeline = shader->requestPipeline(mat->materialSettings);
 
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
+}
+
+void Vu::VuDevice::init(const VuDeviceCreateInfo& info)
+{
+    LogTime;
+    initDevice(info);
+    initVMA();
+    initCommandPool(info);
+    initBindlessDescriptorSetLayout(info);
+    initDescriptorPool(info);
+    initPipelineLayout();
+    initBindlessDescriptorSet();
+    initBindlessResourceManager(info);
+    initDefaultResources();
 }
 
 Vu::VuHnd<Vu::VuImage> Vu::VuDevice::createImageFromAsset(const Path& path, VkFormat format)
@@ -641,6 +648,12 @@ void Vu::VuDevice::transitionImageLayout(VkImage image, VkImageLayout oldLayout,
     EndSingleTimeCommands(commandBuffer);
 }
 
+void Vu::VuDevice::waitIdle()
+{
+    Logger::Trace("Wait Idle Called!");
+    vkDeviceWaitIdle(device);
+}
+
 void Vu::VuDevice::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
 {
     VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
@@ -664,7 +677,7 @@ void Vu::VuDevice::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t wi
     EndSingleTimeCommands(commandBuffer);
 }
 
-void Vu::VuDevice::initBindlessManager(const VuBindlessConfigInfo& info)
+void Vu::VuDevice::initBindlessResourceManager(const VuDeviceCreateInfo& info)
 {
     bdaBuffer.init(device, vma, {
                        .name = "BDA_Buffer",

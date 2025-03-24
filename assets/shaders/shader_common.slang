@@ -131,7 +131,10 @@ PushConsts pc;
 struct PBRMaterialData {
     uint32_t texture0;
     uint32_t texture1;
+
+    uint32_t padding[14];
 };
+
 
 [[vk::binding(0, 0)]]
 ConstantBuffer<FrameConst> frameConst;
