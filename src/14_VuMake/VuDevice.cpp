@@ -343,8 +343,17 @@ void Vu::VuDevice::initDefaultResources()
     assert(debugBufferHnd.index == 0);
 
     Vector<Color32> colorData;
-    Color32         defaultColor = Color32(0.0f, 0.0f, 1.0f);
-    colorData.resize(512 * 512, defaultColor);
+    Color32         defaultColor = Color32(0.0f, 0.0f, 0.0f);
+    Color32         magentaColor = Color32(1.0f, 0.0f, 1.0f);
+    colorData.resize(512 * 512);
+
+    for (int y = 0; y < 512; ++y) {
+        for (int x = 0; x < 512; ++x) {
+            // Determine the block (x // blockSize, y // blockSize)
+            bool isMagenta = ((x / 16) + (y / 16)) % 2 == 0;
+            colorData[y * 512 + x] = isMagenta ? magentaColor : defaultColor;
+        }
+    }
 
     defaultImageHandle = createImage({.width = 512, .height = 512, .format = VK_FORMAT_R8G8B8A8_SRGB});
     disposeStack.push([&] { destroyHandle(defaultImageHandle); });
@@ -475,12 +484,12 @@ Vu::VuHnd<Vu::VuBuffer> Vu::VuDevice::createBuffer(const VuBufferCreateInfo& inf
     return handle;
 }
 
-Vu::VuHnd<Vu::VuShader> Vu::VuDevice::createShader(Path vertexPath, Path fragPath, VkRenderPass renderPass)
+Vu::VuHnd<Vu::VuShader> Vu::VuDevice::createShader(Path vertexPath, Path fragPath, VuRenderPass* vuRenderPass)
 {
     VuHnd<VuShader> handle   = shaderPool.createHandle();
     VuShader*       resource = getShader(handle);
     assert(resource != nullptr);
-    resource->init(this, vertexPath, fragPath, renderPass);
+    resource->init(this, vertexPath, fragPath, vuRenderPass);
     return handle;
 }
 
@@ -503,11 +512,12 @@ Vu::VuHnd<Vu::VuMaterial> Vu::VuDevice::createMaterial(MaterialSettings matSetti
     return handle;
 }
 
-Vu::GPU_PBR_MaterialData* Vu::VuDevice::getMaterialData(VuHnd<uint32> handle)
+std::span<std::byte, Vu::config::MATERIAL_DATA_SIZE> Vu::VuDevice::getMaterialData(VuHnd<uint32> handle)
 {
     VuBuffer* matDataBuffer = getBuffer(materialDataBufferHandle);
     byte*     dataPtr       = static_cast<byte*>(matDataBuffer->mapPtr) + config::MATERIAL_DATA_SIZE * handle.index;
-    return reinterpret_cast<GPU_PBR_MaterialData*>(dataPtr);
+    return std::span<std::byte, Vu::config::MATERIAL_DATA_SIZE>(dataPtr, config::MATERIAL_DATA_SIZE);
+    //return reinterpret_cast<GPU_PBR_MaterialData*>(dataPtr);
 }
 
 void Vu::VuDevice::bindMaterial(VkCommandBuffer cb, VuHnd<VuMaterial> material)
@@ -515,13 +525,11 @@ void Vu::VuDevice::bindMaterial(VkCommandBuffer cb, VuHnd<VuMaterial> material)
     auto*              mat      = getMaterial(material);
     auto*              shader   = getShader(mat->shaderHnd);
     VuGraphicsPipeline pipeline = shader->requestPipeline(mat->materialSettings);
-
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
 }
 
 void Vu::VuDevice::init(const VuDeviceCreateInfo& info)
 {
-    LogTime;
     initDevice(info);
     initVMA();
     initCommandPool(info);

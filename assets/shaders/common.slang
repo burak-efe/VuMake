@@ -1,3 +1,4 @@
+#pragma once
 
 struct Span<T> {
     Ptr<T> _pointer;
@@ -107,6 +108,8 @@ struct FrameConst
 {
     float4x4 view;
     float4x4 proj;
+    float4x4 inverseView;
+    float4x4 inverseProj;
     float4 _cameraPos;
     float4 _cameraDir;
     float _time;
@@ -131,8 +134,10 @@ PushConsts pc;
 struct PBRMaterialData {
     uint32_t texture0;
     uint32_t texture1;
+    uint32_t texture2;
+    uint32_t texture3;
 
-    uint32_t padding[14];
+    uint32_t padding[12];
 };
 
 
@@ -169,5 +174,4 @@ struct VSOutput
     [[vk::location(2)]] float3 Bitangent : BINORMAL0;
     [[vk::location(3)]] float2 UV : TEXCOORD0;
     [[vk::location(4)]] float3 PosWS : TEXCOORD1;
-
 };

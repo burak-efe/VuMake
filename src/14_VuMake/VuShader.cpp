@@ -8,14 +8,15 @@
 #include "12_VuMakeCore/VuGraphicsPipeline.h"
 
 #include "VuDevice.h"
+#include "12_VuMakeCore/VuRenderPass.h"
 
-void Vu::VuShader::init(VuDevice* vuDevice, Path vertexShaderPath, Path fragmentShaderPath, VkRenderPass renderPass)
+void Vu::VuShader::init(VuDevice* vuDevice, Path vertexShaderPath, Path fragmentShaderPath, VuRenderPass* vuRenderPass)
 {
     ZoneScoped;
     this->vuDevice           = vuDevice;
     this->vertexShaderPath   = vertexShaderPath;
     this->fragmentShaderPath = fragmentShaderPath;
-    this->renderPass         = renderPass;
+    this->vuRenderPass       = vuRenderPass;
 
 
     lastModifiedTime = std::max(getlastModifiedTime(vertexShaderPath),
@@ -53,7 +54,7 @@ void Vu::VuShader::tryRecompile()
 
     vkDeviceWaitIdle(vuDevice->device);
     uninit();
-    init(vuDevice, vertexShaderPath, fragmentShaderPath, renderPass);
+    init(vuDevice, vertexShaderPath, fragmentShaderPath, vuRenderPass);
 
     for (auto& pair : compiledPipelines)
     {
@@ -63,7 +64,8 @@ void Vu::VuShader::tryRecompile()
                                          vuDevice->globalPipelineLayout,
                                          vertexShaderModule,
                                          fragmentShaderModule,
-                                         renderPass
+                                         vuRenderPass->renderPass,
+                                         vuRenderPass->colorBlendAttachmentStates
                                         );
     }
 }
@@ -78,7 +80,8 @@ Vu::VuGraphicsPipeline& Vu::VuShader::requestPipeline(MaterialSettings materialS
                                       vuDevice->globalPipelineLayout,
                                       vertexShaderModule,
                                       fragmentShaderModule,
-                                      renderPass);
+                                      vuRenderPass->renderPass,
+                                      vuRenderPass->colorBlendAttachmentStates);
         compiledPipelines.emplace(materialSettings, pipeline);
     }
     return compiledPipelines[materialSettings];

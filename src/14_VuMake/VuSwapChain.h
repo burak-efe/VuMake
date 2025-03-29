@@ -13,14 +13,21 @@ namespace Vu
         VuDevice*      vuDevice;
         VkSurfaceKHR   surface;
         VkSwapchainKHR swapChain;
-        VuRenderPass   renderPass0;
-        //VuRenderPass   renderPass1;
-        VuHnd<VuImage> depthStencilH;
+
+        VuRenderPass gBufferPass;
+        VuRenderPass lightningPass;
+
+        VuHnd<VuImage> colorHnd;
+        VuHnd<VuImage> normalHnd;
+        VuHnd<VuImage> armHnd;
+        VuHnd<VuImage> depthStencilHnd;
 
 
-        Vector<VkImage>       swapChainImages;
-        Vector<VkImageView>   swapChainImageViews;
-        Vector<VkFramebuffer> framebuffers;
+        Vector<VkImage>     swapChainImages;
+        Vector<VkImageView> swapChainImageViews;
+
+        Vector<VkFramebuffer> lightningFrameBuffers;
+        Vector<VkFramebuffer> gPassFrameBuffers;
 
         VkFormat        colorFormat;
         VkColorSpaceKHR colorSpace;
@@ -36,7 +43,8 @@ namespace Vu
 
         void resetSwapChain(VkSurfaceKHR surface);
 
-        void beginRenderPass(VkCommandBuffer commandBuffer, uint32 frameIndex);
+        void beginGBufferPass(VkCommandBuffer commandBuffer, uint32 frameIndex);
+        void beginLightningPass(VkCommandBuffer commandBuffer, uint32 frameIndex);
 
         void endRenderPass(VkCommandBuffer commandBuffer);
 

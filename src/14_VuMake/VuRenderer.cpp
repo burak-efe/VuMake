@@ -19,9 +19,13 @@ namespace Vu
         vuDevice.waitIdle();
     }
 
+    void VuRenderer::waitForFences()
+    {
+        vkWaitForFences(vuDevice.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    }
+
     void VuRenderer::beginFrame()
     {
-        ZoneScoped;
         waitForFences();
         VkResult result = vkAcquireNextImageKHR(vuDevice.device,
                                                 swapChain.swapChain,
@@ -42,23 +46,12 @@ namespace Vu
 
         vkResetFences(vuDevice.device, 1, &inFlightFences[currentFrame]);
         vkResetCommandBuffer(commandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
-        beginRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
-    }
 
-    void VuRenderer::waitForFences()
-    {
-        ZoneScoped;
-        vkWaitForFences(vuDevice.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-    }
-
-    void VuRenderer::beginRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex)
-    {
-        ZoneScoped;
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-        VkCheck(vkBeginCommandBuffer(commandBuffer, &beginInfo));
-        swapChain.beginRenderPass(commandBuffer, imageIndex);
+        VkCheck(vkBeginCommandBuffer(commandBuffers[currentFrame], &beginInfo));
+        swapChain.beginGBufferPass(commandBuffers[currentFrame], currentFrameImageIndex);
 
         VkViewport viewport{};
         viewport.x        = 0.0f;
@@ -67,26 +60,61 @@ namespace Vu
         viewport.height   = -(float)swapChain.swapChainExtent.height;
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdSetViewport(commandBuffers[currentFrame], 0, 1, &viewport);
 
         VkRect2D scissor{};
         scissor.offset = {0, 0};
         scissor.extent = swapChain.swapChainExtent;
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-        bindGlobalBindlessSet(commandBuffer);
+        vkCmdSetScissor(commandBuffers[currentFrame], 0, 1, &scissor);
+        bindGlobalBindlessSet(commandBuffers[currentFrame]);
     }
 
-    void VuRenderer::endRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex)
+    void VuRenderer::beginLightningPass()
     {
-        ZoneScoped;
-        swapChain.endRenderPass(commandBuffer);
-        VkCheck(vkEndCommandBuffer(commandBuffer));
+        VkCommandBuffer cb = commandBuffers[currentFrame];
+        swapChain.endRenderPass(cb);
+
+        VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+        VkMemoryBarrier memoryBarrier = {};
+        memoryBarrier.sType           = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+        memoryBarrier.srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        memoryBarrier.dstAccessMask   = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(
+                             cb,
+                             srcStage,
+                             dstStage,
+                             0,
+                             1,
+                             &memoryBarrier, // One memory barrier for G-buffer attachments
+                             0,
+                             nullptr,
+                             0,
+                             nullptr
+                            );
+
+
+        // VkViewport viewport{};
+        // viewport.x        = 0.0f;
+        // viewport.y        = (float)swapChain.swapChainExtent.height;
+        // viewport.width    = (float)swapChain.swapChainExtent.width;
+        // viewport.height   = (float)swapChain.swapChainExtent.height;
+        // viewport.minDepth = 0.0f;
+        // viewport.maxDepth = 1.0f;
+        // vkCmdSetViewport(commandBuffers[currentFrame], 0, 1, &viewport);
+
+        //lightning pass
+        swapChain.beginLightningPass(cb, currentFrameImageIndex);
     }
 
     void VuRenderer::endFrame()
     {
-        ZoneScoped;
-        endRecordCommandBuffer(commandBuffers[currentFrame], currentFrameImageIndex);
+        VkCommandBuffer cb = commandBuffers[currentFrame];
+        swapChain.endRenderPass(cb);
+        VkCheck(vkEndCommandBuffer(cb));
+
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -131,7 +159,6 @@ namespace Vu
 
     void VuRenderer::bindMesh(VuMesh& mesh)
     {
-        ZoneScoped;
         //we are using vertex pulling, so only index buffers we need to bind
         auto commandBuffer = commandBuffers[currentFrame];
         auto indexBuffer   = vuDevice.bufferPool.getResource(mesh.indexBuffer);
@@ -140,9 +167,8 @@ namespace Vu
 
     void VuRenderer::bindMaterial(VuHnd<VuMaterial> material)
     {
-        ZoneScoped;
         auto commandBuffer = commandBuffers[currentFrame];
-        vuDevice.bindMaterial(commandBuffer,material);
+        vuDevice.bindMaterial(commandBuffer, material);
     }
 
     void VuRenderer::drawIndexed(uint32 indexCount)
@@ -160,7 +186,6 @@ namespace Vu
 
     void VuRenderer::beginImgui()
     {
-        ZoneScoped;
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui_ImplSDL3_ProcessEvent(&ctx::sdlEvent);
@@ -169,7 +194,6 @@ namespace Vu
 
     void VuRenderer::endImgui()
     {
-        ZoneScoped;
         auto commandBuffer = commandBuffers[currentFrame];
 
         ImGui::Render();
@@ -179,8 +203,7 @@ namespace Vu
 
     void VuRenderer::updateFrameConstantBuffer(GPU_FrameConst ubo)
     {
-        ZoneScoped;
-        uniformBuffers[currentFrame].setData(&ubo, sizeof(ubo));
+        VkCheck(uniformBuffers[currentFrame].setData(&ubo, sizeof(ubo)));
     }
 
 

@@ -22,5 +22,3 @@ struct ScopeTimer
         std::cout << "[TIMER] " << sourceLocation.function_name() << ": " << ms << "ms" << std::endl;
     }
 };
-
-#define LogTime ScopeTimer timer
