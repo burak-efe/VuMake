@@ -1,9 +1,15 @@
-#include "shader_common.slang"
+#include "common.slang"
+
+struct GBufferPassVSOutput
+{
+    float4 Pos : SV_Position;
+    float2 UV : TEXCOORD;
+};
 
 [shader("vertex")]
-VSOutput vertexMain(uint32_t vertexIndex: SV_VertexID)
+GBufferPassVSOutput vertexMain(uint32_t vertexIndex: SV_VertexID)
 {
-    VSOutput output;
+    GBufferPassVSOutput output;
 
 //      Top Right
 //           ▲
@@ -25,6 +31,12 @@ VSOutput vertexMain(uint32_t vertexIndex: SV_VertexID)
         float2(1.0, 0.0), //right bottom
         float2(1.0, 2.0)   //top right
     );
+
+    // const float2 uvs[3] = float2[3](
+    //     float2(-1.0, 0.0 * -1 + 1),         // left bottom
+    //     float2(1.0, 0.0 * -1 + 1),  // right bottom
+    //     float2(1.0, 2.0 * -1 + 1)   // top right
+    // );
 
     output.Pos = float4(positions[vertexIndex], 0.0, 1.0);
     output.UV = uvs[vertexIndex];

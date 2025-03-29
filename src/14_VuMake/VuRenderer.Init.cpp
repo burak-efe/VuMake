@@ -17,9 +17,8 @@ namespace Vu
 {
     void VuRenderer::init()
     {
-        LogTime;
-
-        bool isValidationEnabled = config::ENABLE_VALIDATION_LAYERS_LAYERS;
+        ScopeTimer timer;
+        bool       isValidationEnabled = config::ENABLE_VALIDATION_LAYERS_LAYERS;
         //init window
         {
             assert(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) == true);
@@ -257,7 +256,7 @@ namespace Vu
             });
         }
 
-        initImGui();
+        //initImGui();
     }
 
     void VuRenderer::initImGui()
@@ -309,7 +308,7 @@ namespace Vu
         init_info.MinImageCount       = 2;
         init_info.ImageCount          = 2;
         init_info.UseDynamicRendering = false;
-        init_info.RenderPass          = swapChain.renderPass0.renderPass;
+        init_info.RenderPass          = swapChain.gBufferPass.renderPass;
 
         ImGui_ImplVulkan_Init(&init_info);
         disposeStack.push([] { ImGui_ImplVulkan_Shutdown(); });

@@ -219,6 +219,10 @@ namespace Vu
                              cam.far
                             );
 
+
+                        ctx::frameConst.inverseView = trs.ToTRS();
+                        ctx::frameConst.inverseProj = inverse(ctx::frameConst.proj);
+
                         ctx::frameConst.cameraPos = float4(trs.position, 0);
                         ctx::frameConst.cameraDir = float4(float3(cam.yaw, cam.pitch, cam.roll), 0);
                         ctx::frameConst.time      = float4(ctx::time(), 0, 0, 0).x;

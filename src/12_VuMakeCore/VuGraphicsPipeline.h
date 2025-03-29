@@ -13,7 +13,9 @@ namespace Vu
                                   const VkPipelineLayout pipelineLayout,
                                   const VkShaderModule   vertShaderModule,
                                   const VkShaderModule   fragShaderModule,
-                                  const VkRenderPass     renderPass);
+                                  const VkRenderPass     renderPass,
+                                  std::span<VkPipelineColorBlendAttachmentState> colorBlends
+                                  );
 
         void uninit() const;
 

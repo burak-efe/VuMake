@@ -90,13 +90,13 @@ namespace Vu
         VuHnd<VuImage>   createImageFromAsset(const Path& path, VkFormat format);
         VuHnd<VuSampler> createSampler(const VuSamplerCreateInfo& info);
         VuHnd<VuBuffer>  createBuffer(const VuBufferCreateInfo& info);
-        VuHnd<VuShader>  createShader(Path vertexPath, Path fragPath, VkRenderPass renderPass);
+        VuHnd<VuShader>  createShader(Path vertexPath, Path fragPath, VuRenderPass* vuRenderPass);
 
         VuHnd<uint32> createMaterialDataIndex();
 
         VuHnd<VuMaterial> createMaterial(MaterialSettings matSettings, VuHnd<VuShader> shaderHnd, VuHnd<uint32> materialDataHnd);
 
-        GPU_PBR_MaterialData* getMaterialData(VuHnd<uint32> handle);
+        std::span<byte,64> getMaterialData(VuHnd<uint32> handle);
 
         void bindMaterial(VkCommandBuffer cb, VuHnd<VuMaterial> material);
 

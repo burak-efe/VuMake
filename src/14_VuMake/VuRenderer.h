@@ -21,30 +21,32 @@ namespace Vu
         VkPhysicalDevice         physicalDevice;
         VkDebugUtilsMessengerEXT debugMessenger;
         VkSurfaceKHR             surface;
+        VuSwapChain              swapChain;
+        VuDevice                 vuDevice;
+        VuDisposeStack           disposeStack;
+        ImGui_ImplVulkanH_Window imguiMainWindowData;
 
-        VuDevice vuDevice;
 
         std::array<VkCommandBuffer, config::MAX_FRAMES_IN_FLIGHT> commandBuffers;
         std::array<VkSemaphore, config::MAX_FRAMES_IN_FLIGHT>     imageAvailableSemaphores;
         std::array<VkSemaphore, config::MAX_FRAMES_IN_FLIGHT>     renderFinishedSemaphores;
         std::array<VkFence, config::MAX_FRAMES_IN_FLIGHT>         inFlightFences;
+        std::array<VuBuffer, config::MAX_FRAMES_IN_FLIGHT>        uniformBuffers;
 
-        std::array<VuBuffer, config::MAX_FRAMES_IN_FLIGHT> uniformBuffers;
-
-        VuSwapChain              swapChain;
-        ImGui_ImplVulkanH_Window imguiMainWindowData;
 
         uint32 currentFrame           = 0;
         uint32 currentFrameImageIndex = 0;
 
-        VuDisposeStack disposeStack;
 
         void init();
         void uninit();
         bool shouldWindowClose();
         void waitIdle();
+
         void beginFrame();
+        void beginLightningPass();
         void endFrame();
+
         void bindMesh(VuMesh& mesh);
         void bindMaterial(VuHnd<VuMaterial> material);
         void pushConstants(const GPU_PushConstant& pushConstant);
@@ -53,12 +55,8 @@ namespace Vu
         void endImgui();
         void updateFrameConstantBuffer(GPU_FrameConst ubo);
 
-        //void reloadShaders();
-
     private:
         void waitForFences();
-        void beginRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex);
-        void endRecordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32 imageIndex);
         void resetSwapChain();
         void bindGlobalBindlessSet(const VkCommandBuffer& commandBuffer);
         void initImGui();

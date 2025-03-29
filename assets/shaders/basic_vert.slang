@@ -1,4 +1,4 @@
-#include "shader_common.slang"
+#include "common.slang"
 
 [shader("vertex")]
 VSOutput vertexMain(uint32_t id :SV_VertexID )//VSInput input)
@@ -17,7 +17,5 @@ VSOutput vertexMain(uint32_t id :SV_VertexID )//VSInput input)
     o.Tangent   =   normalize(mul((float3x3)pc.model, tan.xyz));
     o.Bitangent =   normalize(cross(o.Normal, o.Tangent));
     o.UV = uv;
-
-
     return o;
 }

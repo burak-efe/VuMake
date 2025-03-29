@@ -7,7 +7,9 @@ void Vu::VuGraphicsPipeline::initGraphicsPipeline(
     const VkPipelineLayout pipelineLayout,
     const VkShaderModule   vertShaderModule,
     const VkShaderModule   fragShaderModule,
-    const VkRenderPass     renderPass)
+    const VkRenderPass     renderPass,
+    std::span<VkPipelineColorBlendAttachmentState> colorBlends
+    )
 {
     this->device = device;
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{
@@ -63,24 +65,24 @@ void Vu::VuGraphicsPipeline::initGraphicsPipeline(
         .sampleShadingEnable = VK_FALSE,
     };
 
-    VkPipelineColorBlendAttachmentState colorBlendAttachment{
-        .blendEnable = VK_FALSE,
-        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-    };
+    // VkPipelineColorBlendAttachmentState colorBlendAttachment{
+    //     .blendEnable = VK_FALSE,
+    //     .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+    // };
 
     VkPipelineColorBlendStateCreateInfo colorBlending{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
         .logicOpEnable = VK_FALSE,
         .logicOp = VK_LOGIC_OP_COPY,
-        .attachmentCount = 1,
-        .pAttachments = &colorBlendAttachment,
+        .attachmentCount = static_cast<uint32_t>(colorBlends.size()),
+        .pAttachments = colorBlends.data(),
         .blendConstants = {0, 0, 0, 0},
     };
 
     //dynamic state
     std::vector<VkDynamicState> dynamicStates = {
         VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR
+        VK_DYNAMIC_STATE_SCISSOR,
     };
 
     VkPipelineDynamicStateCreateInfo dynamicState{};

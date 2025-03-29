@@ -1,4 +1,4 @@
-#include "shader_common.slang"
+#include "ommon.slang"
 
 [shader("fragment")]
 float4 fragmentMain(VSOutput i) : SV_Target

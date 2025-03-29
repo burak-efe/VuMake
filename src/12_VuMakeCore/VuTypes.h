@@ -25,8 +25,10 @@ namespace Vu
     {
         uint32 texture0;
         uint32 texture1;
+        uint32 texture2;
+        uint32 texture3;
 
-        byte padding[56];
+        byte padding[48];
     };
 
     static_assert(sizeof(GPU_PBR_MaterialData) == 64);
@@ -43,6 +45,8 @@ namespace Vu
     {
         float4x4 view;
         float4x4 proj;
+        float4x4 inverseView;
+        float4x4 inverseProj;
         float4   cameraPos;
         float4   cameraDir;
         float    time;

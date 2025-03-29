@@ -25,13 +25,11 @@ namespace Vu
     private:
         Path gnomePath = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
 
-        Path shaderPathBasicVert = "assets/shaders/shader_basic_vert.slang";
-        Path shaderPathBasicFrag = "assets/shaders/shader_basic_frag.slang";
+        Path gpassVertPath = "assets/shaders/GPass_vert.slang";
+        Path gpassFragPath = "assets/shaders/GPass_frag.slang";
 
-        Path shaderPathPBR_Frag = "assets/shaders/shader_PBR_frag.slang";
-
-        Path shaderPathScreenTriVert = "assets/shaders/shader_screenTri_vert.slang";
-
+        Path defVertPath = "assets/shaders/screenTri_vert.slang";
+        Path defFragPath = "assets/shaders/deferred_frag.slang";
 
         flecs::system spinningSystem;
         flecs::system flyCameraSystem;
@@ -55,27 +53,34 @@ namespace Vu
 
             VuMesh mesh{};
             mesh.init(device);
+            VuAssetLoader::LoadGltf(vuRenderer.vuDevice, gnomePath, mesh);
 
-            VuHnd<VuShader> pbrShaderHnd = device->createShader(shaderPathBasicVert,
-                                                                shaderPathPBR_Frag,
-                                                                vuRenderer.swapChain.renderPass0.renderPass);
+            VuHnd<VuShader> gPassShaderHnd = device->createShader(gpassVertPath,
+                                                                  gpassFragPath,
+                                                                  &vuRenderer.swapChain.gBufferPass);
 
-            VuHnd<VuShader> screenTriShaderHnd = device->createShader(shaderPathScreenTriVert,
-                                                                      shaderPathBasicFrag,
-                                                                      vuRenderer.swapChain.renderPass0.renderPass);
-            auto screenTriMatDataIndexHnd = vuRenderer.vuDevice.createMaterialDataIndex();
-            auto screeTriMatHnd           = vuRenderer.vuDevice.createMaterial({}, screenTriShaderHnd, screenTriMatDataIndexHnd);
+            VuHnd<VuShader> deferShaderHnd = device->createShader(defVertPath,
+                                                                  defFragPath,
+                                                                  &vuRenderer.swapChain.lightningPass);
 
-            auto matDataIndexHnd = vuRenderer.vuDevice.createMaterialDataIndex();
+            //mesh mat
+            auto                  basicMatDataIndexHnd = vuRenderer.vuDevice.createMaterialDataIndex();
+            auto                  basicMatHnd          = vuRenderer.vuDevice.createMaterial({}, gPassShaderHnd, basicMatDataIndexHnd);
+            std::span<byte, 64>   basicMatDataBlob     = vuRenderer.vuDevice.getMaterialData(basicMatDataIndexHnd);
+            GPU_PBR_MaterialData* basicMatData         = reinterpret_cast<GPU_PBR_MaterialData*>(basicMatDataBlob.data());
+            basicMatData->texture0                     = 0;
+            basicMatData->texture1                     = 1;
 
-            auto matHnd = vuRenderer.vuDevice.createMaterial({}, pbrShaderHnd, matDataIndexHnd);
+            //def mat
+            auto                  deferMatDataIndexHnd = vuRenderer.vuDevice.createMaterialDataIndex();
+            auto                  deferMatHnd          = vuRenderer.vuDevice.createMaterial({}, deferShaderHnd, deferMatDataIndexHnd);
+            std::span<byte, 64>   deferMatDataBlob     = vuRenderer.vuDevice.getMaterialData(deferMatDataIndexHnd);
+            GPU_PBR_MaterialData* deferMatData         = reinterpret_cast<GPU_PBR_MaterialData*>(deferMatDataBlob.data());
+            deferMatData->texture0                     = vuRenderer.swapChain.colorHnd.index;
+            deferMatData->texture1                     = vuRenderer.swapChain.normalHnd.index;
+            deferMatData->texture2                     = vuRenderer.swapChain.armHnd.index;
+            deferMatData->texture3                     = vuRenderer.swapChain.depthStencilHnd.index;
 
-            GPU_PBR_MaterialData* data = vuRenderer.vuDevice.getMaterialData(matDataIndexHnd);
-
-            VuAssetLoader::LoadGltf(vuRenderer.vuDevice, gnomePath, mesh, *data);
-
-            data->texture0 = 0;
-            data->texture1 = 1;
 
             flecs::world world;
             //Add Systems
@@ -93,7 +98,7 @@ namespace Vu
                           .rotation = quaternion::identity(),
                           .scale = float3(10.0F, 10.0F, 10.0F)
                       })
-                 .set(MeshRenderer{.mesh = &mesh, .materialHnd = matHnd})
+                 .set(MeshRenderer{.mesh = &mesh, .materialHnd = basicMatHnd})
                  .set(Spinn{});
 
             world.entity("Cam")
@@ -115,14 +120,18 @@ namespace Vu
 
                 //Rendering
                 {
-                    vuRenderer.vuDevice.getShader(pbrShaderHnd)->tryRecompile();
-                    vuRenderer.vuDevice.getShader(screenTriShaderHnd)->tryRecompile();
+                    vuRenderer.vuDevice.getShader(gPassShaderHnd)->tryRecompile();
+                    vuRenderer.vuDevice.getShader(deferShaderHnd)->tryRecompile();
 
                     vuRenderer.beginFrame();
                     drawMeshSystem.run();
 
-                    vuRenderer.bindMaterial(screeTriMatHnd);
-                    vkCmdDraw(vuRenderer.commandBuffers[vuRenderer.currentFrame], 3, 1, 0,0);
+                    vuRenderer.beginLightningPass();
+
+                    vuRenderer.bindMaterial(deferMatHnd);
+                    auto dataIndex = device->getMaterial(deferMatHnd)->materialDataHnd.index;
+                    vuRenderer.pushConstants({float4x4(), dataIndex});
+                    vkCmdDraw(vuRenderer.commandBuffers[vuRenderer.currentFrame], 3, 1, 0, 0);
 
 
                     //UI
@@ -165,9 +174,9 @@ namespace Vu
             }
 
             vuRenderer.waitIdle();
-            device->destroyHandle(pbrShaderHnd);
-            device->destroyHandle(matHnd);
-            device->destroyHandle(matDataIndexHnd);
+            device->destroyHandle(gPassShaderHnd);
+            device->destroyHandle(basicMatHnd);
+            device->destroyHandle(basicMatDataIndexHnd);
             mesh.uninit();
             vuRenderer.uninit();
         }

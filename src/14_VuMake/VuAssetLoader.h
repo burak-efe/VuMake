@@ -16,7 +16,7 @@ namespace Vu
 
     struct VuAssetLoader
     {
-        static void LoadGltf(VuDevice& vuDevice, std::filesystem::path gltfPath, VuMesh& dstMesh, GPU_PBR_MaterialData& dstMaterialData)
+        static void LoadGltf(VuDevice& vuDevice, std::filesystem::path gltfPath, VuMesh& dstMesh)
         {
             ZoneScoped;
 

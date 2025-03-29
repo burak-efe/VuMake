@@ -1,4 +1,4 @@
-#include "shader_common.slang"
+#include "common.slang"
 
 
 static const float3 lightColor = float3(1.0, 1.0, 1.0);
@@ -22,12 +22,11 @@ float4 fragmentMain(VSOutput i) : SV_Target
     float3 normalSample = globalSampledImages[data.texture1].Sample(globalSamplers[0], uv).xyz;
     float3 normalTS = normalSample * 2 - 1;
 
+    float3x3 TBN = float3x3(i.Tangent, i.Bitangent, i.Normal);
+    float3 normalWS = mul(normalTS,TBN);
+
     float3 nrm = normalize(normalTS.r * i.Tangent.xyz + normalTS.g * i.Bitangent + normalTS.b * i.Normal);
 
-    // Calculate TBN matrix
-    float3x3 TBN = float3x3(i.Tangent, i.Bitangent, i.Normal);
-
-    float3 normalWS = mul(normalTS,TBN);
 
     // Calculate lighting
     float3 viewDir = normalize(fc.cameraPos - i.PosWS);

@@ -9,6 +9,7 @@
 
 namespace Vu
 {
+    struct VuRenderPass;
     struct VuGraphicsShaderCreateInfo
     {
         Path         vertexShaderPath   = {};
@@ -21,7 +22,7 @@ namespace Vu
         VuDevice*    vuDevice;
         Path         vertexShaderPath;
         Path         fragmentShaderPath;
-        VkRenderPass renderPass;
+        VuRenderPass* vuRenderPass;
 
         time_t         lastModifiedTime     = 0;
         VkShaderModule vertexShaderModule   = {};
@@ -29,7 +30,7 @@ namespace Vu
 
         std::unordered_map<MaterialSettings, VuGraphicsPipeline> compiledPipelines;
 
-        void init(VuDevice* vuDevice, Path vertexShaderPath, Path fragmentShaderPath, VkRenderPass renderPass);
+        void init(VuDevice* vuDevice, Path vertexShaderPath, Path fragmentShaderPath, VuRenderPass* vuRenderPass);
 
         void uninit();
 
