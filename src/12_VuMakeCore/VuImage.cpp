@@ -1,5 +1,6 @@
 #include "VuImage.h"
 
+#include <filesystem>
 #include <iostream>
 
 #include "VuBuffer.h"

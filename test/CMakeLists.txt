@@ -19,4 +19,4 @@ FetchContent_Declare(
         GIT_PROGRESS TRUE
 )
 FetchContent_MakeAvailable(googletest)
-target_link_libraries(Google_Tests_run PRIVATE gtest gtest_main)
+target_link_libraries(Google_Tests_run PRIVATE gtest gtest_main VuLibs)
