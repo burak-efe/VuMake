@@ -1,11 +1,11 @@
 ####################################################################################################
-function(add_sources_recursively target_name source_dir)
+function(add_sources_recursively target_name source_dir visibility)
     if (NOT TARGET ${target_name})
         message(FATAL_ERROR "Target ${target_name} does not exist. Please create the target before calling this function.")
     endif ()
     file(GLOB_RECURSE sources "${source_dir}/*.cpp" "${source_dir}/*.c" "${source_dir}/*.h" "${source_dir}/*.hpp")
     if (sources)
-        target_sources(${target_name} PRIVATE ${sources})
+        target_sources(${target_name} INTERFACE ${sources})
     else ()
         message(WARNING "No source files found in directory: ${source_dir}")
     endif ()

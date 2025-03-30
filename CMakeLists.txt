@@ -23,10 +23,12 @@ include(${CMAKE_SOURCE_DIR}/buildUtils/Functions.cmake)
 ####################################################################################################
 #Project
 project("VuMake")
-add_executable(${PROJECT_NAME})
+add_executable(${PROJECT_NAME} Main.cpp)
+add_library(VuLibs INTERFACE)
+target_link_libraries(${PROJECT_NAME} PRIVATE VuLibs)
+####################################################################################################
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
-add_library(VuLibs STATIC src/main.cpp)
 ####################################################################################################
 # Precompiled Headers
 set(PCH
@@ -43,20 +45,20 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
 )
 ####################################################################################################
 #Add Sources
-add_sources_recursively(${PROJECT_NAME} src)
-add_sources_recursively(${PROJECT_NAME} external)
-target_include_directories(${PROJECT_NAME} PRIVATE src)
+add_sources_recursively(VuLibs src INTERFACE)
+add_sources_recursively(VuLibs external INTERFACE)
+target_include_directories(VuLibs INTERFACE  src)
 ####################################################################################################
 #imgui
-target_include_directories(${PROJECT_NAME} PRIVATE external/imgui)
+target_include_directories(VuLibs INTERFACE  external/imgui)
 ####################################################################################################
 #Header Only
-target_include_directories(${PROJECT_NAME} PRIVATE external/stb)
+target_include_directories(VuLibs INTERFACE  external/stb)
 ####################################################################################################
 #Vulkan
 find_package(Vulkan 1.4.304 REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${Vulkan_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
+target_include_directories(VuLibs INTERFACE ${Vulkan_INCLUDE_DIRS})
+target_link_libraries(VuLibs INTERFACE ${Vulkan_LIBRARIES})
 ####################################################################################################
 FetchContent_Declare(
         fetch_volk
@@ -67,7 +69,7 @@ FetchContent_MakeAvailable(fetch_volk)
 if (WIN32)
     set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR)
 endif ()
-target_link_libraries(${PROJECT_NAME} PRIVATE volk)
+target_link_libraries(VuLibs INTERFACE volk)
 ####################################################################################################
 FetchContent_Declare(
         fetch_VMA
@@ -77,8 +79,8 @@ FetchContent_Declare(
         GIT_PROGRESS TRUE
 )
 FetchContent_MakeAvailable(fetch_VMA)
-target_link_libraries(${PROJECT_NAME} PRIVATE VulkanMemoryAllocator)
-target_include_directories(${PROJECT_NAME} PRIVATE GPUOpen::VulkanMemoryAllocator)
+target_link_libraries(VuLibs INTERFACE VulkanMemoryAllocator)
+target_include_directories(VuLibs INTERFACE GPUOpen::VulkanMemoryAllocator)
 ####################################################################################################
 set(SDL_SHARED FALSE BOOL)
 set(SDL_STATIC TRUE BOOL)
@@ -94,7 +96,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(fetch_SDL)
 set_property(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/_deps/fetch_sdl-src" PROPERTY EXCLUDE_FROM_ALL TRUE)
-target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3-static)
+target_link_libraries(VuLibs INTERFACE SDL3::SDL3-static)
 ####################################################################################################
 set(FASTGLTF_COMPILE_AS_CPP20 ON)
 FetchContent_Declare(
@@ -105,7 +107,7 @@ FetchContent_Declare(
         GIT_PROGRESS TRUE
 )
 FetchContent_MakeAvailable(fetch_fastgltf)
-target_link_libraries(${PROJECT_NAME} PRIVATE fastgltf)
+target_link_libraries(VuLibs INTERFACE fastgltf)
 ####################################################################################################
 FetchContent_Declare(
         fetch_flecs
@@ -115,7 +117,7 @@ FetchContent_Declare(
         GIT_PROGRESS TRUE
 )
 FetchContent_MakeAvailable(fetch_flecs)
-target_link_libraries(${PROJECT_NAME} PRIVATE flecs::flecs_static)
+target_link_libraries(VuLibs INTERFACE flecs::flecs_static)
 ####################################################################################################
 FetchContent_Declare(
         fetch_tracy
@@ -127,7 +129,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(fetch_tracy)
 option(TRACY_ENABLE "" ON)
 option(TRACY_STATIC "" OFF)
-target_link_libraries(${PROJECT_NAME} PRIVATE TracyClient)
+target_link_libraries(VuLibs INTERFACE TracyClient)
 ####################################################################################################
 #Create a symlink to the assets folder in the build directory
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

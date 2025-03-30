@@ -1,5 +1,9 @@
 #pragma once
 
+#include <functional>
+#include <stack>
+#include <optional>
+
 #include "10_Core/FixedString.h"
 #include "10_Core/VuCommon.h"
 #include "10_Core/math/VuFloat4.h"

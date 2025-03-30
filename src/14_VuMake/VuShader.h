@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <unordered_map>
 
 #include "10_Core/VuCommon.h"

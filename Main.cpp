@@ -1,5 +1,5 @@
-#include "10_Core/VuCommon.h"
-#include "30_Scenes/Scene0.h"
+#include "src/10_Core/VuCommon.h"
+#include "src/30_Scenes/Scene0.h"
 
 int main(int argc, char* argv[])
 {
