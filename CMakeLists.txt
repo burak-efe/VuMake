@@ -2,8 +2,8 @@
 
 include(FetchContent)
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
@@ -17,60 +17,43 @@ if (MSVC)
     add_compile_options(/DEBUG)
 endif ()
 
-####################################################################################################
-function(add_sources_recursively target_name source_dir)
-    if (NOT TARGET ${target_name})
-        message(FATAL_ERROR "Target ${target_name} does not exist. Please create the target before calling this function.")
-    endif ()
-    file(GLOB_RECURSE sources "${source_dir}/*.cpp" "${source_dir}/*.c" "${source_dir}/*.h" "${source_dir}/*.hpp")
-    if (sources)
-        target_sources(${target_name} PRIVATE ${sources})
-    else ()
-        message(WARNING "No source files found in directory: ${source_dir}")
-    endif ()
-endfunction()
+
+include(${CMAKE_SOURCE_DIR}/buildUtils/Functions.cmake)
+
 ####################################################################################################
 #Project
 project("VuMake")
 add_executable(${PROJECT_NAME})
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+add_library(VuLibs STATIC src/main.cpp)
 ####################################################################################################
 # Precompiled Headers
 set(PCH
         src/10_Core/pch.h
 )
 target_precompile_headers(${PROJECT_NAME} PRIVATE
-        <cstdint>
-        <cassert>
-        <cstdlib>
-        <chrono>
-        <iostream>
-        <filesystem>
-        <format>
-        <algorithm>
-        <functional>
-        <mutex>
-        <ranges>
-        <array>
-        <span>
-        <vector>
-        <stack>
+        <cstdint> <cassert> <cstdlib>
+        <chrono> <iostream> <filesystem>
+        <format> <algorithm> <functional>
+        <mutex> <ranges> <array>
+        <span> <vector> <stack>
         <string>
         ${PCH}
 )
 ####################################################################################################
 #Add Sources
 add_sources_recursively(${PROJECT_NAME} src)
+add_sources_recursively(${PROJECT_NAME} external)
 target_include_directories(${PROJECT_NAME} PRIVATE src)
 ####################################################################################################
 #imgui
-add_sources_recursively(${PROJECT_NAME} external/imgui)
 target_include_directories(${PROJECT_NAME} PRIVATE external/imgui)
 ####################################################################################################
-#Header Onlys
+#Header Only
 target_include_directories(${PROJECT_NAME} PRIVATE external/stb)
 ####################################################################################################
+#Vulkan
 find_package(Vulkan 1.4.304 REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
@@ -146,10 +129,17 @@ option(TRACY_ENABLE "" ON)
 option(TRACY_STATIC "" OFF)
 target_link_libraries(${PROJECT_NAME} PRIVATE TracyClient)
 ####################################################################################################
+#Create a symlink to the assets folder in the build directory
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E create_symlink
         ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets)
 
+#Create a symlink to the bin folder in the build directory
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E create_symlink
         ${CMAKE_SOURCE_DIR}/bin $<TARGET_FILE_DIR:${PROJECT_NAME}>/bin)
+
+#Alert if forbidden text used
+search_text_files("${CMAKE_SOURCE_DIR}/src" "#include <vector>")
+
+add_subdirectory(test)

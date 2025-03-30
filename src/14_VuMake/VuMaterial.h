@@ -46,14 +46,14 @@ namespace Vu
         VuDevice*           vuDevice;
         MaterialSettings    materialSettings;
         VuHnd<VuShader> shaderHnd;
-        VuHnd<uint32>   materialDataHnd;
+        VuHnd<u32>   materialDataHnd;
 
         // VkShaderModule vertexShaderModule;
         // VkShaderModule fragmentShaderModule;
         // VkRenderPass   renderPass;
         // VuGraphicsPipeline vuPipeline;
 
-        void init(VuDevice* vuDevice, MaterialSettings matSettings, VuHnd<VuShader> shaderHnd, VuHnd<uint32> materialDataHnd);
+        void init(VuDevice* vuDevice, MaterialSettings matSettings, VuHnd<VuShader> shaderHnd, VuHnd<u32> materialDataHnd);
 
         //void recompile();
 

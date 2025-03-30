@@ -1,12 +1,9 @@
 #pragma once
 
-#include <functional>
-#include <optional>
-#include <stack>
-#include <vector>
-
 #include "10_Core/FixedString.h"
 #include "10_Core/VuCommon.h"
+#include "10_Core/math/VuFloat4.h"
+#include "10_Core/math/VuFloat4x4.h"
 
 
 namespace Vu
@@ -15,18 +12,18 @@ namespace Vu
 
     struct GPU_Mesh
     {
-        uint32 vertexBufferHandle;
-        uint32 vertexCount;
-        uint32 meshFlags;
+        u32 vertexBufferHandle;
+        u32 vertexCount;
+        u32 meshFlags;
     };
 
 
     struct GPU_PBR_MaterialData
     {
-        uint32 texture0;
-        uint32 texture1;
-        uint32 texture2;
-        uint32 texture3;
+        u32 texture0;
+        u32 texture1;
+        u32 texture2;
+        u32 texture3;
 
         byte padding[48];
     };
@@ -36,19 +33,19 @@ namespace Vu
 
     struct GPU_PushConstant
     {
-        float4x4 trs;
-        uint32   materialDataIndex;
+        mat4x4 trs;
+        u32   materialDataIndex;
         GPU_Mesh mesh;
     };
 
     struct GPU_FrameConst
     {
-        float4x4 view;
-        float4x4 proj;
-        float4x4 inverseView;
-        float4x4 inverseProj;
-        float4   cameraPos;
-        float4   cameraDir;
+        mat4x4 view;
+        mat4x4 proj;
+        mat4x4 inverseView;
+        mat4x4 inverseProj;
+        vec4   cameraPos;
+        vec4   cameraDir;
         float    time;
         float    debugIndex;
     };
@@ -76,8 +73,8 @@ namespace Vu
 
     struct QueueFamilyIndices
     {
-        std::optional<uint32> graphicsFamily;
-        std::optional<uint32> presentFamily;
+        std::optional<u32> graphicsFamily;
+        std::optional<u32> presentFamily;
 
         bool isComplete()
         {
@@ -90,7 +87,7 @@ namespace Vu
             //Logic to find graphics queue family
             QueueFamilyIndices indices;
 
-            uint32 queueFamilyCount = 0;
+            u32 queueFamilyCount = 0;
             vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 
             std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
@@ -137,7 +134,7 @@ namespace Vu
             SwapChainSupportDetails details;
             vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
 
-            uint32 formatCount;
+            u32 formatCount;
             vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
 
             if (formatCount != 0)
@@ -146,7 +143,7 @@ namespace Vu
                 vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, details.formats.data());
             }
 
-            uint32 presentModeCount;
+            u32 presentModeCount;
             vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
 
             if (presentModeCount != 0)

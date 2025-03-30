@@ -11,7 +11,7 @@ namespace Vu
     {
     public:
         // Underlying 32-bit color storage
-        uint32 value;
+        u32 value;
 
         // Constructors
         constexpr explicit Color32() : value(0xFFFFFFFF)
@@ -19,11 +19,11 @@ namespace Vu
         }
 
         // Default white, full alpha
-        constexpr explicit Color32(uint32 v) : value(v)
+        constexpr explicit Color32(u32 v) : value(v)
         {
         }
 
-        constexpr explicit Color32(uint8 r, uint8 g, uint8 b, uint8 a = 255)
+        constexpr explicit Color32(u8 r, u8 g, u8 b, u8 a = 255)
         {
             setRGBA_uint8(r, g, b, a);
         }
@@ -34,10 +34,10 @@ namespace Vu
         }
 
         // Get components as u8
-        uint8 r() const { return (value >> 0) & 0xFF; }
-        uint8 g() const { return (value >> 8) & 0xFF; }
-        uint8 b() const { return (value >> 16) & 0xFF; }
-        uint8 a() const { return (value >> 24) & 0xFF; }
+        u8 r() const { return (value >> 0) & 0xFF; }
+        u8 g() const { return (value >> 8) & 0xFF; }
+        u8 b() const { return (value >> 16) & 0xFF; }
+        u8 a() const { return (value >> 24) & 0xFF; }
 
         // Get components as float [0.0, 1.0]
         float rf() const { return r() / 255.0f; }
@@ -46,10 +46,10 @@ namespace Vu
         float af() const { return a() / 255.0f; }
 
         // Set components with u8
-        void setR(uint8 v) { value = (value & 0xFFFFFF00) | v; }
-        void setG(uint8 v) { value = (value & 0xFFFF00FF) | (v << 8); }
-        void setB(uint8 v) { value = (value & 0xFF00FFFF) | (v << 16); }
-        void setA(uint8 v) { value = (value & 0x00FFFFFF) | (v << 24); }
+        void setR(u8 v) { value = (value & 0xFFFFFF00) | v; }
+        void setG(u8 v) { value = (value & 0xFFFF00FF) | (v << 8); }
+        void setB(u8 v) { value = (value & 0xFF00FFFF) | (v << 16); }
+        void setA(u8 v) { value = (value & 0x00FFFFFF) | (v << 24); }
 
         // Set components with float
         void setRf(float v) { setR(toU8(v)); }
@@ -58,7 +58,7 @@ namespace Vu
         void setAf(float v) { setA(toU8(v)); }
 
         // Set all at once
-        constexpr void setRGBA_uint8(uint8 r, uint8 g, uint8 b, uint8 a = 255)
+        constexpr void setRGBA_uint8(u8 r, u8 g, u8 b, u8 a = 255)
         {
             value = (a << 24) | (b << 16) | (g << 8) | r;
         }
@@ -69,9 +69,9 @@ namespace Vu
         }
 
     private:
-        static constexpr uint8 toU8(float v)
+        static constexpr u8 toU8(float v)
         {
-            return static_cast<uint8>(std::clamp(v, 0.0f, 1.0f) * 255.0f + 0.5f);
+            return static_cast<u8>(std::clamp(v, 0.0f, 1.0f) * 255.0f + 0.5f);
         }
     };
 }

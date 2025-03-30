@@ -30,13 +30,13 @@ namespace Vu
                         ECS_VU_RENDERER->bindMaterial(materialHnd);
 
                         //push constant
-                        float4x4 trs = transform.ToTRS();
+                        mat4x4 trs = transform.ToTRS();
                         GPU_PushConstant pc{
                             trs,
                             matPtr->materialDataHnd.index,
                             {
                                 meshRenderer.mesh->vertexBuffer.index,
-                                (uint32)meshRenderer.mesh->vertexCount,
+                                (u32)meshRenderer.mesh->vertexCount,
                                 0
                             }
                         };
@@ -120,7 +120,7 @@ namespace Vu
                         }
 
 
-                        float3 input{};
+                        vec3 input{};
                         if (state[SDL_SCANCODE_W])
                         {
                             input.z -= 1;
@@ -146,7 +146,7 @@ namespace Vu
                             input.y -= 1;
                         }
 
-                        float3 movement = input * velocity * ctx::deltaAsSecond;
+                        vec3 movement = input * velocity * ctx::deltaAsSecond;
                         //Mouse
                         auto mouseState = SDL_GetMouseState(nullptr, nullptr);
 
@@ -199,17 +199,17 @@ namespace Vu
                         }
 
 
-                        trs.SetEulerAngles(float3(cam.yaw, cam.pitch, cam.roll));
+                        trs.SetEulerAngles(vec3(cam.yaw, cam.pitch, cam.roll));
 
-                        quaternion asEuler            = fromEulerYXZ(float3(cam.yaw, cam.pitch, cam.roll));
-                        float3     rotatedTranslation = rotate(asEuler, movement);
+                        quaternion asEuler            = fromEulerYXZ(vec3(cam.yaw, cam.pitch, cam.roll));
+                        vec3     rotatedTranslation = rotate(asEuler, movement);
 
                         trs.position.x += rotatedTranslation.x;
                         trs.position.y += rotatedTranslation.y;
                         trs.position.z += rotatedTranslation.z;
 
-
                         ctx::frameConst.view = inverse(trs.ToTRS());
+
                         ctx::frameConst.proj = createPerspectiveProjectionMatrix
                             (
                              cam.fov,
@@ -223,9 +223,9 @@ namespace Vu
                         ctx::frameConst.inverseView = trs.ToTRS();
                         ctx::frameConst.inverseProj = inverse(ctx::frameConst.proj);
 
-                        ctx::frameConst.cameraPos = float4(trs.position, 0);
-                        ctx::frameConst.cameraDir = float4(float3(cam.yaw, cam.pitch, cam.roll), 0);
-                        ctx::frameConst.time      = float4(ctx::time(), 0, 0, 0).x;
+                        ctx::frameConst.cameraPos = vec4(trs.position, 0);
+                        ctx::frameConst.cameraDir = vec4(vec3(cam.yaw, cam.pitch, cam.roll), 0);
+                        ctx::frameConst.time      = vec4(ctx::time(), 0, 0, 0).x;
 
 
                         //const auto* state = SDL_GetKeyboardState(nullptr);

@@ -3,7 +3,7 @@
 #include "11_Config/VuCtx.h"
 #include "VuDevice.h"
 
-void Vu::VuMaterial::init(VuDevice* vuDevice, MaterialSettings matSettings, VuHnd<VuShader> shaderHnd, VuHnd<uint32> materialDataHnd
+void Vu::VuMaterial::init(VuDevice* vuDevice, MaterialSettings matSettings, VuHnd<VuShader> shaderHnd, VuHnd<u32> materialDataHnd
                           //VkShaderModule vertexShaderModule,
                           //VkShaderModule fragmentShaderModule,
                           //VkRenderPass   renderPass

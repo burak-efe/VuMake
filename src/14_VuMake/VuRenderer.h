@@ -34,8 +34,8 @@ namespace Vu
         std::array<VuBuffer, config::MAX_FRAMES_IN_FLIGHT>        uniformBuffers;
 
 
-        uint32 currentFrame           = 0;
-        uint32 currentFrameImageIndex = 0;
+        u32 currentFrame           = 0;
+        u32 currentFrameImageIndex = 0;
 
 
         void init();
@@ -50,7 +50,7 @@ namespace Vu
         void bindMesh(VuMesh& mesh);
         void bindMaterial(VuHnd<VuMaterial> material);
         void pushConstants(const GPU_PushConstant& pushConstant);
-        void drawIndexed(uint32 indexCount);
+        void drawIndexed(u32 indexCount);
         void beginImgui();
         void endImgui();
         void updateFrameConstantBuffer(GPU_FrameConst ubo);

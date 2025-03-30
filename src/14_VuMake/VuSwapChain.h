@@ -23,11 +23,11 @@ namespace Vu
         VuHnd<VuImage> depthStencilHnd;
 
 
-        Vector<VkImage>     swapChainImages;
-        Vector<VkImageView> swapChainImageViews;
+        std::vector<VkImage>     swapChainImages;
+        std::vector<VkImageView> swapChainImageViews;
 
-        Vector<VkFramebuffer> lightningFrameBuffers;
-        Vector<VkFramebuffer> gPassFrameBuffers;
+        std::vector<VkFramebuffer> lightningFrameBuffers;
+        std::vector<VkFramebuffer> gPassFrameBuffers;
 
         VkFormat        colorFormat;
         VkColorSpaceKHR colorSpace;
@@ -43,8 +43,8 @@ namespace Vu
 
         void resetSwapChain(VkSurfaceKHR surface);
 
-        void beginGBufferPass(VkCommandBuffer commandBuffer, uint32 frameIndex);
-        void beginLightningPass(VkCommandBuffer commandBuffer, uint32 frameIndex);
+        void beginGBufferPass(VkCommandBuffer commandBuffer, u32 frameIndex);
+        void beginLightningPass(VkCommandBuffer commandBuffer, u32 frameIndex);
 
         void endRenderPass(VkCommandBuffer commandBuffer);
 

@@ -8,8 +8,8 @@ namespace Vu::Utils
 
     VkImageViewCreateInfo fillImageViewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags);
 
-    uint32 findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memoryProperties,
-                               uint32                                  typeFilter,
+    u32 findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memoryProperties,
+                               u32                                  typeFilter,
                                VkMemoryPropertyFlags                   requiredProperties);
 
 

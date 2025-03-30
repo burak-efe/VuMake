@@ -33,7 +33,7 @@ namespace Vu
             VkCheck(volkInitialize());
             disposeStack.push([] { volkFinalize(); });
 
-            uint32 count = 0;
+            u32 count = 0;
 
             const char* const *      instance_extensions = SDL_Vulkan_GetInstanceExtensions(&count);
             std::vector<const char*> instanceExtensions(instance_extensions, instance_extensions + count);
@@ -221,9 +221,9 @@ namespace Vu
             allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
             allocInfo.commandPool        = vuDevice.commandPool;
             allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-            allocInfo.commandBufferCount = static_cast<uint32>(commandBuffers.size());
+            allocInfo.commandBufferCount = static_cast<u32>(commandBuffers.size());
             VkCheck(vkAllocateCommandBuffers(vuDevice.device, &allocInfo, commandBuffers.data()));
-            for (uint32 i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
+            for (u32 i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
             {
                 std::string name = std::format("Command Buffer {}", i);
                 Utils::giveDebugName(vuDevice.device, VK_OBJECT_TYPE_COMMAND_BUFFER, commandBuffers[i], name.c_str());

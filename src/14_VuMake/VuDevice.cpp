@@ -3,6 +3,7 @@
 #include <set>
 
 #include "10_Core/Color32.h"
+#include "10_Core/VuLogger.h"
 #include "10_Core/VuScopeTimer.h"
 #include "11_Config/VuConfig.h"
 #include "12_VuMakeCore/VuCreateUtils.h"
@@ -32,7 +33,7 @@ Vu::VuMaterial* Vu::VuDevice::getMaterial(const VuHnd<VuMaterial> handle)
     return materialPool.getResource(handle);
 }
 
-Vu::uint32* Vu::VuDevice::getMaterialDataIndex(const VuHnd<uint32> handle)
+Vu::u32* Vu::VuDevice::getMaterialDataIndex(const VuHnd<u32> handle)
 {
     return materialDataIndexPool.getResource(handle);
 }
@@ -62,7 +63,7 @@ void Vu::VuDevice::destroyHandle(VuHnd<VuMaterial> handle)
     materialPool.destroyHandle(handle);
 }
 
-void Vu::VuDevice::destroyHandle(VuHnd<uint32> handle)
+void Vu::VuDevice::destroyHandle(VuHnd<u32> handle)
 {
     materialDataIndexPool.destroyHandle(handle);
 }
@@ -87,7 +88,7 @@ void Vu::VuDevice::registerBindlessBDA_Buffer(const VuBuffer& buffer)
     }
 }
 
-void Vu::VuDevice::writeUBO_ToGlobalPool(const VuBuffer& buffer, uint32 writeIndex, uint32 setIndex)
+void Vu::VuDevice::writeUBO_ToGlobalPool(const VuBuffer& buffer, u32 writeIndex, u32 setIndex)
 {
     VkDescriptorBufferInfo bufferInfo{
         .buffer = buffer.buffer,
@@ -106,13 +107,13 @@ void Vu::VuDevice::writeUBO_ToGlobalPool(const VuBuffer& buffer, uint32 writeInd
     vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 }
 
-void Vu::VuDevice::registerToBindless(const VuBuffer& buffer, uint32 bindlessIndex)
+void Vu::VuDevice::registerToBindless(const VuBuffer& buffer, u32 bindlessIndex)
 {
     VkDeviceAddress address = buffer.getDeviceAddress();
     VkCheck(bdaBuffer.setData(&address, sizeof(VkDeviceAddress), bindlessIndex * sizeof(VkDeviceAddress)));
 }
 
-void Vu::VuDevice::registerToBindless(const VkImageView& imageView, uint32 bindlessIndex)
+void Vu::VuDevice::registerToBindless(const VkImageView& imageView, u32 bindlessIndex)
 {
     VkDescriptorImageInfo imageInfo{
         .sampler = VK_NULL_HANDLE,
@@ -134,7 +135,7 @@ void Vu::VuDevice::registerToBindless(const VkImageView& imageView, uint32 bindl
     }
 }
 
-void Vu::VuDevice::registerToBindless(const VkSampler& sampler, uint32 bindlessIndex)
+void Vu::VuDevice::registerToBindless(const VkSampler& sampler, u32 bindlessIndex)
 {
     VkDescriptorImageInfo imageInfo{
         .sampler = sampler,
@@ -342,7 +343,7 @@ void Vu::VuDevice::initDefaultResources()
     disposeStack.push([&] { destroyHandle(debugBufferHnd); });
     assert(debugBufferHnd.index == 0);
 
-    Vector<Color32> colorData;
+    std::vector<Color32> colorData;
     Color32         defaultColor = Color32(0.0f, 0.0f, 0.0f);
     Color32         magentaColor = Color32(1.0f, 0.0f, 1.0f);
     colorData.resize(512 * 512);
@@ -495,15 +496,15 @@ Vu::VuHnd<Vu::VuShader> Vu::VuDevice::createShader(Path vertexPath, Path fragPat
 
 Vu::VuHnd<unsigned> Vu::VuDevice::createMaterialDataIndex()
 {
-    VuHnd<uint32> handle   = materialDataIndexPool.createHandle();
-    uint32*       resource = getMaterialDataIndex(handle);
+    VuHnd<u32> handle   = materialDataIndexPool.createHandle();
+    u32*       resource = getMaterialDataIndex(handle);
     assert(resource != nullptr);
     *resource = handle.index;
     return handle;
 }
 
 Vu::VuHnd<Vu::VuMaterial> Vu::VuDevice::createMaterial(MaterialSettings matSettings, VuHnd<VuShader> shaderHnd,
-                                                       VuHnd<uint32>    materialDataHnd)
+                                                       VuHnd<u32>    materialDataHnd)
 {
     VuHnd<VuMaterial> handle   = materialPool.createHandle();
     VuMaterial*       resource = getMaterial(handle);
@@ -512,7 +513,7 @@ Vu::VuHnd<Vu::VuMaterial> Vu::VuDevice::createMaterial(MaterialSettings matSetti
     return handle;
 }
 
-std::span<std::byte, Vu::config::MATERIAL_DATA_SIZE> Vu::VuDevice::getMaterialData(VuHnd<uint32> handle)
+std::span<std::byte, Vu::config::MATERIAL_DATA_SIZE> Vu::VuDevice::getMaterialData(VuHnd<u32> handle)
 {
     VuBuffer* matDataBuffer = getBuffer(materialDataBufferHandle);
     byte*     dataPtr       = static_cast<byte*>(matDataBuffer->mapPtr) + config::MATERIAL_DATA_SIZE * handle.index;
@@ -557,8 +558,8 @@ Vu::VuHnd<Vu::VuImage> Vu::VuDevice::createImageFromAsset(const Path& path, VkFo
         throw std::runtime_error("failed to load texture image!");
     }
 
-    uint32         w      = texWidth;
-    uint32         h      = texHeight;
+    u32         w      = texWidth;
+    u32         h      = texHeight;
     VuHnd<VuImage> handle = createImage({.width = w, .height = h, .format = format});
     uploadToImage(*getImage(handle), pixels, imageSize);
     stbi_image_free(pixels);
@@ -690,7 +691,7 @@ void Vu::VuDevice::initBindlessResourceManager(const VuDeviceCreateInfo& info)
     bdaBuffer.init(device, vma, {
                        .name = "BDA_Buffer",
                        .length = info.storageBufferCount,
-                       .strideInBytes = sizeof(uint64)
+                       .strideInBytes = sizeof(u64)
                    });
 
     disposeStack.push([this]()-> void { bdaBuffer.uninit(); });

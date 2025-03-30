@@ -92,7 +92,7 @@ VkShaderModule Vu::VuShader::createShaderModule(VuDevice* vuDevice, const void* 
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = size;
-    createInfo.pCode    = static_cast<const uint32*>(code);
+    createInfo.pCode    = static_cast<const u32*>(code);
     createInfo.pNext    = nullptr;
 
     VkShaderModule shaderModule;

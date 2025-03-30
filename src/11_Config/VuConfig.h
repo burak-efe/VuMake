@@ -16,34 +16,34 @@
 
 namespace Vu::config
 {
-    constexpr uint32 START_WIDTH  = 1280u;
-    constexpr uint32 START_HEIGHT = 720u;
+    constexpr u32 START_WIDTH  = 1280u;
+    constexpr u32 START_HEIGHT = 720u;
 
-    constexpr uint32 MAX_FRAMES_IN_FLIGHT = 2u;
+    constexpr u32 MAX_FRAMES_IN_FLIGHT = 2u;
 
     constexpr VkDeviceSize MATERIAL_DATA_SIZE = 64u;
-    constexpr uint32       PUSH_CONST_SIZE    = 256u;
+    constexpr u32       PUSH_CONST_SIZE    = 256u;
 
-    constexpr uint32 DEVICE_MAX_IMAGE_COUNT         = 256u;
-    constexpr uint32 DEVICE_MAX_SAMPLER_COUNT       = 256u;
-    constexpr uint32 DEVICE_MAX_BUFFER_COUNT        = 256u;
-    constexpr uint32 DEVICE_MAX_SHADER_COUNT        = 256u;
-    constexpr uint32 DEVICE_MAX_MATERIAL_DATA_COUNT = 256u;
-    constexpr uint32 DEVICE_MAX_MATERIAL_COUNT      = 256u;
+    constexpr u32 DEVICE_MAX_IMAGE_COUNT         = 256u;
+    constexpr u32 DEVICE_MAX_SAMPLER_COUNT       = 256u;
+    constexpr u32 DEVICE_MAX_BUFFER_COUNT        = 256u;
+    constexpr u32 DEVICE_MAX_SHADER_COUNT        = 256u;
+    constexpr u32 DEVICE_MAX_MATERIAL_DATA_COUNT = 256u;
+    constexpr u32 DEVICE_MAX_MATERIAL_COUNT      = 256u;
 
-    constexpr uint32 BINDLESS_UNIFORM_BUFFER_COUNT = 1u;
-    constexpr uint32 BINDLESS_SAMPLER_COUNT        = 256u;
-    constexpr uint32 BINDLESS_SAMPLED_IMAGE_COUNT  = 256u;
-    constexpr uint32 BINDLESS_STORAGE_IMAGE_COUNT  = 256u;
-    constexpr uint32 BINDLESS_STORAGE_BUFFER_COUNT = 256u;
+    constexpr u32 BINDLESS_UNIFORM_BUFFER_COUNT = 1u;
+    constexpr u32 BINDLESS_SAMPLER_COUNT        = 256u;
+    constexpr u32 BINDLESS_SAMPLED_IMAGE_COUNT  = 256u;
+    constexpr u32 BINDLESS_STORAGE_IMAGE_COUNT  = 256u;
+    constexpr u32 BINDLESS_STORAGE_BUFFER_COUNT = 256u;
 
-    constexpr uint32 BINDLESS_UNIFORM_BUFFER_BINDING = 0u;
-    constexpr uint32 BINDLESS_SAMPLER_BINDING        = 1u;
-    constexpr uint32 BINDLESS_SAMPLED_IMAGE_BINDING  = 2u;
-    constexpr uint32 BINDLESS_STORAGE_IMAGE_BINDING  = 3u;
-    constexpr uint32 BINDLESS_STORAGE_BUFFER_BINDING = 4u;
+    constexpr u32 BINDLESS_UNIFORM_BUFFER_BINDING = 0u;
+    constexpr u32 BINDLESS_SAMPLER_BINDING        = 1u;
+    constexpr u32 BINDLESS_SAMPLED_IMAGE_BINDING  = 2u;
+    constexpr u32 BINDLESS_STORAGE_IMAGE_BINDING  = 3u;
+    constexpr u32 BINDLESS_STORAGE_BUFFER_BINDING = 4u;
 
-    inline static Vector<const char*> VALIDATION_LAYERS = {
+    inline static std::vector<const char*> VALIDATION_LAYERS = {
         "VK_LAYER_KHRONOS_validation"
     };
 
