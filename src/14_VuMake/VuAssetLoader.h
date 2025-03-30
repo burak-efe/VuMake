@@ -41,12 +41,16 @@ namespace Vu
 
             auto parentPath = gltfPath.parent_path();
 
-            fastgltf::Optional<size_t> matIndex     = primitive.materialIndex;
-            fastgltf::Material&        material     = asset->materials.at(matIndex.value());
-            fastgltf::TextureInfo&     colorTexInfo = material.pbrData.baseColorTexture.value();
-            fastgltf::Image&           colorImage   = asset->images[colorTexInfo.textureIndex];
-            fastgltf::sources::URI     colorPath    = std::get<fastgltf::sources::URI>(colorImage.data);
-            auto                       colorTexPath = parentPath / colorPath.uri.string();
+            fastgltf::Optional<size_t> matIndex = primitive.materialIndex;
+
+            // if (matIndex.has_value())
+            // {
+            //     fastgltf::Material&    material     = asset->materials.at(matIndex.value());
+            //     fastgltf::TextureInfo& colorTexInfo = material.pbrData.baseColorTexture.value();
+            //     fastgltf::Image&       colorImage   = asset->images[colorTexInfo.textureIndex];
+            //     fastgltf::sources::URI colorPath    = std::get<fastgltf::sources::URI>(colorImage.data);
+            //     auto                   colorTexPath = parentPath / colorPath.uri.string();
+            // }
 
             // Handle<VuTexture> colorTexture;
             // colorTexture.createHandle().init({colorTexPath, VK_FORMAT_R8G8B8A8_SRGB});
@@ -72,21 +76,21 @@ namespace Vu
                 return;
             }
             fastgltf::Accessor& indexAccesor = asset->accessors[primitive.indicesAccessor.value()];
-            uint32              indexCount   = (uint32)indexAccesor.count;
+            u32              indexCount   = (u32)indexAccesor.count;
 
             dstMesh.indexBuffer = vuDevice.createBuffer({
                                                             .name = "IndexBuffer",
-                                                            .length = indexCount, .strideInBytes = sizeof(uint32),
+                                                            .length = indexCount, .strideInBytes = sizeof(u32),
                                                             .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT
                                                         });
             auto* indexBuffer = vuDevice.getBuffer(dstMesh.indexBuffer);
 
             indexBuffer->map();
-            std::span<byte>   indexSpanByte = indexBuffer->getMappedSpan(0, indexCount * sizeof(uint32));
-            std::span<uint32> indexSpan     = std::span(reinterpret_cast<uint32*>(indexSpanByte.data()), indexCount);
-            fastgltf::iterateAccessorWithIndex<uint32>(
+            std::span<byte>   indexSpanByte = indexBuffer->getMappedSpan(0, indexCount * sizeof(u32));
+            std::span<u32> indexSpan     = std::span(reinterpret_cast<u32*>(indexSpanByte.data()), indexCount);
+            fastgltf::iterateAccessorWithIndex<u32>(
                                                        asset.get(), indexAccesor,
-                                                       [&](uint32 index, std::size_t idx) { indexSpan[idx] = index; }
+                                                       [&](u32 index, std::size_t idx) { indexSpan[idx] = index; }
                                                       );
             indexBuffer->unmap();
 
@@ -157,8 +161,9 @@ namespace Vu
             //uv
             {
                 ZoneScopedN("UVs");
-                auto* uvIter     = primitive.findAttribute("TEXCOORD_0");
-                auto& uvAccessor = asset->accessors[uvIter->accessorIndex];
+                fastgltf::Attribute* uvIter     = primitive.findAttribute("TEXCOORD_0");
+                fastgltf::Accessor&  uvAccessor = asset->accessors[uvIter->accessorIndex];
+
 
                 fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec2>(asset.get(), uvAccessor,
                                                                             [&](fastgltf::math::f32vec2 uv, std::size_t idx)
@@ -177,10 +182,10 @@ namespace Vu
                 {
                     std::cout << "Gltf file has no tangents" << std::endl;
 
-                    auto pos  = rpCastSpan<fastgltf::math::f32vec3, float3>(vertexSpan);
-                    auto norm = rpCastSpan<fastgltf::math::f32vec3, float3>(normalSpan);
-                    auto uv   = rpCastSpan<fastgltf::math::f32vec2, float2>(uvSpan);
-                    auto tang = rpCastSpan<fastgltf::math::f32vec4, float4>(tangentSpan);
+                    auto pos  = rpCastSpan<fastgltf::math::f32vec3, vec3>(vertexSpan);
+                    auto norm = rpCastSpan<fastgltf::math::f32vec3, vec3>(normalSpan);
+                    auto uv   = rpCastSpan<fastgltf::math::f32vec2, vec2>(uvSpan);
+                    auto tang = rpCastSpan<fastgltf::math::f32vec4, vec4>(tangentSpan);
 
                     dstMesh.calculateTangents(indexSpan, pos, norm, uv, tang);
                 }

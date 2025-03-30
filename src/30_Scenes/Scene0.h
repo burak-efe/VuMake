@@ -9,6 +9,7 @@
 #include "11_Config/VuCtx.h"
 #include "14_VuMake/VuAssetLoader.h"
 #include "../12_VuMakeCore/VuPools.h"
+#include "10_Core/VuLogger.h"
 #include "14_VuMake/VuRenderer.h"
 #include "20_Components/Camera.h"
 #include "20_Components/Components.h"
@@ -23,7 +24,9 @@ namespace Vu
     struct Scene0
     {
     private:
-        Path gnomePath = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
+        //Path meshPath = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
+        Path meshPath = "assets/gltf/Cube.glb";
+
 
         Path gpassVertPath = "assets/shaders/GPass_vert.slang";
         Path gpassFragPath = "assets/shaders/GPass_frag.slang";
@@ -53,7 +56,7 @@ namespace Vu
 
             VuMesh mesh{};
             mesh.init(device);
-            VuAssetLoader::LoadGltf(vuRenderer.vuDevice, gnomePath, mesh);
+            VuAssetLoader::LoadGltf(vuRenderer.vuDevice, meshPath, mesh);
 
             VuHnd<VuShader> gPassShaderHnd = device->createShader(gpassVertPath,
                                                                   gpassFragPath,
@@ -94,17 +97,17 @@ namespace Vu
             //Add Entities
             world.entity("Obj1")
                  .set(Transform{
-                          .position = float3(0, 0, 0),
+                          .position = vec3(0, 0, 0),
                           .rotation = quaternion::identity(),
-                          .scale = float3(10.0F, 10.0F, 10.0F)
+                          .scale = vec3(1.0F, 1.0F, 1.0F)
                       })
                  .set(MeshRenderer{.mesh = &mesh, .materialHnd = basicMatHnd})
                  .set(Spinn{});
 
             world.entity("Cam")
-                 .set(Transform(float3(0.0f, 0.0f, 3.5f),
+                 .set(Transform(vec3(0.0f, 0.0f, 3.5f),
                                 quaternion::identity(),
-                                float3(1, 1, 1))
+                                vec3(1, 1, 1))
                      ).set(Camera{});
 
 
@@ -115,7 +118,7 @@ namespace Vu
                 ctx::UpdateInput();
 
                 //Pre-Render Begins
-                auto runner0 = spinningSystem.run();
+                //auto runner0 = spinningSystem.run();
                 auto runner1 = flyCameraSystem.run();
 
                 //Rendering
@@ -130,7 +133,7 @@ namespace Vu
 
                     vuRenderer.bindMaterial(deferMatHnd);
                     auto dataIndex = device->getMaterial(deferMatHnd)->materialDataHnd.index;
-                    vuRenderer.pushConstants({float4x4(), dataIndex});
+                    vuRenderer.pushConstants({mat4x4(), dataIndex});
                     vkCmdDraw(vuRenderer.commandBuffers[vuRenderer.currentFrame], 3, 1, 0, 0);
 
 

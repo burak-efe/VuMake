@@ -95,16 +95,6 @@ namespace Vu
                              nullptr
                             );
 
-
-        // VkViewport viewport{};
-        // viewport.x        = 0.0f;
-        // viewport.y        = (float)swapChain.swapChainExtent.height;
-        // viewport.width    = (float)swapChain.swapChainExtent.width;
-        // viewport.height   = (float)swapChain.swapChainExtent.height;
-        // viewport.minDepth = 0.0f;
-        // viewport.maxDepth = 1.0f;
-        // vkCmdSetViewport(commandBuffers[currentFrame], 0, 1, &viewport);
-
         //lightning pass
         swapChain.beginLightningPass(cb, currentFrameImageIndex);
     }
@@ -171,7 +161,7 @@ namespace Vu
         vuDevice.bindMaterial(commandBuffer, material);
     }
 
-    void VuRenderer::drawIndexed(uint32 indexCount)
+    void VuRenderer::drawIndexed(u32 indexCount)
     {
         auto commandBuffer = commandBuffers[currentFrame];
         vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);

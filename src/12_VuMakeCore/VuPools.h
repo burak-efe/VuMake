@@ -8,16 +8,16 @@ namespace Vu
     template <typename T>
     struct VuHnd
     {
-        uint32 index;
-        uint32 generation;
+        u32 index;
+        u32 generation;
     };
 
     struct ResourceCounters
     {
         //counter of total references
-        uint32 referenceCounter;
+        u32 referenceCounter;
         //generation counter incremented whe de-allocation of that slot
-        uint32 generationCounter;
+        u32 generationCounter;
     };
 
 
@@ -28,14 +28,14 @@ namespace Vu
     };
 
     //Calls uninit when zero ref count IF T implements it
-    template <typename T, uint32 capacity>
+    template <typename T, u32 capacity>
     struct VuResourcePool
     {
         std::array<T, capacity>                 data{};
         std::array<ResourceCounters, capacity> counters{};
-        std::array<uint32, capacity>            freeList{};
-        uint32                                  allocationCounter = 0;
-        uint32                                  freeListCounter   = 0;
+        std::array<u32, capacity>            freeList{};
+        u32                                  allocationCounter = 0;
+        u32                                  freeListCounter   = 0;
 
         //Handle functions
         T* getResource(const VuHnd<T> handle)
@@ -59,7 +59,7 @@ namespace Vu
 
 
         // NULLABLE:  get the data that this handle points to, it can be null
-        T* get(uint32 index, uint32 generation)
+        T* get(u32 index, u32 generation)
         {
             T* result = (T*)nullptr;
             if (generation == counters[index].generationCounter)
@@ -69,20 +69,20 @@ namespace Vu
             return result;
         }
 
-        [[nodiscard]] uint32 getUsedSlotCount() const
+        [[nodiscard]] u32 getUsedSlotCount() const
         {
             return allocationCounter - freeListCounter;
         }
 
-        [[nodiscard]] uint32 getFreeSlotCount() const
+        [[nodiscard]] u32 getFreeSlotCount() const
         {
             return capacity - getUsedSlotCount();
         }
 
         //allocate, set refCount to one, and return index
-        void allocate(uint32& outIndex, uint32& outGeneration)
+        void allocate(u32& outIndex, u32& outGeneration)
         {
-            uint32 newDataIndex = 0;
+            u32 newDataIndex = 0;
 
             if (freeListCounter == 0)
             {
@@ -105,13 +105,13 @@ namespace Vu
         }
 
 
-        void increaseRefCount(uint32 index)
+        void increaseRefCount(u32 index)
         {
             counters[index].referenceCounter += 1;
         }
 
         //Returns true if object reference count reached zero and deallocated.
-        [[maybe_unused]] bool decreaseRefCount(uint32 index)
+        [[maybe_unused]] bool decreaseRefCount(u32 index)
         {
             bool isDeallocated = false;
             counters[index].referenceCounter -= 1;

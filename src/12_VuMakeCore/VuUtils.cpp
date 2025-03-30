@@ -37,10 +37,10 @@ VkImageViewCreateInfo Vu::Utils::fillImageViewCreateInfo(VkFormat format, VkImag
     return info;
 }
 
-Vu::uint32 Vu::Utils::findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memoryProperties, uint32 typeFilter,
+Vu::u32 Vu::Utils::findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memoryProperties, u32 typeFilter,
     VkMemoryPropertyFlags requiredProperties)
 {
-    for (uint32 i = 0; i < memoryProperties.memoryTypeCount; ++i)
+    for (u32 i = 0; i < memoryProperties.memoryTypeCount; ++i)
     {
         const bool isTypeSuitable        = (typeFilter & (1 << i)) != 0;
         const bool hasRequiredProperties = (memoryProperties.memoryTypes[i].propertyFlags & requiredProperties) == requiredProperties;

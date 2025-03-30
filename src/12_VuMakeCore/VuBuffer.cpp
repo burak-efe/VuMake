@@ -1,5 +1,7 @@
 #include "VuBuffer.h"
 
+#include "10_Core/VuLogger.h"
+
 namespace Vu
 {
     void VuBuffer::init(VkDevice device, VmaAllocator allocator, const VuBufferCreateInfo& info)

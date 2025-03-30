@@ -19,7 +19,7 @@ namespace Vu {
         inline SDL_Event   sdlEvent{};
 
         inline float  deltaAsSecond        = 0;
-        inline uint64 prevTimeAsNanoSecond = 0;
+        inline u64 prevTimeAsNanoSecond = 0;
         inline float  mouseX               = 0;
         inline float  mouseY               = 0;
 
@@ -41,7 +41,6 @@ namespace Vu {
 
             mouseDeltaX = prevx - mouseX;
             mouseDeltaY = prevy - mouseY;
-
         }
 
         inline float time() {

@@ -41,7 +41,7 @@ namespace Vu
             };
 
             VkAttachmentDescription normalAttachment{
-                .format = aoRoughMetalFormat,
+                .format = normalFormat,
                 .samples = VK_SAMPLE_COUNT_1_BIT,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .storeOp = VK_ATTACHMENT_STORE_OP_STORE,

@@ -118,7 +118,7 @@ void Vu::CreateUtils::createDevice(const VkPhysicalDeviceFeatures2& features, co
 }
 
 void Vu::CreateUtils::createPipelineLayout(const VkDevice device, const std::span<VkDescriptorSetLayout> descriptorSetLayouts,
-    const uint32 pushConstantSizeAsByte, VkPipelineLayout& outPipelineLayout)
+    const u32 pushConstantSizeAsByte, VkPipelineLayout& outPipelineLayout)
 {
     ZoneScoped;
 

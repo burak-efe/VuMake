@@ -22,16 +22,16 @@ namespace Vu
         VkSurfaceKHR              surface;
         std::span<const char*>    deviceExtensions;
         //bindless
-        uint32 uboBinding;
-        uint32 samplerBinding;
-        uint32 sampledImageBinding;
-        uint32 storageImageBinding;
-        uint32 storageBufferBinding;
-        uint32 uboCount;
-        uint32 samplerCount;
-        uint32 sampledImageCount;
-        uint32 storageImageCount;
-        uint32 storageBufferCount;
+        u32 uboBinding;
+        u32 samplerBinding;
+        u32 sampledImageBinding;
+        u32 storageImageBinding;
+        u32 storageBufferBinding;
+        u32 uboCount;
+        u32 samplerCount;
+        u32 sampledImageCount;
+        u32 storageImageCount;
+        u32 storageBufferCount;
     };
 
     struct VuDevice
@@ -58,7 +58,7 @@ namespace Vu
         VuResourcePool<VuBuffer, 32>   bufferPool;
         VuResourcePool<VuShader, 32>   shaderPool;
         VuResourcePool<VuMaterial, 32> materialPool;
-        VuResourcePool<uint32, 32>     materialDataIndexPool;
+        VuResourcePool<u32, 32>     materialDataIndexPool;
 
     private:
         VuBuffer         bdaBuffer; //holds the address of all other buffers
@@ -77,14 +77,14 @@ namespace Vu
         VuBuffer*   getBuffer(const VuHnd<VuBuffer> handle);
         VuShader*   getShader(const VuHnd<VuShader> handle);
         VuMaterial* getMaterial(const VuHnd<VuMaterial> handle);
-        uint32*     getMaterialDataIndex(const VuHnd<uint32> handle);
+        u32*     getMaterialDataIndex(const VuHnd<u32> handle);
 
         void destroyHandle(VuHnd<VuImage> handle);
         void destroyHandle(VuHnd<VuSampler> handle);
         void destroyHandle(VuHnd<VuBuffer> handle);
         void destroyHandle(VuHnd<VuShader> handle);
         void destroyHandle(VuHnd<VuMaterial> handle);
-        void destroyHandle(VuHnd<uint32> handle);
+        void destroyHandle(VuHnd<u32> handle);
 
         VuHnd<VuImage>   createImage(const VuImageCreateInfo& info);
         VuHnd<VuImage>   createImageFromAsset(const Path& path, VkFormat format);
@@ -92,11 +92,11 @@ namespace Vu
         VuHnd<VuBuffer>  createBuffer(const VuBufferCreateInfo& info);
         VuHnd<VuShader>  createShader(Path vertexPath, Path fragPath, VuRenderPass* vuRenderPass);
 
-        VuHnd<uint32> createMaterialDataIndex();
+        VuHnd<u32> createMaterialDataIndex();
 
-        VuHnd<VuMaterial> createMaterial(MaterialSettings matSettings, VuHnd<VuShader> shaderHnd, VuHnd<uint32> materialDataHnd);
+        VuHnd<VuMaterial> createMaterial(MaterialSettings matSettings, VuHnd<VuShader> shaderHnd, VuHnd<u32> materialDataHnd);
 
-        std::span<byte,64> getMaterialData(VuHnd<uint32> handle);
+        std::span<byte,64> getMaterialData(VuHnd<u32> handle);
 
         void bindMaterial(VkCommandBuffer cb, VuHnd<VuMaterial> material);
 
@@ -108,13 +108,13 @@ namespace Vu
 
         void registerBindlessBDA_Buffer(const VuBuffer& buffer);
 
-        void writeUBO_ToGlobalPool(const VuBuffer& buffer, uint32 writeIndex, uint32 setIndex);
+        void writeUBO_ToGlobalPool(const VuBuffer& buffer, u32 writeIndex, u32 setIndex);
 
-        void registerToBindless(const VuBuffer& buffer, uint32 bindlessIndex);
+        void registerToBindless(const VuBuffer& buffer, u32 bindlessIndex);
 
-        void registerToBindless(const VkImageView& imageView, uint32 bindlessIndex);
+        void registerToBindless(const VkImageView& imageView, u32 bindlessIndex);
 
-        void registerToBindless(const VkSampler& sampler, uint32 bindlessIndex);
+        void registerToBindless(const VkSampler& sampler, u32 bindlessIndex);
 
         VkCommandBuffer BeginSingleTimeCommands();
 

@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "10_Core/VuCommon.h"
+#include "10_Core/math/VuFloat3.h"
 
 namespace Vu {
 
@@ -27,7 +28,7 @@ namespace Vu {
 
     struct Transform : Component
     {
-        float3 position;
+        vec3 position;
 
         void Start() override
         {

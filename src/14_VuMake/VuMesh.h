@@ -2,6 +2,8 @@
 
 #include "VuDevice.h"
 #include "10_Core/VuCommon.h"
+#include "10_Core/math/VuFloat2.h"
+#include "10_Core/math/VuFloat3.h"
 #include "12_VuMakeCore/VuPools.h"
 
 
@@ -13,7 +15,7 @@ namespace Vu
     struct VuMesh
     {
         VuDevice*       vuDevice;
-        uint32          vertexCount;
+        u32          vertexCount;
         VuHnd<VuBuffer> indexBuffer;
         VuHnd<VuBuffer> vertexBuffer;
 
@@ -33,41 +35,41 @@ namespace Vu
         VkDeviceSize totalAttributesSizePerVertex()
         {
             //pos, norm, tan , uv
-            return sizeof(float3) + sizeof(float3) + sizeof(float4) + sizeof(float2);
+            return sizeof(vec3) + sizeof(vec3) + sizeof(vec4) + sizeof(vec2);
         }
 
         VkDeviceSize getNormalOffsetAsByte() const
         {
-            return sizeof(float3) * vertexCount;
+            return sizeof(vec3) * vertexCount;
         }
 
         VkDeviceSize getTangentOffsetAsByte() const
         {
-            return (sizeof(float3) + sizeof(float3)) * vertexCount;
+            return (sizeof(vec3) + sizeof(vec3)) * vertexCount;
         }
 
         VkDeviceSize getUV_OffsetAsByte() const
         {
-            return (sizeof(float3) + sizeof(float3) + sizeof(float4)) * vertexCount;
+            return (sizeof(vec3) + sizeof(vec3) + sizeof(vec4)) * vertexCount;
         }
 
         static std::array<VkVertexInputBindingDescription, 4> getBindingDescription()
         {
             std::array<VkVertexInputBindingDescription, 4> bindingDescriptions{};
             bindingDescriptions[0].binding   = 0;
-            bindingDescriptions[0].stride    = sizeof(float3);
+            bindingDescriptions[0].stride    = sizeof(vec3);
             bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
             bindingDescriptions[1].binding   = 1;
-            bindingDescriptions[1].stride    = sizeof(float3);
+            bindingDescriptions[1].stride    = sizeof(vec3);
             bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
             bindingDescriptions[2].binding   = 2;
-            bindingDescriptions[2].stride    = sizeof(float3);
+            bindingDescriptions[2].stride    = sizeof(vec3);
             bindingDescriptions[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
             bindingDescriptions[3].binding   = 3;
-            bindingDescriptions[3].stride    = sizeof(float3);
+            bindingDescriptions[3].stride    = sizeof(vec3);
             bindingDescriptions[3].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
             return bindingDescriptions;
@@ -100,33 +102,33 @@ namespace Vu
         }
 
         static void calculateTangents(
-            const std::span<uint32> indices,
-            const std::span<float3> positions,
-            const std::span<float3> normals,
-            const std::span<float2> uvs,
-            std::span<float4>       tangents)
+            const std::span<u32> indices,
+            const std::span<vec3> positions,
+            const std::span<vec3> normals,
+            const std::span<vec2> uvs,
+            std::span<vec4>       tangents)
         {
             ZoneScoped;
 
-            uint32 vertexCount   = positions.size();
-            uint32 triangleCount = indices.size() / 3;
+            u32 vertexCount   = positions.size();
+            u32 triangleCount = indices.size() / 3;
 
-            std::vector<float3> tan1(vertexCount);
-            std::vector<float3> tan2(vertexCount);
+            std::vector<vec3> tan1(vertexCount);
+            std::vector<vec3> tan2(vertexCount);
 
-            for (uint32 a = 0; a < triangleCount; a++)
+            for (u32 a = 0; a < triangleCount; a++)
             {
-                uint32 i1 = indices[a * 3 + 0];
-                uint32 i2 = indices[a * 3 + 1];
-                uint32 i3 = indices[a * 3 + 2];
+                u32 i1 = indices[a * 3 + 0];
+                u32 i2 = indices[a * 3 + 1];
+                u32 i3 = indices[a * 3 + 2];
 
-                const float3 v1 = positions[i1];
-                const float3 v2 = positions[i2];
-                const float3 v3 = positions[i3];
+                const vec3 v1 = positions[i1];
+                const vec3 v2 = positions[i2];
+                const vec3 v3 = positions[i3];
 
-                const float2 w1 = uvs[i1];
-                const float2 w2 = uvs[i2];
-                const float2 w3 = uvs[i3];
+                const vec2 w1 = uvs[i1];
+                const vec2 w2 = uvs[i2];
+                const vec2 w3 = uvs[i3];
 
                 float x1 = v2.x - v1.x;
                 float x2 = v3.x - v1.x;
@@ -142,11 +144,11 @@ namespace Vu
 
                 float r = 1.0f / (s1 * t2 - s2 * t1);
 
-                float3 sdir((t2 * x1 - t1 * x2) * r,
+                vec3 sdir((t2 * x1 - t1 * x2) * r,
                             (t2 * y1 - t1 * y2) * r,
                             (t2 * z1 - t1 * z2) * r);
 
-                float3 tdir((s1 * x2 - s2 * x1) * r,
+                vec3 tdir((s1 * x2 - s2 * x1) * r,
                             (s1 * y2 - s2 * y1) * r,
                             (s1 * z2 - s2 * z1) * r);
 
@@ -159,19 +161,19 @@ namespace Vu
                 tan2[i3] += tdir;
             }
 
-            for (uint32 a = 0; a < vertexCount; a++)
+            for (u32 a = 0; a < vertexCount; a++)
             {
-                float3 n = normals[a];
-                float3 t = tan1[a];
+                vec3 n = normals[a];
+                vec3 t = tan1[a];
                 // Gram-Schmidt orthogonalize
-                float3 vec = Math::normalize(t - n * Math::dot(n, t));
+                vec3 vec = Math::normalize(t - n * Math::dot(n, t));
                 float  sign;
                 float  handedness = Math::dot(Math::cross(n, t), tan2[a]);
                 if (handedness < 0.0F)
                     sign = -1.0F;
                 else
                     sign = 1.0F;
-                tangents[a] = float4(vec, sign);
+                tangents[a] = vec4(vec, sign);
             }
         }
     };

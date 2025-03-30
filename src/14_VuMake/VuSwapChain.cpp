@@ -33,7 +33,7 @@ namespace Vu
                                   {
                                       .width = swapChainExtent.width,
                                       .height = swapChainExtent.height,
-                                      .format = VK_FORMAT_R8G8B8A8_UNORM,
+                                      .format = VK_FORMAT_R32G32B32A32_SFLOAT,
                                       .usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                       .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                                   }
@@ -44,7 +44,7 @@ namespace Vu
                                   {
                                       .width = swapChainExtent.width,
                                       .height = swapChainExtent.height,
-                                      .format = VK_FORMAT_R8G8B8A8_UNORM,
+                                      .format = VK_FORMAT_R32G32B32A32_SFLOAT,
                                       .usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                       .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                                   }
@@ -65,8 +65,8 @@ namespace Vu
 
         gBufferPass.initAsGBufferPass(vuDevice->device,
                                       VK_FORMAT_R8G8B8A8_UNORM,
-                                      VK_FORMAT_R8G8B8A8_UNORM,
-                                      VK_FORMAT_R8G8B8A8_UNORM,
+                                      VK_FORMAT_R32G32B32A32_SFLOAT,
+                                      VK_FORMAT_R32G32B32A32_SFLOAT,
                                       dsImage->lastCreateInfo.format);
 
         lightningPass.initAsLightningPass(vuDevice->device, swapChainImageFormat);
@@ -118,7 +118,7 @@ namespace Vu
 
     VkExtent2D VuSwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
     {
-        if (capabilities.currentExtent.width != std::numeric_limits<uint32>::max())
+        if (capabilities.currentExtent.width != std::numeric_limits<u32>::max())
         {
             return capabilities.currentExtent;
         }
@@ -126,8 +126,8 @@ namespace Vu
         SDL_GetWindowSize(ctx::window, &width, &height);
         std::cout << "width: " << width << std::endl;
         VkExtent2D actualExtent = {
-            static_cast<uint32>(width),
-            static_cast<uint32>(height)
+            static_cast<u32>(width),
+            static_cast<u32>(height)
         };
         actualExtent.width  = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
         actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
@@ -137,7 +137,7 @@ namespace Vu
     QueueFamilyIndices VuSwapChain::findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
     {
         QueueFamilyIndices indices;
-        uint32             queueFamilyCount = 0;
+        u32             queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
@@ -184,7 +184,7 @@ namespace Vu
         createFramebuffers();
     }
 
-    void VuSwapChain::beginGBufferPass(VkCommandBuffer commandBuffer, uint32 frameIndex)
+    void VuSwapChain::beginGBufferPass(VkCommandBuffer commandBuffer, u32 frameIndex)
     {
         std::array<VkClearValue, 4> clearValues{};
         clearValues[0].color        = {{0, 0, 0, 1.0f}};
@@ -204,11 +204,11 @@ namespace Vu
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     }
 
-    void VuSwapChain::beginLightningPass(VkCommandBuffer commandBuffer, uint32 frameIndex)
+    void VuSwapChain::beginLightningPass(VkCommandBuffer commandBuffer, u32 frameIndex)
     {
         std::array<VkClearValue, 1> clearValues = {
             {
-                {.color = {{0.02f, 0.02f, 0.02f, 1.0f}}}
+                {.color = {{0.0f, 0.0f, 0.f, 1.0f}}}
             }
         };
 
@@ -236,7 +236,7 @@ namespace Vu
         VkExtent2D         extend        = chooseSwapExtent(swapChainSupport.capabilities);
         VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR   presentMode   = chooseSwapPresentMode(swapChainSupport.presentModes);
-        uint32             imageCount    = swapChainSupport.capabilities.minImageCount + 1;
+        u32             imageCount    = swapChainSupport.capabilities.minImageCount + 1;
 
         if (swapChainSupport.capabilities.maxImageCount > 0
             && imageCount > swapChainSupport.capabilities.maxImageCount)
@@ -255,7 +255,7 @@ namespace Vu
         createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
         QueueFamilyIndices indices              = findQueueFamilies(vuDevice->physicalDevice, surfaceKHR);
-        uint32             queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+        u32             queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
         if (indices.graphicsFamily != indices.presentFamily)
         {
@@ -342,6 +342,7 @@ namespace Vu
             auto name = std::format("gpass framebuffer [{}]", i);
             Utils::giveDebugName(vuDevice->device, VK_OBJECT_TYPE_FRAMEBUFFER, gPassFrameBuffers[i], name.c_str());
         }
+
 
         lightningFrameBuffers.resize(swapChainImageViews.size());
         for (size_t i = 0; i < swapChainImageViews.size(); i++)
