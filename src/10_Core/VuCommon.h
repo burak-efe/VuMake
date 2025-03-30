@@ -1,10 +1,18 @@
 #pragma once
 
 #include <source_location>
+#include <span>
 
 #include "volk.h"
 #include "vk_mem_alloc.h"
 #include "tracy/Tracy.hpp"
+#include <cstdint>
+#include <stdexcept>
+
+namespace std::filesystem
+{
+    class path;
+}
 
 namespace Vu
 {
@@ -27,10 +35,11 @@ namespace Vu
     using i8  = int8_t;
     using i16 = int16_t;
     using i32 = int32_t;
+    using i64 = int64_t;
 
-    using vec2  = Math::Float2;
-    using vec3  = Math::Float3;
-    using vec4  = Math::Float4;
+    using vec2   = Math::Float2;
+    using vec3   = Math::Float3;
+    using vec4   = Math::Float4;
     using mat4x4 = Math::Float4x4;
 
     using quaternion = Math::Quaternion;
@@ -47,3 +56,15 @@ namespace Vu
         return std::span<T_To>(reinterpret_cast<T_To*>(source.data()), source.size());
     }
 }
+
+
+consteval std::uint8_t operator"" _ub(unsigned long long value)
+{
+    if (value > 255)
+    {
+        throw std::out_of_range("Value exceeds uint8_t range");
+    }
+    return static_cast<std::uint8_t>(value);
+}
+
+constexpr uint8_t val = 255_ub; //compile error not linting error
