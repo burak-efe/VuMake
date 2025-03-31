@@ -3,6 +3,7 @@
 
 #include "10_Core/VuCommon.h"
 #include "10_Core/Color32.h"
+#include "10_Core/collections/VuAllocator.h"
 
 // Clamp float to [0,1] while setting
 TEST(Color32Test, SaturateFloatSetter) {
@@ -60,4 +61,11 @@ TEST(Color32Test, SetAndGetMethods) {
     EXPECT_EQ(color.getG(), 60);
     EXPECT_EQ(color.getB(), 70);
     EXPECT_EQ(color.getA(), 80);
+}
+
+TEST(AllocatorTest, allocate) {
+    for (const auto& allocator : ALLOCATORS)
+    {
+        std::visit([](auto&& alloc) { alloc.allocate(1); }, allocator);
+    }
 }
