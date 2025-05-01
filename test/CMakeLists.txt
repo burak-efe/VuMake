@@ -5,7 +5,9 @@ option(ENABLE_TESTING "Enable building tests" ON)
 
 
 project(VuTest)
-add_executable(Google_Tests_run Test1.cpp)
+add_executable(Google_Tests_run
+        Test1.cpp
+        VuListTest1.cpp)
 
 if(ENABLE_TESTING)
     enable_testing()

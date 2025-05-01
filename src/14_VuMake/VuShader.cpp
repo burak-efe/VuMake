@@ -8,9 +8,10 @@
 #include "12_VuMakeCore/VuGraphicsPipeline.h"
 
 #include "VuDevice.h"
+#include "../08_LangUtils/VuLogger.h"
 #include "12_VuMakeCore/VuRenderPass.h"
 
-void Vu::VuShader::init(VuDevice* vuDevice, Path vertexShaderPath, Path fragmentShaderPath, VuRenderPass* vuRenderPass)
+void Vu::VuShader::init(VuDevice* vuDevice, path vertexShaderPath, path fragmentShaderPath, VuRenderPass* vuRenderPass)
 {
     ZoneScoped;
     this->vuDevice           = vuDevice;
@@ -28,8 +29,23 @@ void Vu::VuShader::init(VuDevice* vuDevice, Path vertexShaderPath, Path fragment
     const auto vertSpv = Vu::readFile(vertOutPath);
     const auto fragSpv = Vu::readFile(fragOutPath);
 
-    fragmentShaderModule = createShaderModule(vuDevice, fragSpv.data(), fragSpv.size());
-    vertexShaderModule   = createShaderModule(vuDevice, vertSpv.data(), vertSpv.size());
+    if (vertSpv.has_value())
+    {
+        vertexShaderModule = createShaderModule(vuDevice, vertSpv.value().data(), vertSpv.value().size());
+    }
+    else
+    {
+        Logger::Error("vertex spv file cannot be read!");
+    }
+
+    if (fragSpv.has_value())
+    {
+        fragmentShaderModule = createShaderModule(vuDevice, fragSpv.value().data(), fragSpv.value().size());
+    }
+    else
+    {
+        Logger::Error("frag spv file cannot be read!");
+    }
 }
 
 void Vu::VuShader::uninit()
@@ -100,17 +116,17 @@ VkShaderModule Vu::VuShader::createShaderModule(VuDevice* vuDevice, const void* 
     return shaderModule;
 }
 
-Vu::Path Vu::VuShader::compileToSpirv(const Path& shaderCodePath)
+path Vu::VuShader::compileToSpirv(const path& shaderCodePath)
 {
-    Path shaderPath = shaderCodePath;
+    path shaderPath = shaderCodePath;
     shaderPath.make_preferred();
 
-    Path spirvFilePath = shaderCodePath;
+    path spirvFilePath = shaderCodePath;
     spirvFilePath.make_preferred();
     spirvFilePath.replace_extension(".spv");
 
 
-    Path compilerPath = config::SHADER_COMPILER_PATH;
+    path compilerPath = config::SHADER_COMPILER_PATH;
     compilerPath.make_preferred();
 
 

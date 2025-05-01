@@ -61,7 +61,7 @@ namespace Vu
                                   }
                                  );
 
-        VuImage* dsImage = vuDevice->getImage(depthStencilHnd);
+        VuImage* dsImage = depthStencilHnd.getResource();
 
         gBufferPass.initAsGBufferPass(vuDevice->device,
                                       VK_FORMAT_R8G8B8A8_UNORM,
@@ -86,7 +86,7 @@ namespace Vu
         }
 
         gBufferPass.uninit();
-        vuDevice->destroyHandle(depthStencilHnd);
+        depthStencilHnd.destroyHandle();
         vkDestroySwapchainKHR(vuDevice->device, swapChain, nullptr);
     }
 
@@ -137,7 +137,7 @@ namespace Vu
     QueueFamilyIndices VuSwapChain::findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
     {
         QueueFamilyIndices indices;
-        u32             queueFamilyCount = 0;
+        u32                queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
@@ -236,7 +236,7 @@ namespace Vu
         VkExtent2D         extend        = chooseSwapExtent(swapChainSupport.capabilities);
         VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR   presentMode   = chooseSwapPresentMode(swapChainSupport.presentModes);
-        u32             imageCount    = swapChainSupport.capabilities.minImageCount + 1;
+        u32                imageCount    = swapChainSupport.capabilities.minImageCount + 1;
 
         if (swapChainSupport.capabilities.maxImageCount > 0
             && imageCount > swapChainSupport.capabilities.maxImageCount)
@@ -255,7 +255,7 @@ namespace Vu
         createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
         QueueFamilyIndices indices              = findQueueFamilies(vuDevice->physicalDevice, surfaceKHR);
-        u32             queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+        u32                queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
         if (indices.graphicsFamily != indices.presentFamily)
         {
@@ -325,10 +325,10 @@ namespace Vu
         for (size_t i = 0; i < swapChainImageViews.size(); i++)
         {
             std::array<VkImageView, 4> attachments = {
-                vuDevice->getImage(colorHnd)->imageView,
-                vuDevice->getImage(normalHnd)->imageView,
-                vuDevice->getImage(armHnd)->imageView,
-                vuDevice->getImage(depthStencilHnd)->imageView,
+                colorHnd.getResource()->imageView,
+                normalHnd.getResource()->imageView,
+                armHnd.getResource()->imageView,
+                depthStencilHnd.getResource()->imageView,
             };
             VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

@@ -4,7 +4,7 @@
 #include "10_Core/VuCommon.h"
 #include "10_Core/math/VuFloat2.h"
 #include "10_Core/math/VuFloat3.h"
-#include "12_VuMakeCore/VuPools.h"
+#include "../08_LangUtils/VuPools.h"
 
 
 namespace Vu
@@ -28,8 +28,8 @@ namespace Vu
 
         void uninit()
         {
-            vuDevice->destroyHandle(indexBuffer);
-            vuDevice->destroyHandle(vertexBuffer);
+            indexBuffer.destroyHandle();
+            vertexBuffer.destroyHandle();
         }
 
         VkDeviceSize totalAttributesSizePerVertex()

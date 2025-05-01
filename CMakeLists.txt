@@ -1,53 +1,59 @@
 ﻿cmake_minimum_required(VERSION 3.28)
-
 include(FetchContent)
-
+include(${CMAKE_SOURCE_DIR}/build_utils/Functions.cmake)
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-# Enable Hot Reload for MSVC compilers if supported.
-if (POLICY CMP0141)
-    #cmake_policy(SET CMP0141 NEW)
-    #set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
-endif ()
+#if (MSVC)
+#    add_compile_options(/Bt) #more verbose log
+#    add_compile_options(/Zi)
+#    add_compile_options(/DEBUG)
+#endif ()
 
-if (MSVC)
-    add_compile_options(/Bt) #more verbose log
-    add_compile_options(/Zi)
-    add_compile_options(/DEBUG)
-endif ()
+#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 
-
-include(${CMAKE_SOURCE_DIR}/buildUtils/Functions.cmake)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+#add_compile_options(-static-libasan)
+#add_link_options(-static-libasan)
+##add_compile_options(-fsanitize=address)
+#set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+#set(ENV{ASAN_OPTIONS} "asan_blacklist=${CMAKE_SOURCE_DIR}/build_utils/asan_blacklist.txt")
 
 ####################################################################################################
-#Project
 project("VuMake")
 add_executable(${PROJECT_NAME} Main.cpp)
 add_library(VuLibs INTERFACE)
 target_link_libraries(${PROJECT_NAME} PRIVATE VuLibs)
 ####################################################################################################
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+#target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+#target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+####################################################################################################
+#set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
+#set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+
+#find_program(iwyu_path NAMES include-what-you-use PATHS "${CMAKE_SOURCE_DIR}/build_utils" REQUIRED)
+#set_property(TARGET ${PROJECT_NAME}  PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
 ####################################################################################################
 # Precompiled Headers
 set(PCH
         src/10_Core/pch.h
 )
-target_precompile_headers(${PROJECT_NAME} PRIVATE
-        <cstdint> <cassert> <cstdlib>
-        <chrono> <iostream> <filesystem>
-        <format> <algorithm> <functional>
-        <mutex> <ranges> <array>
-        <span> <vector> <stack>
-        <string>
-        ${PCH}
-)
+#target_precompile_headers(${PROJECT_NAME} PRIVATE
+#        <cstdint> <cassert> <cstdlib>
+#        <chrono> <iostream> <filesystem>
+#        <format> <algorithm> <functional>
+#        <mutex> <ranges> <array>
+#        <span> <vector> <stack>
+#        <string>
+#        #${PCH}
+#)
 ####################################################################################################
 #Add Sources
-add_sources_recursively(VuLibs src INTERFACE)
-add_sources_recursively(VuLibs external INTERFACE)
+add_sources_recursively(VuLibs src)
+add_sources_recursively(VuLibs external)
 target_include_directories(VuLibs INTERFACE  src)
+target_include_directories(VuLibs INTERFACE  external)
 ####################################################################################################
 #imgui
 target_include_directories(VuLibs INTERFACE  external/imgui)

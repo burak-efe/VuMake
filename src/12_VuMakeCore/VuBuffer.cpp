@@ -1,6 +1,6 @@
 #include "VuBuffer.h"
 
-#include "10_Core/VuLogger.h"
+#include "../08_LangUtils/VuLogger.h"
 
 namespace Vu
 {

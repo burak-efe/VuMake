@@ -6,16 +6,25 @@
 
 namespace Vu
 {
-    inline std::vector<char> readFile(const std::filesystem::path& path)
+    inline std::optional<std::vector<char>> readFile(const std::filesystem::path& path)
     {
+        if (std::filesystem::exists(path) == false)
+        {
+            return std::nullopt;
+        }
         std::ifstream file(path, std::ios::ate | std::ios::binary);
 
         if (!file.is_open())
         {
-            throw std::runtime_error("failed to open file!");
+            return std::nullopt;
         }
 
-        auto fileSize = file.tellg();
+        std::streampos fileSize = file.tellg();
+
+        if (fileSize == -1)
+        {
+            return std::nullopt;
+        }
 
         std::vector<char> buffer(fileSize);
 
@@ -56,22 +65,25 @@ namespace Vu
         return time;
     }
 
-
-    std::string exec(const char* cmd) {
-        std::array<char, 128> buffer;
-        std::string result;
-
-        // _popen runs the command and opens a pipe for reading its stdout
-        std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(cmd, "r"), _pclose);
-        if (!pipe) {
-            throw std::runtime_error("_popen() failed!");
-        }
-
-        // Read the output of the command line by line
-        while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe.get()) != nullptr) {
-            result += buffer.data();
-        }
-
-        return result;
-    }
+    //
+    // std::string exec(const char* cmd)
+    // {
+    //     std::array<char, 128> buffer;
+    //     std::string           result;
+    //
+    //     // _popen runs the command and opens a pipe for reading its stdout
+    //     std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(cmd, "r"), _pclose);
+    //     if (!pipe)
+    //     {
+    //         throw std::runtime_error("_popen() failed!");
+    //     }
+    //
+    //     // Read the output of the command line by line
+    //     while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe.get()) != nullptr)
+    //     {
+    //         result += buffer.data();
+    //     }
+    //
+    //     return result;
+    // }
 }

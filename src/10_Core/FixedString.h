@@ -22,7 +22,9 @@ namespace Vu
         T_counter                  length = 0;
 
     public:
-        constexpr FixedString() = default;
+        constexpr FixedString() : buffer(), length(0)
+        {
+        }
 
         constexpr FixedString(const char* str)
         {

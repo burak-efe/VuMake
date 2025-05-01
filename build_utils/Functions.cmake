@@ -1,5 +1,5 @@
 ####################################################################################################
-function(add_sources_recursively target_name source_dir visibility)
+function(add_sources_recursively target_name source_dir)
     if (NOT TARGET ${target_name})
         message(FATAL_ERROR "Target ${target_name} does not exist. Please create the target before calling this function.")
     endif ()

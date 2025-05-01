@@ -8,30 +8,32 @@
 
 #include "VuMaterial.h"
 
+
 namespace Vu
 {
     struct VuRenderPass;
+
     struct VuGraphicsShaderCreateInfo
     {
-        Path         vertexShaderPath   = {};
-        Path         fragmentShaderPath = {};
-        VkRenderPass renderPass         = {};
+        path         vertexShaderPath;
+        path         fragmentShaderPath;
+        VkRenderPass renderPass;
     };
 
     struct VuShader
     {
-        VuDevice*    vuDevice;
-        Path         vertexShaderPath;
-        Path         fragmentShaderPath;
-        VuRenderPass* vuRenderPass;
+        VuDevice*     vuDevice           = nullptr;
+        path          vertexShaderPath   = "error";
+        path          fragmentShaderPath = "error";
+        VuRenderPass* vuRenderPass       = nullptr;
 
         time_t         lastModifiedTime     = 0;
         VkShaderModule vertexShaderModule   = {};
         VkShaderModule fragmentShaderModule = {};
 
-        std::unordered_map<MaterialSettings, VuGraphicsPipeline> compiledPipelines;
+        std::unordered_map<MaterialSettings, VuGraphicsPipeline> compiledPipelines = {};
 
-        void init(VuDevice* vuDevice, Path vertexShaderPath, Path fragmentShaderPath, VuRenderPass* vuRenderPass);
+        void init(VuDevice* vuDevice, path vertexShaderPath, path fragmentShaderPath, VuRenderPass* vuRenderPass);
 
         void uninit();
 
@@ -40,7 +42,7 @@ namespace Vu
         //get compiled pipeline handle if present, id not, compile and get
         VuGraphicsPipeline& requestPipeline(MaterialSettings materialSettings);
 
-        static Path compileToSpirv(const Path& shaderCodePath);
+        static path compileToSpirv(const path& shaderCodePath);
 
         static VkShaderModule createShaderModule(VuDevice* vuDevice, const void* code, size_t size);
     };

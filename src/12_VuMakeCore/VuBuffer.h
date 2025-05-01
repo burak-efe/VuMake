@@ -47,4 +47,6 @@ namespace Vu
 
         static VkDeviceSize alignedSize(VkDeviceSize value, VkDeviceSize alignment);
     };
+
+    //static_assert(std::is_default_constructible_v<VuBuffer>);
 }

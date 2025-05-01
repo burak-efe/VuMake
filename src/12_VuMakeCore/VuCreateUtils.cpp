@@ -4,8 +4,10 @@
 
 #include "VuUtils.h"
 
-void Vu::CreateUtils::createInstance(bool enableValidationLayers, std::span<const char*> validationLayers,
-                                     std::span<const char*> extensions, VkInstance& outInstance)
+void Vu::CreateUtils::createInstance(bool                   enableValidationLayers,
+                                     std::span<const char*> validationLayers,
+                                     std::span<const char*> extensions,
+                                     VkInstance&            outInstance)
 {
     ZoneScoped;
 
@@ -40,15 +42,16 @@ void Vu::CreateUtils::createInstance(bool enableValidationLayers, std::span<cons
     }
     //create
     {
-        ZoneScopedN("create");
+        ZoneScopedN("create call");
         VkCheck(vkCreateInstance(&instanceCreateInfo, nullptr, &outInstance));
     }
 }
 
-void Vu::CreateUtils::createPhysicalDevice(const VkInstance& instance, const VkSurfaceKHR& surface,
-    std::span<const char*> enabledExtensions, VkPhysicalDevice& outPhysicalDevice)
+void Vu::CreateUtils::createPhysicalDevice(const VkInstance&      instance,
+                                           const VkSurfaceKHR&    surface,
+                                           std::span<const char*> enabledExtensions,
+                                           VkPhysicalDevice&      outPhysicalDevice)
 {
-    ZoneScoped;
     outPhysicalDevice    = VK_NULL_HANDLE;
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -76,11 +79,14 @@ void Vu::CreateUtils::createPhysicalDevice(const VkInstance& instance, const VkS
     }
 }
 
-void Vu::CreateUtils::createDevice(const VkPhysicalDeviceFeatures2& features, const QueueFamilyIndices& indices,
-    const VkPhysicalDevice& physicalDevice, std::span<const char*> enabledExtensions, VkDevice& outDevice, VkQueue& outGraphicsQueue,
-    VkQueue& outPresentQueue)
+void Vu::CreateUtils::createDevice(const VkPhysicalDeviceFeatures2& features,
+                                   const QueueFamilyIndices&        indices,
+                                   const VkPhysicalDevice&          physicalDevice,
+                                   std::span<const char*>           enabledExtensions,
+                                   VkDevice&                        outDevice,
+                                   VkQueue&                         outGraphicsQueue,
+                                   VkQueue&                         outPresentQueue)
 {
-    ZoneScoped;
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
     std::set<uint32_t>                   uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
@@ -117,11 +123,11 @@ void Vu::CreateUtils::createDevice(const VkPhysicalDeviceFeatures2& features, co
     }
 }
 
-void Vu::CreateUtils::createPipelineLayout(const VkDevice device, const std::span<VkDescriptorSetLayout> descriptorSetLayouts,
-    const u32 pushConstantSizeAsByte, VkPipelineLayout& outPipelineLayout)
+void Vu::CreateUtils::createPipelineLayout(const VkDevice                         device,
+                                           const std::span<VkDescriptorSetLayout> descriptorSetLayouts,
+                                           const u32                              pushConstantSizeAsByte,
+                                           VkPipelineLayout&                      outPipelineLayout)
 {
-    ZoneScoped;
-
     //push constants
     VkPushConstantRange pcRange{
         .stageFlags = VK_SHADER_STAGE_ALL,
@@ -139,8 +145,10 @@ void Vu::CreateUtils::createPipelineLayout(const VkDevice device, const std::spa
     VkCheck(vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &outPipelineLayout));
 }
 
-VkResult Vu::CreateUtils::createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-    const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
+VkResult Vu::CreateUtils::createDebugUtilsMessengerEXT(VkInstance                                instance,
+                                                       const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                                       const VkAllocationCallbacks*              pAllocator,
+                                                       VkDebugUtilsMessengerEXT*                 pDebugMessenger)
 {
     auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
         vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
@@ -154,7 +162,8 @@ VkResult Vu::CreateUtils::createDebugUtilsMessengerEXT(VkInstance instance, cons
     }
 }
 
-void Vu::CreateUtils::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
+void Vu::CreateUtils::destroyDebugUtilsMessengerEXT(VkInstance                   instance,
+                                                    VkDebugUtilsMessengerEXT     debugMessenger,
                                                     const VkAllocationCallbacks* pAllocator)
 {
     auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
