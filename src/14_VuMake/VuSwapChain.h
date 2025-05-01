@@ -3,7 +3,7 @@
 #include "10_Core/VuCommon.h"
 #include "12_VuMakeCore/VuTypes.h"
 #include "12_VuMakeCore/VuImage.h"
-#include "12_VuMakeCore/VuPools.h"
+#include "08_LangUtils/VuPoolManager.h"
 #include "12_VuMakeCore/VuRenderPass.h"
 
 namespace Vu

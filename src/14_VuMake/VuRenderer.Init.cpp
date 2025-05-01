@@ -11,11 +11,22 @@
 #include "12_VuMakeCore/VuCreateUtils.h"
 
 #include "VuDevice.h"
-#include "10_Core/VuScopeTimer.h"
+#include "08_LangUtils/ScopeTimer.h"
 
 namespace Vu
 {
-    void VuRenderer::init()
+    // VuRenderer::VuRenderer()
+    // {
+    //     init();
+    // }
+
+    void VuRenderer::init(PoolHandle imagePoolHnd,
+                          PoolHandle samplerPoolHnd,
+                          PoolHandle bufferPoolHnd,
+                          PoolHandle shaderPoolHnd,
+                          PoolHandle materialPoolHnd,
+                          PoolHandle materialDataIndexPoolHnd
+    )
     {
         ScopeTimer timer;
         bool       isValidationEnabled = config::ENABLE_VALIDATION_LAYERS_LAYERS;
@@ -169,7 +180,13 @@ namespace Vu
                               .samplerCount = config::BINDLESS_SAMPLER_COUNT,
                               .sampledImageCount = config::BINDLESS_SAMPLED_IMAGE_COUNT,
                               .storageImageCount = config::BINDLESS_STORAGE_IMAGE_COUNT,
-                              .storageBufferCount = config::BINDLESS_STORAGE_BUFFER_COUNT
+                              .storageBufferCount = config::BINDLESS_STORAGE_BUFFER_COUNT,
+                              .imagePoolHnd = imagePoolHnd,
+                              .samplerPoolHnd = samplerPoolHnd,
+                              .bufferPoolHnd = bufferPoolHnd,
+                              .shaderPoolHnd = shaderPoolHnd,
+                              .materialPoolHnd =  materialPoolHnd,
+                              .materialDataIndexPoolHnd = materialDataIndexPoolHnd,
                           });
             disposeStack.push([&] { vuDevice.uninit(); });
         }
@@ -316,11 +333,6 @@ namespace Vu
         ImGui_ImplVulkan_CreateFontsTexture();
         disposeStack.push([] { ImGui_ImplVulkan_DestroyFontsTexture(); });
     }
-
-    // void VuRenderer::reloadShaders()
-    // {
-    //     //TODO:
-    // }
 
     void VuRenderer::bindGlobalBindlessSet(const VkCommandBuffer& commandBuffer)
     {

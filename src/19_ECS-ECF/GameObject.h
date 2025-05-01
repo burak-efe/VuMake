@@ -1,6 +1,7 @@
 #pragma once
 
 #include <typeindex>
+#include <vector>
 #include <unordered_map>
 
 #include "10_Core/VuCommon.h"

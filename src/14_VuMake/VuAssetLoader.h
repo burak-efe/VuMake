@@ -76,22 +76,22 @@ namespace Vu
                 return;
             }
             fastgltf::Accessor& indexAccesor = asset->accessors[primitive.indicesAccessor.value()];
-            u32              indexCount   = (u32)indexAccesor.count;
+            u32                 indexCount   = (u32)indexAccesor.count;
 
             dstMesh.indexBuffer = vuDevice.createBuffer({
                                                             .name = "IndexBuffer",
                                                             .length = indexCount, .strideInBytes = sizeof(u32),
                                                             .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT
                                                         });
-            auto* indexBuffer = vuDevice.getBuffer(dstMesh.indexBuffer);
+            auto* indexBuffer = dstMesh.indexBuffer.getResource();
 
             indexBuffer->map();
-            std::span<byte>   indexSpanByte = indexBuffer->getMappedSpan(0, indexCount * sizeof(u32));
-            std::span<u32> indexSpan     = std::span(reinterpret_cast<u32*>(indexSpanByte.data()), indexCount);
+            std::span<byte> indexSpanByte = indexBuffer->getMappedSpan(0, indexCount * sizeof(u32));
+            std::span<u32>  indexSpan     = std::span(reinterpret_cast<u32*>(indexSpanByte.data()), indexCount);
             fastgltf::iterateAccessorWithIndex<u32>(
-                                                       asset.get(), indexAccesor,
-                                                       [&](u32 index, std::size_t idx) { indexSpan[idx] = index; }
-                                                      );
+                                                    asset.get(), indexAccesor,
+                                                    [&](u32 index, std::size_t idx) { indexSpan[idx] = index; }
+                                                   );
             indexBuffer->unmap();
 
             //Position
@@ -106,7 +106,7 @@ namespace Vu
                                                              .vkUsageFlags =
                                                              VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
                                                          });
-            VuBuffer* vertexBuffer = vuDevice.getBuffer(dstMesh.vertexBuffer);
+            VuBuffer* vertexBuffer = dstMesh.vertexBuffer.getResource();
             vertexBuffer->map();
 
             std::span<byte> vertexSpanByte =

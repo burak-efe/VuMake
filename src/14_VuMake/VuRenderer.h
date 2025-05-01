@@ -34,11 +34,18 @@ namespace Vu
         std::array<VuBuffer, config::MAX_FRAMES_IN_FLIGHT>        uniformBuffers;
 
 
-        u32 currentFrame           = 0;
-        u32 currentFrameImageIndex = 0;
+        u32 currentFrame           = 0u;
+        u32 currentFrameImageIndex = 0u;
+
+        //VuRenderer( );
 
 
-        void init();
+        void init(PoolHandle imagePoolHnd,
+                  PoolHandle samplerPoolHnd,
+                  PoolHandle bufferPoolHnd,
+                  PoolHandle shaderPoolHnd,
+                  PoolHandle materialPoolHnd,
+                  PoolHandle materialDataIndexPoolHnd);
         void uninit();
         bool shouldWindowClose();
         void waitIdle();

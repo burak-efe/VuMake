@@ -24,7 +24,7 @@ namespace Vu
 
                         auto materialHnd = meshRenderer.materialHnd;
 
-                        auto* matPtr = vuDevice->getMaterial(materialHnd);
+                        auto* matPtr = materialHnd.getResource();
 
                         //bind pipeline
                         ECS_VU_RENDERER->bindMaterial(materialHnd);
@@ -42,7 +42,7 @@ namespace Vu
                         };
                         ECS_VU_RENDERER->pushConstants(pc);
                         ECS_VU_RENDERER->bindMesh(*meshRenderer.mesh);
-                        ECS_VU_RENDERER->drawIndexed(vuDevice->getBuffer(meshRenderer.mesh->indexBuffer)->length);
+                        ECS_VU_RENDERER->drawIndexed(meshRenderer.mesh->indexBuffer.getResource()->length);
                     });
     }
 

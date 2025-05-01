@@ -5,7 +5,7 @@
 #include "10_Core/VuCommon.h"
 #include "12_VuMakeCore/VuBuffer.h"
 #include "12_VuMakeCore/VuTypes.h"
-#include "12_VuMakeCore/VuPools.h"
+#include "../08_LangUtils/VuPools.h"
 #include "12_VuMakeCore/VuImage.h"
 #include "12_VuMakeCore/VuSampler.h"
 
@@ -21,6 +21,7 @@ namespace Vu
         VkPhysicalDeviceFeatures2 physicalDeviceFeatures2;
         VkSurfaceKHR              surface;
         std::span<const char*>    deviceExtensions;
+
         //bindless
         u32 uboBinding;
         u32 samplerBinding;
@@ -32,6 +33,13 @@ namespace Vu
         u32 sampledImageCount;
         u32 storageImageCount;
         u32 storageBufferCount;
+        //pool handles
+        PoolHandle imagePoolHnd;
+        PoolHandle samplerPoolHnd;
+        PoolHandle bufferPoolHnd;
+        PoolHandle shaderPoolHnd;
+        PoolHandle materialPoolHnd;
+        PoolHandle materialDataIndexPoolHnd;
     };
 
     struct VuDevice
@@ -53,12 +61,12 @@ namespace Vu
 
         VkPhysicalDeviceMemoryProperties memProperties;
 
-        VuResourcePool<VuImage, 32>    imagePool;
-        VuResourcePool<VuSampler, 32>  samplerPool;
-        VuResourcePool<VuBuffer, 32>   bufferPool;
-        VuResourcePool<VuShader, 32>   shaderPool;
-        VuResourcePool<VuMaterial, 32> materialPool;
-        VuResourcePool<u32, 32>     materialDataIndexPool;
+        PoolHandle imagePoolHnd;
+        PoolHandle samplerPoolHnd;
+        PoolHandle bufferPoolHnd;
+        PoolHandle shaderPoolHnd;
+        PoolHandle materialPoolHnd;
+        PoolHandle materialDataIndexPoolHnd;
 
     private:
         VuBuffer         bdaBuffer; //holds the address of all other buffers
@@ -72,31 +80,31 @@ namespace Vu
 
     public:
         //RESOURCES
-        VuImage*    getImage(const VuHnd<VuImage> handle);
-        VuSampler*  getSampler(const VuHnd<VuSampler> handle);
-        VuBuffer*   getBuffer(const VuHnd<VuBuffer> handle);
-        VuShader*   getShader(const VuHnd<VuShader> handle);
-        VuMaterial* getMaterial(const VuHnd<VuMaterial> handle);
-        u32*     getMaterialDataIndex(const VuHnd<u32> handle);
-
-        void destroyHandle(VuHnd<VuImage> handle);
-        void destroyHandle(VuHnd<VuSampler> handle);
-        void destroyHandle(VuHnd<VuBuffer> handle);
-        void destroyHandle(VuHnd<VuShader> handle);
-        void destroyHandle(VuHnd<VuMaterial> handle);
-        void destroyHandle(VuHnd<u32> handle);
+        // VuImage*    getImage(const VuHnd<VuImage> handle);
+        // VuSampler*  getSampler(const VuHnd<VuSampler> handle);
+        // VuBuffer*   getBuffer(const VuHnd<VuBuffer> handle);
+        // VuShader*   getShader(const VuHnd<VuShader> handle);
+        // VuMaterial* getMaterial(const VuHnd<VuMaterial> handle);
+        // u32*        getMaterialDataIndex(const VuHnd<u32> handle);
+        //
+        // void destroyHandle(VuHnd<VuImage> handle);
+        // void destroyHandle(VuHnd<VuSampler> handle);
+        // void destroyHandle(VuHnd<VuBuffer> handle);
+        // void destroyHandle(VuHnd<VuShader> handle);
+        // void destroyHandle(VuHnd<VuMaterial> handle);
+        // void destroyHandle(VuHnd<u32> handle);
 
         VuHnd<VuImage>   createImage(const VuImageCreateInfo& info);
-        VuHnd<VuImage>   createImageFromAsset(const Path& path, VkFormat format);
+        VuHnd<VuImage>   createImageFromAsset(const path& path, VkFormat format);
         VuHnd<VuSampler> createSampler(const VuSamplerCreateInfo& info);
         VuHnd<VuBuffer>  createBuffer(const VuBufferCreateInfo& info);
-        VuHnd<VuShader>  createShader(Path vertexPath, Path fragPath, VuRenderPass* vuRenderPass);
+        VuHnd<VuShader>  createShader(path vertexPath, path fragPath, VuRenderPass* vuRenderPass);
 
         VuHnd<u32> createMaterialDataIndex();
 
         VuHnd<VuMaterial> createMaterial(MaterialSettings matSettings, VuHnd<VuShader> shaderHnd, VuHnd<u32> materialDataHnd);
 
-        std::span<byte,64> getMaterialData(VuHnd<u32> handle);
+        std::span<byte, 64> getMaterialData(VuHnd<u32> handle);
 
         void bindMaterial(VkCommandBuffer cb, VuHnd<VuMaterial> material);
 

@@ -151,7 +151,7 @@ namespace Vu
     {
         //we are using vertex pulling, so only index buffers we need to bind
         auto commandBuffer = commandBuffers[currentFrame];
-        auto indexBuffer   = vuDevice.bufferPool.getResource(mesh.indexBuffer);
+        auto indexBuffer   = mesh.indexBuffer.getResource();
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 

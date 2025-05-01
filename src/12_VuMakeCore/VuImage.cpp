@@ -9,7 +9,7 @@
 void Vu::VuImage::init(VkDevice device, const VkPhysicalDeviceMemoryProperties& memProps, const VuImageCreateInfo& createInfo)
 {
     this->device         = device;
-    this->physicalDevice = physicalDevice;
+    //this->physicalDevice = physicalDevice;
 
     lastCreateInfo = createInfo;
     createImage(device,
@@ -18,7 +18,7 @@ void Vu::VuImage::init(VkDevice device, const VkPhysicalDeviceMemoryProperties& 
                 createInfo.format,
                 createInfo.tiling,
                 createInfo.usage,
-                createInfo.properties,
+                createInfo.memProperties,
                 image,
                 imageMemory);
 
@@ -26,7 +26,7 @@ void Vu::VuImage::init(VkDevice device, const VkPhysicalDeviceMemoryProperties& 
 }
 
 
-void Vu::VuImage::loadImageFile(const Path& path, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& pixels)
+void Vu::VuImage::loadImageFile(const std::filesystem::path& path, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& pixels)
 {
     ZoneScoped;
     pixels = stbi_load(path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);

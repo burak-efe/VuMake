@@ -28,7 +28,7 @@ namespace Vu::CreateUtils
 
     void createPipelineLayout(const VkDevice                         device,
                               const std::span<VkDescriptorSetLayout> descriptorSetLayouts,
-                              const u32                           pushConstantSizeAsByte,
+                              const u32                              pushConstantSizeAsByte,
                               VkPipelineLayout&                      outPipelineLayout);
 
     VkResult createDebugUtilsMessengerEXT(VkInstance                                instance,

@@ -53,8 +53,8 @@
 
 #if defined(OS_WINDOWS) && defined(ARCH_X86_64)
 #define PLATFORM_SPECIFIC_PATH "/windows-x86_64"
-#elif  defined(OS_LINUX) && defined(ARCH_X86_32)
-#define PLATFORM_SPECIFIC_PATH /linux-x86_64
+#elif  defined(OS_LINUX) && defined(ARCH_X86_64)
+#define PLATFORM_SPECIFIC_PATH "/linux-x86_64"
 #else
 #endif
 
@@ -66,6 +66,5 @@ inline void addTagetDependentPath(std::filesystem::path& path)
 #elif  defined(OS_LINUX) && defined(ARCH_X86_32)
    path.append("/linux-x86_64");
 #else
-   UNSUPPORTED TARGET
 #endif
 }

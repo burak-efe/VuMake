@@ -1,9 +1,8 @@
 #pragma once
 
 #include "10_Core/VuCommon.h"
-#include "12_VuMakeCore/VuPools.h"
-
-
+#include "../08_LangUtils/VuPools.h"
+#include "08_LangUtils/VuPoolManager.h"
 
 
 namespace Vu
@@ -43,10 +42,10 @@ namespace Vu
     //when parent shader recompiled, it should be recompiled too
     struct VuMaterial
     {
-        VuDevice*           vuDevice;
-        MaterialSettings    materialSettings;
-        VuHnd<VuShader> shaderHnd;
-        VuHnd<u32>   materialDataHnd;
+        VuDevice*        vuDevice;
+        MaterialSettings materialSettings;
+        VuHnd<VuShader>  shaderHnd;
+        VuHnd<u32>       materialDataHnd;
 
         // VkShaderModule vertexShaderModule;
         // VkShaderModule fragmentShaderModule;

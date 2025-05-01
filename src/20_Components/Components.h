@@ -1,7 +1,7 @@
 #pragma once
 
 #include "10_Core/VuCommon.h"
-#include "12_VuMakeCore/VuPools.h"
+#include "../08_LangUtils/VuPools.h"
 
 namespace Vu
 {
