@@ -80,20 +80,6 @@ namespace Vu
 
     public:
         //RESOURCES
-        // VuImage*    getImage(const VuHnd<VuImage> handle);
-        // VuSampler*  getSampler(const VuHnd<VuSampler> handle);
-        // VuBuffer*   getBuffer(const VuHnd<VuBuffer> handle);
-        // VuShader*   getShader(const VuHnd<VuShader> handle);
-        // VuMaterial* getMaterial(const VuHnd<VuMaterial> handle);
-        // u32*        getMaterialDataIndex(const VuHnd<u32> handle);
-        //
-        // void destroyHandle(VuHnd<VuImage> handle);
-        // void destroyHandle(VuHnd<VuSampler> handle);
-        // void destroyHandle(VuHnd<VuBuffer> handle);
-        // void destroyHandle(VuHnd<VuShader> handle);
-        // void destroyHandle(VuHnd<VuMaterial> handle);
-        // void destroyHandle(VuHnd<u32> handle);
-
         VuHnd<VuImage>   createImage(const VuImageCreateInfo& info);
         VuHnd<VuImage>   createImageFromAsset(const path& path, VkFormat format);
         VuHnd<VuSampler> createSampler(const VuSamplerCreateInfo& info);

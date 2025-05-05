@@ -126,7 +126,7 @@ path Vu::VuShader::compileToSpirv(const path& shaderCodePath)
     spirvFilePath.replace_extension(".spv");
 
 
-    path compilerPath = config::SHADER_COMPILER_PATH;
+    path compilerPath = config::getShaderCompilerPath();
     compilerPath.make_preferred();
 
 
