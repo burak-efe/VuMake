@@ -22,7 +22,7 @@ namespace Vu::config
     constexpr u32 MAX_FRAMES_IN_FLIGHT = 2u;
 
     constexpr VkDeviceSize MATERIAL_DATA_SIZE = 64u;
-    constexpr u32       PUSH_CONST_SIZE    = 256u;
+    constexpr u32          PUSH_CONST_SIZE    = 256u;
 
     constexpr u32 DEVICE_MAX_IMAGE_COUNT         = 256u;
     constexpr u32 DEVICE_MAX_SAMPLER_COUNT       = 256u;
@@ -66,5 +66,13 @@ namespace Vu::config
 #endif
 
 
-    constexpr char SHADER_COMPILER_PATH[] = "bin" PLATFORM_SPECIFIC_PATH "/slang/slangc.exe";
+    constexpr const char* getShaderCompilerPath()
+    {
+#ifdef OS_LINUX
+        return "bin" PLATFORM_SPECIFIC_PATH "/slang/slangc";
+#endif
+#ifdef OS_WINDOWS
+        return "bin" PLATFORM_SPECIFIC_PATH "/slang/slangc.exe";
+#endif
+    }
 }

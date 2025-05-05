@@ -95,6 +95,8 @@ struct VuHnd
     {
         return static_cast<Vu::VuResourcePool<T>*>(VuPoolManager::getPoolPtr({poolHandle}));
     }
+
+
 };
 
 static_assert(sizeof(VuHnd<u32>) == 8, "VuHnd size must be 8 bytes");

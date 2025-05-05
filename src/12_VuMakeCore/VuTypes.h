@@ -99,9 +99,9 @@ namespace Vu
 
             int i = 0;
 
-            for (const auto& queuefamily : queueFamilies)
+            for (const auto& queue_family : queueFamilies)
             {
-                if (queuefamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+                if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
                 {
                     indices.graphicsFamily = i;
                 }
@@ -134,7 +134,6 @@ namespace Vu
 
         static SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice physicalDevice, const VkSurfaceKHR surface)
         {
-            ZoneScoped;
             SwapChainSupportDetails details;
             vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
 
