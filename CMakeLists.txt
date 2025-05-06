@@ -3,6 +3,7 @@ include(FetchContent)
 include(${CMAKE_SOURCE_DIR}/build_utils/Functions.cmake)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ####################################################################################################
 project("VuMake")

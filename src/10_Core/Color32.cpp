@@ -1,5 +1,7 @@
 #include "Color32.h"
 
+#include "08_LangUtils/TypeDefs.h"
+
 namespace Vu
 {
     u8 Color32::getR() const

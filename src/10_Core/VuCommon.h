@@ -2,11 +2,8 @@
 
 #include <source_location>
 #include <filesystem>
+#include "vulkan/vulkan.h"
 
-#include "volk.h"
-#include "vk_mem_alloc.h"
-#include "tracy/Tracy.hpp"
-#include "../08_LangUtils/TypeDefs.h"
 
 using path = std::filesystem::path;
 

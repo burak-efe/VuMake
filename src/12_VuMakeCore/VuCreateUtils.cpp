@@ -1,16 +1,23 @@
 #include "VuCreateUtils.h"
 
-#include <set>
 
-#include "VuUtils.h"
+#include <cstdint>                  // for uint32_t
+#include <optional>                 // for optional
+#include <set>                      // for set, _Rb_tree_const_iterator
+#include <stdexcept>                // for runtime_error
+#include <string>                   // for basic_string, string
+#include <vector>                   // for vector
+
+#include "10_Core/VuCommon.h"       // for VkCheck
+#include "11_Config/VuCtx.h"        // for vkCreateDebugUtilsMessengerEXT
+#include "12_VuMakeCore/VuTypes.h"  // for QueueFamilyIndices
+#include "VuUtils.h"                // for fillDebugMessengerCreateInfo,
 
 void Vu::CreateUtils::createInstance(bool                   enableValidationLayers,
                                      std::span<const char*> validationLayers,
                                      std::span<const char*> extensions,
                                      VkInstance&            outInstance)
 {
-    ZoneScoped;
-
     if (enableValidationLayers && !Utils::checkValidationLayerSupport(validationLayers))
     {
         throw std::runtime_error("validation layers requested, but not available!");
@@ -42,7 +49,6 @@ void Vu::CreateUtils::createInstance(bool                   enableValidationLaye
     }
     //create
     {
-        ZoneScopedN("create call");
         VkCheck(vkCreateInstance(&instanceCreateInfo, nullptr, &outInstance));
     }
 }
@@ -111,13 +117,11 @@ void Vu::CreateUtils::createDevice(const VkPhysicalDeviceFeatures2& features,
     createInfo.ppEnabledExtensionNames = enabledExtensions.data();
     //create
     {
-        ZoneScopedN("create");
         VkCheck(vkCreateDevice(physicalDevice, &createInfo, nullptr, &outDevice));
     }
 
     //queue
     {
-        ZoneScopedN("Queue");
         vkGetDeviceQueue(outDevice, indices.graphicsFamily.value(), 0, &outGraphicsQueue);
         vkGetDeviceQueue(outDevice, indices.presentFamily.value(), 0, &outPresentQueue);
     }
@@ -145,38 +149,38 @@ void Vu::CreateUtils::createPipelineLayout(const VkDevice                       
     VkCheck(vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &outPipelineLayout));
 }
 
-VkResult Vu::CreateUtils::createDebugUtilsMessengerEXT(VkInstance                                instance,
-                                                       const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                                       const VkAllocationCallbacks*              pAllocator,
-                                                       VkDebugUtilsMessengerEXT*                 pDebugMessenger)
-{
-    auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-        vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
-    if (func != nullptr)
-    {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-    }
-    else
-    {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
-
-void Vu::CreateUtils::destroyDebugUtilsMessengerEXT(VkInstance                   instance,
-                                                    VkDebugUtilsMessengerEXT     debugMessenger,
-                                                    const VkAllocationCallbacks* pAllocator)
-{
-    auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-        vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
-    if (func != nullptr)
-    {
-        func(instance, debugMessenger, pAllocator);
-    }
-}
+// VkResult Vu::CreateUtils::createDebugUtilsMessengerEXT(VkInstance                                instance,
+//                                                        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+//                                                        const VkAllocationCallbacks*              pAllocator,
+//                                                        VkDebugUtilsMessengerEXT*                 pDebugMessenger)
+// {
+//     auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+//         vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
+//     if (func != nullptr)
+//     {
+//         return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+//     }
+//     else
+//     {
+//         return VK_ERROR_EXTENSION_NOT_PRESENT;
+//     }
+// }
+//
+// void Vu::CreateUtils::destroyDebugUtilsMessengerEXT(VkInstance                   instance,
+//                                                     VkDebugUtilsMessengerEXT     debugMessenger,
+//                                                     const VkAllocationCallbacks* pAllocator)
+// {
+//     auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+//         vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
+//     if (func != nullptr)
+//     {
+//         func(instance, debugMessenger, pAllocator);
+//     }
+// }
 
 void Vu::CreateUtils::createDebugMessenger(const VkInstance& instance, VkDebugUtilsMessengerEXT& outDebugMessenger)
 {
     VkDebugUtilsMessengerCreateInfoEXT createInfo{};
     Utils::fillDebugMessengerCreateInfo(createInfo);
-    VkCheck(createDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &outDebugMessenger));
+    VkCheck(Vu::ctx::vkCreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &outDebugMessenger));
 }

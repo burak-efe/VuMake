@@ -1,15 +1,27 @@
 #pragma once
 
-#include <span>
+#include <cstdint>                        // for uint32_t
+#include <functional>                     // for function
+#include <memory>                         // for shared_ptr
+#include <optional>                       // for optional
+#include <span>                           // for span
+#include <stack>                          // for stack
+#include <vector>                         // for vector
 
-#include "10_Core/VuCommon.h"
-#include "12_VuMakeCore/VuBuffer.h"
-#include "12_VuMakeCore/VuTypes.h"
-#include "12_VuMakeCore/VuImage.h"
-#include "12_VuMakeCore/VuSampler.h"
+#include <vulkan/vulkan_core.h>           // for VkBuffer, VkCommandBuffer
+#include "vk_mem_alloc.h"                 // for VmaAllocator
 
-#include "VuShader.h"
-#include "08_LangUtils/IndexAllocator.h"
+#include "08_LangUtils/IndexAllocator.h"  // for IndexAllocator
+#include "08_LangUtils/TypeDefs.h"        // for u32, byte
+#include "10_Core/VuCommon.h"             // for path
+#include "12_VuMakeCore/VuBuffer.h"       // for VuBuffer, VuBufferCreateInf...
+#include "12_VuMakeCore/VuImage.h"        // for VuImage, VuImageCreateInfo ...
+#include "12_VuMakeCore/VuSampler.h"      // for VuSampler, VuSamplerCreateI...
+#include "12_VuMakeCore/VuTypes.h"        // for QueueFamilyIndices, VuDispo...
+#include "14_VuMake/VuMaterial.h"         // for MaterialSettings (ptr only)
+#include "VuShader.h"                     // for VuShader
+
+namespace Vu { struct VuRenderPass; }
 
 namespace Vu
 {
@@ -33,13 +45,7 @@ namespace Vu
         u32 sampledImageCount;
         u32 storageImageCount;
         u32 storageBufferCount;
-        // //pool handles
-        // PoolHandle imagePoolHnd;
-        // PoolHandle samplerPoolHnd;
-        // PoolHandle bufferPoolHnd;
-        // PoolHandle shaderPoolHnd;
-        // PoolHandle materialPoolHnd;
-        // PoolHandle materialDataIndexPoolHnd;
+
     };
 
     struct VuDevice
@@ -94,10 +100,6 @@ namespace Vu
         std::span<byte, 64> getMaterialData(std::shared_ptr<u32> handle);
 
         void bindMaterial(VkCommandBuffer cb, std::shared_ptr<VuMaterial> material);
-
-        //INIT
-
-        //void init(const VuDeviceCreateInfo& info);
 
         void uninit();
 

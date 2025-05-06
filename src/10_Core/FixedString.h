@@ -3,23 +3,26 @@
 #include <cstddef>
 #include <stdexcept>
 #include <algorithm>
+#include <cstdint>
+#include <concepts>
+#include <limits>
 
 namespace Vu
 {
-    template <typename T_counter, std::size_t Capacity>
-    concept ValidCounter = std::integral<T_counter>
-                           && (Capacity - 1 <= static_cast<std::size_t>(std::numeric_limits<T_counter>::max()));
+    // template <typename T, std::size_t Max>
+    // concept InRangeOf = std::integral<T> && (Max - 1 <= static_cast<std::size_t>(std::numeric_limits<T>::max()));
 
-    template <std::size_t Capacity, ValidCounter<Capacity> T_counter>
+
+    template <std::size_t TN_Capacity, typename T_Counter>
     struct FixedString
     {
-        static_assert(std::is_integral_v<T_counter>, "T_counter must be an integral type");
-        static_assert(Capacity - 1 <= static_cast<std::size_t>(std::numeric_limits<T_counter>::max()),
+        static_assert(std::is_integral_v<T_Counter>, "T_counter must be an integral type");
+        static_assert(TN_Capacity - 1 <= static_cast<std::size_t>(std::numeric_limits<T_Counter>::max()),
                       "T_counter type is too small for the specified Capacity");
 
     private:
-        std::array<char, Capacity> buffer;
-        T_counter                  length = 0;
+        std::array<char, TN_Capacity> buffer;
+        T_Counter                length = 0;
 
     public:
         constexpr FixedString() : buffer(), length(0)
@@ -39,7 +42,7 @@ namespace Vu
         constexpr void assign(const char* str)
         {
             std::size_t len = std::char_traits<char>::length(str);
-            if (len >= Capacity)
+            if (len >= TN_Capacity)
                 throw std::out_of_range("FixedString: input string too long");
 
             std::copy_n(str, len, buffer.begin());
@@ -49,7 +52,7 @@ namespace Vu
 
         constexpr void assign(const char* str, std::size_t len)
         {
-            if (len >= Capacity)
+            if (len >= TN_Capacity)
                 throw std::out_of_range("FixedString: input string too long");
 
             std::copy_n(str, len, buffer.begin());
@@ -63,7 +66,7 @@ namespace Vu
 
         constexpr std::size_t size() const { return length; }
 
-        static constexpr std::size_t capacity() { return Capacity; }
+        static constexpr std::size_t capacity() { return TN_Capacity; }
 
         constexpr bool empty() const { return length == 0; }
 

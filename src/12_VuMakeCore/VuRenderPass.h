@@ -23,7 +23,6 @@ namespace Vu
                                VkFormat depthStencilFormat
         )
         {
-            ZoneScoped;
             this->device             = device;
             this->colorFormat        = colorFormat;
             this->normalFormat       = normalFormat;
@@ -130,7 +129,6 @@ namespace Vu
 
         void initAsLightningPass(VkDevice device, VkFormat colorFormat)
         {
-            ZoneScoped;
             this->device      = device;
             this->colorFormat = colorFormat;
 

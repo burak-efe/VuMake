@@ -13,8 +13,8 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
-#define IMGUI_IMPL_VULKAN_USE_VOLK
+//#define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
+//#define IMGUI_IMPL_VULKAN_USE_VOLK
 
 //---- Define assertion handler. Defaults to calling assert().
 // If your macro uses multiple statements, make sure is enclosed in a 'do { .. } while (0)' block so it can be used as a single statement.
