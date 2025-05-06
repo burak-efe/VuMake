@@ -1,8 +1,6 @@
 #pragma once
 
 #include "10_Core/VuCommon.h"
-#include "../08_LangUtils/VuPools.h"
-#include "08_LangUtils/VuPoolManager.h"
 
 
 namespace Vu
@@ -13,7 +11,6 @@ namespace Vu
 
     struct MaterialSettings
     {
-
         bool            isTransparent = false;
         VkCullModeFlags cullMode      = VK_CULL_MODE_BACK_BIT;
 
@@ -42,32 +39,26 @@ namespace Vu
     //when parent shader recompiled, it should be recompiled too
     struct VuMaterial
     {
-        VuDevice*        vuDevice;
-        MaterialSettings materialSettings;
-        VuHnd<VuShader>  shaderHnd;
-        VuHnd<u32>       materialDataHnd;
+        VuDevice*                 vuDevice{};
+        MaterialSettings          materialSettings{};
+        std::shared_ptr<VuShader> shaderHnd{};
+        std::shared_ptr<u32>      materialDataHnd{};
 
-        // VkShaderModule vertexShaderModule;
-        // VkShaderModule fragmentShaderModule;
-        // VkRenderPass   renderPass;
-        // VuGraphicsPipeline vuPipeline;
-
-        void init(VuDevice* vuDevice, MaterialSettings matSettings, VuHnd<VuShader> shaderHnd, VuHnd<u32> materialDataHnd);
-
-        //void recompile();
-
-        void uninit();
-
-        //void bindMaterial(const VkCommandBuffer& commandBuffer) const;
-
-        //GPU_PBR_MaterialData* getMaterialData();
+        VuMaterial();
+        VuMaterial(VuDevice*                        vuDevice,
+                   MaterialSettings                 matSettings,
+                   const std::shared_ptr<VuShader>& shaderHnd,
+                   const std::shared_ptr<u32>&      materialDataHnd);
     };
 }
 
-namespace std {
+namespace std
+{
     template <>
-    struct hash<Vu::MaterialSettings> {
-        std::size_t operator()(const Vu::MaterialSettings& settings) const {
+    struct hash<Vu::MaterialSettings>
+    {
+        std::size_t operator()(const Vu::MaterialSettings& settings) const
+        {
             std::size_t h1 = std::hash<bool>()(settings.isTransparent);
             std::size_t h2 = std::hash<VkFlags>()(settings.cullMode);
 

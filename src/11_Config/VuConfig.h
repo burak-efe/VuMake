@@ -1,4 +1,6 @@
 #pragma once
+#include <filesystem>
+
 #include "10_Core/VuCommon.h"
 #include "10_Core/VuPlatform.h"
 
@@ -66,13 +68,13 @@ namespace Vu::config
 #endif
 
 
-    constexpr const char* getShaderCompilerPath()
+    inline std::filesystem::path getShaderCompilerPath()
     {
-#ifdef OS_LINUX
-        return "bin" PLATFORM_SPECIFIC_PATH "/slang/slangc";
-#endif
-#ifdef OS_WINDOWS
-        return "bin" PLATFORM_SPECIFIC_PATH "/slang/slangc.exe";
-#endif
+        std::filesystem::path shaderCompilerPath = "bin";
+
+        appendTargetVariablePath(shaderCompilerPath);
+        shaderCompilerPath /= "slang/slangc";
+        appendTargetVariableExtension(shaderCompilerPath);
+        return shaderCompilerPath;
     }
 }

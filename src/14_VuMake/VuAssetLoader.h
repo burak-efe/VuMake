@@ -83,7 +83,7 @@ namespace Vu
                                                             .length = indexCount, .strideInBytes = sizeof(u32),
                                                             .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT
                                                         });
-            auto* indexBuffer = dstMesh.indexBuffer.getResource();
+            auto* indexBuffer = dstMesh.indexBuffer.get();
 
             indexBuffer->map();
             std::span<byte> indexSpanByte = indexBuffer->getMappedSpan(0, indexCount * sizeof(u32));
@@ -106,7 +106,7 @@ namespace Vu
                                                              .vkUsageFlags =
                                                              VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
                                                          });
-            VuBuffer* vertexBuffer = dstMesh.vertexBuffer.getResource();
+            VuBuffer* vertexBuffer = dstMesh.vertexBuffer.get();
             vertexBuffer->map();
 
             std::span<byte> vertexSpanByte =

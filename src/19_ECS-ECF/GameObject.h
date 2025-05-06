@@ -13,7 +13,7 @@ namespace Vu
 
     struct GameObject
     {
-        String name;
+        std::string name;
         bool   active = true;
 
     private:

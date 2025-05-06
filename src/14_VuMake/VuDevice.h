@@ -5,11 +5,11 @@
 #include "10_Core/VuCommon.h"
 #include "12_VuMakeCore/VuBuffer.h"
 #include "12_VuMakeCore/VuTypes.h"
-#include "../08_LangUtils/VuPools.h"
 #include "12_VuMakeCore/VuImage.h"
 #include "12_VuMakeCore/VuSampler.h"
 
 #include "VuShader.h"
+#include "08_LangUtils/IndexAllocator.h"
 
 namespace Vu
 {
@@ -33,82 +33,83 @@ namespace Vu
         u32 sampledImageCount;
         u32 storageImageCount;
         u32 storageBufferCount;
-        //pool handles
-        PoolHandle imagePoolHnd;
-        PoolHandle samplerPoolHnd;
-        PoolHandle bufferPoolHnd;
-        PoolHandle shaderPoolHnd;
-        PoolHandle materialPoolHnd;
-        PoolHandle materialDataIndexPoolHnd;
+        // //pool handles
+        // PoolHandle imagePoolHnd;
+        // PoolHandle samplerPoolHnd;
+        // PoolHandle bufferPoolHnd;
+        // PoolHandle shaderPoolHnd;
+        // PoolHandle materialPoolHnd;
+        // PoolHandle materialDataIndexPoolHnd;
     };
 
     struct VuDevice
     {
-        VkInstance       instance;
-        VkPhysicalDevice physicalDevice;
+        VkInstance       instance{};
+        VkPhysicalDevice physicalDevice{};
 
-        QueueFamilyIndices           queueFamilyIndices;
-        VkDevice                     device;
-        VkQueue                      graphicsQueue;
-        VkQueue                      presentQueue;
-        VkCommandPool                commandPool;
-        VkDescriptorSetLayout        globalDescriptorSetLayout;
-        std::vector<VkDescriptorSet> globalDescriptorSets;
-        VkDescriptorPool             descriptorPool;
-        VkDescriptorPool             uiDescriptorPool;
-        VkPipelineLayout             globalPipelineLayout;
-        VmaAllocator                 vma;
-
-        VkPhysicalDeviceMemoryProperties memProperties;
-
-        PoolHandle imagePoolHnd;
-        PoolHandle samplerPoolHnd;
-        PoolHandle bufferPoolHnd;
-        PoolHandle shaderPoolHnd;
-        PoolHandle materialPoolHnd;
-        PoolHandle materialDataIndexPoolHnd;
+        QueueFamilyIndices               queueFamilyIndices{};
+        VkDevice                         device{};
+        VkQueue                          graphicsQueue{};
+        VkQueue                          presentQueue{};
+        VkCommandPool                    commandPool{};
+        VkDescriptorSetLayout            globalDescriptorSetLayout{};
+        std::vector<VkDescriptorSet>     globalDescriptorSets{};
+        VkDescriptorPool                 descriptorPool{};
+        VkDescriptorPool                 uiDescriptorPool{};
+        VkPipelineLayout                 globalPipelineLayout{};
+        VmaAllocator                     vma{};
+        VkPhysicalDeviceMemoryProperties memProperties{};
+        IndexAllocator                   imgBindlessIndexAllocator{};
+        IndexAllocator                   samplerBindlessIndexAllocator{};
+        IndexAllocator                   bufferBindlessIndexAllocator{};
+        IndexAllocator                   materialDataBindlessIndexAllocator{};
 
     private:
-        VuBuffer         bdaBuffer; //holds the address of all other buffers
-        VuBuffer         stagingBuffer;
-        VuHnd<VuBuffer>  debugBufferHnd;
-        VuHnd<VuBuffer>  materialDataBufferHandle;
-        VuHnd<VuImage>   defaultImageHandle;
-        VuHnd<VuImage>   defaultNormalImageHandle;
-        VuHnd<VuSampler> defaultSamplerHandle;
-        VuDisposeStack   disposeStack;
+        //holds the address of all other buffers
+        VuBuffer                   bdaBuffer{};
+        VuBuffer                   stagingBuffer{};
+        std::shared_ptr<VuBuffer>  debugBufferHnd{};
+        std::shared_ptr<VuBuffer>  materialDataBufferHandle{};
+        std::shared_ptr<VuImage>   defaultImageHandle{};
+        std::shared_ptr<VuImage>   defaultNormalImageHandle{};
+        std::shared_ptr<VuSampler> defaultSamplerHandle{};
+        VuDisposeStack             disposeStack{};
 
     public:
         //RESOURCES
-        VuHnd<VuImage>   createImage(const VuImageCreateInfo& info);
-        VuHnd<VuImage>   createImageFromAsset(const path& path, VkFormat format);
-        VuHnd<VuSampler> createSampler(const VuSamplerCreateInfo& info);
-        VuHnd<VuBuffer>  createBuffer(const VuBufferCreateInfo& info);
-        VuHnd<VuShader>  createShader(path vertexPath, path fragPath, VuRenderPass* vuRenderPass);
 
-        VuHnd<u32> createMaterialDataIndex();
+        VuDevice() = default;
+        explicit                   VuDevice(const VuDeviceCreateInfo& createInfo);
+        std::shared_ptr<VuImage>   createImage(const VuImageCreateInfo& info);
+        std::shared_ptr<VuImage>   createImageFromAsset(const path& path, VkFormat format);
+        std::shared_ptr<VuSampler> createSampler(const VuSamplerCreateInfo& info);
+        std::shared_ptr<VuBuffer>  createBuffer(const VuBufferCreateInfo& info);
+        std::shared_ptr<VuShader>  createShader(path vertexPath, path fragPath, VuRenderPass* vuRenderPass);
 
-        VuHnd<VuMaterial> createMaterial(MaterialSettings matSettings, VuHnd<VuShader> shaderHnd, VuHnd<u32> materialDataHnd);
+        std::shared_ptr<u32> createMaterialDataIndex();
 
-        std::span<byte, 64> getMaterialData(VuHnd<u32> handle);
+        std::shared_ptr<VuMaterial> createMaterial(MaterialSettings matSettings, std::shared_ptr<VuShader> shaderHnd,
+                                                   std::shared_ptr<u32> materialDataHnd);
 
-        void bindMaterial(VkCommandBuffer cb, VuHnd<VuMaterial> material);
+        std::span<byte, 64> getMaterialData(std::shared_ptr<u32> handle);
+
+        void bindMaterial(VkCommandBuffer cb, std::shared_ptr<VuMaterial> material);
 
         //INIT
 
-        void init(const VuDeviceCreateInfo& info);
+        //void init(const VuDeviceCreateInfo& info);
 
         void uninit();
 
-        void registerBindlessBDA_Buffer(const VuBuffer& buffer);
+        void registerBindlessBDA_Buffer(const VuBuffer& buffer) const;
 
-        void writeUBO_ToGlobalPool(const VuBuffer& buffer, u32 writeIndex, u32 setIndex);
+        void writeUBO_ToGlobalPool(const VuBuffer& buffer, u32 writeIndex, u32 setIndex) const;
 
-        void registerToBindless(const VuBuffer& buffer, u32 bindlessIndex);
+        void registerToBindless(const VuBuffer& buffer, u32 bindlessIndex) const;
 
-        void registerToBindless(const VkImageView& imageView, u32 bindlessIndex);
+        void registerToBindless(const VkImageView& imageView, u32 bindlessIndex) const;
 
-        void registerToBindless(const VkSampler& sampler, u32 bindlessIndex);
+        void registerToBindless(const VkSampler& sampler, u32 bindlessIndex) const;
 
         VkCommandBuffer BeginSingleTimeCommands();
 

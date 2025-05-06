@@ -5,15 +5,9 @@
 #include <cstddef>
 #include <span>
 #include <stdexcept>
-
-// #define START_NAMESPACE(Name) namespace Name {
-// #define END_NAMESPACE }
-
-// namespace std::filesystem
-// {
-//     class path;
-// }
-
+#include <vector>
+#include <memory>
+#include <vector>
 
 using byte = std::byte;
 
@@ -40,8 +34,12 @@ using i64orNull = int64_t;
 template <typename T>
 using PtrOrNull = T*;
 
-// using Path   = std::filesystem::path;
-using String = std::string;
+
+template <typename T>
+using vector = std::pmr::vector<T>;
+
+using string = std::pmr::string;
+
 
 consteval std::uint8_t operator""_u8(unsigned long long value)
 {

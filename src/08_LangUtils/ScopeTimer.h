@@ -4,7 +4,7 @@
 #include <iostream>
 #include <source_location>
 
-// RAII function timer
+// RAII function timer, prints time on destruction
 struct ScopeTimer
 {
     std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();

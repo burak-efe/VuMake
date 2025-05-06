@@ -74,26 +74,18 @@ namespace Vu
         VkCommandBuffer cb = commandBuffers[currentFrame];
         swapChain.endRenderPass(cb);
 
-        VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                                        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
         VkMemoryBarrier memoryBarrier = {};
         memoryBarrier.sType           = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-        memoryBarrier.srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        memoryBarrier.dstAccessMask   = VK_ACCESS_SHADER_READ_BIT;
+        memoryBarrier.srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                      VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-        vkCmdPipelineBarrier(
-                             cb,
-                             srcStage,
-                             dstStage,
-                             0,
-                             1,
-                             &memoryBarrier, // One memory barrier for G-buffer attachments
-                             0,
-                             nullptr,
-                             0,
-                             nullptr
-                            );
+        vkCmdPipelineBarrier(cb, srcStage, dstStage, 0, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
 
         //lightning pass
         swapChain.beginLightningPass(cb, currentFrameImageIndex);
@@ -151,11 +143,11 @@ namespace Vu
     {
         //we are using vertex pulling, so only index buffers we need to bind
         auto commandBuffer = commandBuffers[currentFrame];
-        auto indexBuffer   = mesh.indexBuffer.getResource();
+        auto indexBuffer   = mesh.indexBuffer.get();
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
-    void VuRenderer::bindMaterial(VuHnd<VuMaterial> material)
+    void VuRenderer::bindMaterial(std::shared_ptr<VuMaterial>& material)
     {
         auto commandBuffer = commandBuffers[currentFrame];
         vuDevice.bindMaterial(commandBuffer, material);
@@ -170,7 +162,8 @@ namespace Vu
     void VuRenderer::pushConstants(const GPU_PushConstant& pushConstant)
     {
         auto commandBuffer = commandBuffers[currentFrame];
-        vkCmdPushConstants(commandBuffer, vuDevice.globalPipelineLayout, VK_SHADER_STAGE_ALL, 0, config::PUSH_CONST_SIZE,
+        vkCmdPushConstants(commandBuffer, vuDevice.globalPipelineLayout, VK_SHADER_STAGE_ALL, 0,
+                           config::PUSH_CONST_SIZE,
                            &pushConstant);
     }
 

@@ -1,6 +1,7 @@
 #include "VuSwapChain.h"
 
 #include <algorithm>
+#include <format>
 #include <iostream>
 
 #include "11_Config/VuCtx.h"
@@ -9,11 +10,13 @@
 
 namespace Vu
 {
-    void VuSwapChain::init(VuDevice* vuDevice, VkSurfaceKHR surface)
+    VuSwapChain::VuSwapChain(): vuDevice(nullptr), surface(nullptr), gBufferPass(), lightningPass(), colorFormat(),
+                                colorSpace(), swapChainImageFormat()
     {
-        this->vuDevice = vuDevice;
-        this->surface  = surface;
+    }
 
+    VuSwapChain::VuSwapChain(VuDevice* vuDevice, VkSurfaceKHR surface) : vuDevice{vuDevice}, surface{surface}
+    {
         createSwapChain(surface);
         createImageViews(vuDevice->device);
 
@@ -61,7 +64,7 @@ namespace Vu
                                   }
                                  );
 
-        VuImage* dsImage = depthStencilHnd.getResource();
+        VuImage* dsImage = depthStencilHnd.get();
 
         gBufferPass.initAsGBufferPass(vuDevice->device,
                                       VK_FORMAT_R8G8B8A8_UNORM,
@@ -73,6 +76,71 @@ namespace Vu
 
         createFramebuffers();
     }
+
+    // void VuSwapChain::init(VuDevice* vuDevice, VkSurfaceKHR surface)
+    // {
+    //     this->vuDevice = vuDevice;
+    //     this->surface  = surface;
+    //
+    //     createSwapChain(surface);
+    //     createImageViews(vuDevice->device);
+    //
+    //     colorHnd =
+    //         vuDevice->createImage(
+    //                               {
+    //                                   .width = swapChainExtent.width,
+    //                                   .height = swapChainExtent.height,
+    //                                   .format = VK_FORMAT_R8G8B8A8_UNORM,
+    //                                   .usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    //                                   .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+    //                               }
+    //                              );
+    //
+    //     normalHnd =
+    //         vuDevice->createImage(
+    //                               {
+    //                                   .width = swapChainExtent.width,
+    //                                   .height = swapChainExtent.height,
+    //                                   .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+    //                                   .usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    //                                   .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+    //                               }
+    //                              );
+    //
+    //     armHnd =
+    //         vuDevice->createImage(
+    //                               {
+    //                                   .width = swapChainExtent.width,
+    //                                   .height = swapChainExtent.height,
+    //                                   .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+    //                                   .usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    //                                   .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+    //                               }
+    //                              );
+    //
+    //     depthStencilHnd =
+    //         vuDevice->createImage(
+    //                               {
+    //                                   .width = swapChainExtent.width,
+    //                                   .height = swapChainExtent.height,
+    //                                   .format = VK_FORMAT_D32_SFLOAT,
+    //                                   .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+    //                                   .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+    //                               }
+    //                              );
+    //
+    //     VuImage* dsImage = depthStencilHnd.getResource();
+    //
+    //     gBufferPass.initAsGBufferPass(vuDevice->device,
+    //                                   VK_FORMAT_R8G8B8A8_UNORM,
+    //                                   VK_FORMAT_R32G32B32A32_SFLOAT,
+    //                                   VK_FORMAT_R32G32B32A32_SFLOAT,
+    //                                   dsImage->lastCreateInfo.format);
+    //
+    //     lightningPass.initAsLightningPass(vuDevice->device, swapChainImageFormat);
+    //
+    //     createFramebuffers();
+    // }
 
     void VuSwapChain::uninit()
     {
@@ -86,7 +154,7 @@ namespace Vu
         }
 
         gBufferPass.uninit();
-        depthStencilHnd.destroyHandle();
+        //depthStencilHnd.destroyHandle();
         vkDestroySwapchainKHR(vuDevice->device, swapChain, nullptr);
     }
 
@@ -129,8 +197,10 @@ namespace Vu
             static_cast<u32>(width),
             static_cast<u32>(height)
         };
-        actualExtent.width  = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-        actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+        actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width,
+                                        capabilities.maxImageExtent.width);
+        actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height,
+                                         capabilities.maxImageExtent.height);
         return actualExtent;
     }
 
@@ -236,13 +306,8 @@ namespace Vu
         VkExtent2D         extend        = chooseSwapExtent(swapChainSupport.capabilities);
         VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR   presentMode   = chooseSwapPresentMode(swapChainSupport.presentModes);
-        u32                imageCount    = swapChainSupport.capabilities.minImageCount + 1;
+        u32                imageCount    = swapChainSupport.capabilities.minImageCount;
 
-        if (swapChainSupport.capabilities.maxImageCount > 0
-            && imageCount > swapChainSupport.capabilities.maxImageCount)
-        {
-            imageCount = swapChainSupport.capabilities.maxImageCount;
-        }
 
         VkSwapchainCreateInfoKHR createInfo{};
         createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -325,10 +390,10 @@ namespace Vu
         for (size_t i = 0; i < swapChainImageViews.size(); i++)
         {
             std::array<VkImageView, 4> attachments = {
-                colorHnd.getResource()->imageView,
-                normalHnd.getResource()->imageView,
-                armHnd.getResource()->imageView,
-                depthStencilHnd.getResource()->imageView,
+                colorHnd.get()->imageView,
+                normalHnd.get()->imageView,
+                armHnd.get()->imageView,
+                depthStencilHnd.get()->imageView,
             };
             VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

@@ -7,7 +7,6 @@
 #include "imgui_internal.h"
 
 #include "11_Config/VuCtx.h"
-#include "../08_LangUtils/VuPools.h"
 #include "14_VuMake/VuAssetLoader.h"
 #include "14_VuMake/VuRenderer.h"
 #include "20_Components/Camera.h"
@@ -44,72 +43,46 @@ namespace Vu
     public:
         void Run()
         {
-            ZoneScoped;
-            PoolHandle imagePoolHnd             = {.index = 1};
-            PoolHandle samplerPoolHnd           = {.index = 2};
-            PoolHandle bufferPoolHnd            = {.index = 3};
-            PoolHandle shaderPoolHnd            = {.index = 4};
-            PoolHandle materialPoolHnd          = {.index = 5};
-            PoolHandle materialDataIndexPoolHnd = {.index = 6};
-
             VuShader a{};
-
-            VuResourcePool<VuShader>   shaderPool(1024, {1});
-            VuResourcePool<VuImage>    imagePool(1024, AllocatorHandle::Default());
-            VuResourcePool<VuSampler>  samplerPool(1024, AllocatorHandle::Default());
-            VuResourcePool<VuBuffer>   bufferPool(1024, AllocatorHandle::Default());
-            VuResourcePool<VuMaterial> materialPool(1024, AllocatorHandle::Default());
-            VuResourcePool<u32>        materialDataIndexPool(1024, AllocatorHandle::Default());
-
-
-            VuPoolManager::registerPoolToGlobalArray(imagePoolHnd, &imagePool);
-            VuPoolManager::registerPoolToGlobalArray(samplerPoolHnd, &samplerPool);
-            VuPoolManager::registerPoolToGlobalArray(bufferPoolHnd, &bufferPool);
-            VuPoolManager::registerPoolToGlobalArray(shaderPoolHnd, &shaderPool);
-            VuPoolManager::registerPoolToGlobalArray(materialPoolHnd, &materialPool);
-            VuPoolManager::registerPoolToGlobalArray(materialDataIndexPoolHnd, &materialDataIndexPool);
 
 
             VuRenderer vuRenderer{};
-
-            vuRenderer.init(imagePoolHnd,
-                            samplerPoolHnd,
-                            bufferPoolHnd,
-                            shaderPoolHnd,
-                            materialPoolHnd,
-                            materialDataIndexPoolHnd);
-            VuDevice* device = &vuRenderer.vuDevice;
-            ECS_VU_RENDERER  = &vuRenderer;
+            VuDevice*  device = &vuRenderer.vuDevice;
+            ECS_VU_RENDERER   = &vuRenderer;
 
             VuMesh mesh{};
             mesh.init(device);
             VuAssetLoader::LoadGltf(vuRenderer.vuDevice, meshPath, mesh);
 
-            VuHnd<VuShader> gPassShaderHnd = device->createShader(gpassVertPath,
-                                                                  gpassFragPath,
-                                                                  &vuRenderer.swapChain.gBufferPass);
+            std::shared_ptr<VuShader> gPassShaderHnd = device->createShader(gpassVertPath,
+                                                                            gpassFragPath,
+                                                                            &vuRenderer.swapChain.gBufferPass);
 
-            VuHnd<VuShader> deferShaderHnd = device->createShader(defVertPath,
-                                                                  defFragPath,
-                                                                  &vuRenderer.swapChain.lightningPass);
+            std::shared_ptr<VuShader> deferShaderHnd = device->createShader(defVertPath,
+                                                                            defFragPath,
+                                                                            &vuRenderer.swapChain.lightningPass);
 
             //mesh mat
-            VuHnd<u32>            basicMatDataIndexHnd = vuRenderer.vuDevice.createMaterialDataIndex();
-            VuHnd<VuMaterial>     basicMatHnd          = vuRenderer.vuDevice.createMaterial({}, gPassShaderHnd, basicMatDataIndexHnd);
-            std::span<byte, 64>   basicMatDataBlob     = vuRenderer.vuDevice.getMaterialData(basicMatDataIndexHnd);
-            GPU_PBR_MaterialData* basicMatData         = reinterpret_cast<GPU_PBR_MaterialData*>(basicMatDataBlob.data());
-            basicMatData->texture0                     = 0;
-            basicMatData->texture1                     = 1;
+            std::shared_ptr<u32>        basicMatDataIndexHnd = vuRenderer.vuDevice.createMaterialDataIndex();
+            std::shared_ptr<VuMaterial> basicMatHnd          = vuRenderer.vuDevice.
+                                                                 createMaterial({}, gPassShaderHnd,
+                                                                                    basicMatDataIndexHnd);
+            std::span<byte, 64>   basicMatDataBlob = vuRenderer.vuDevice.getMaterialData(basicMatDataIndexHnd);
+            GPU_PBR_MaterialData* basicMatData     = reinterpret_cast<GPU_PBR_MaterialData*>(basicMatDataBlob.data());
+            basicMatData->texture0                 = 0;
+            basicMatData->texture1                 = 1;
 
             //def mat
-            VuHnd<u32>            deferMatDataIndexHnd = vuRenderer.vuDevice.createMaterialDataIndex();
-            VuHnd<VuMaterial>     deferMatHnd          = vuRenderer.vuDevice.createMaterial({}, deferShaderHnd, deferMatDataIndexHnd);
-            std::span<byte, 64>   deferMatDataBlob     = vuRenderer.vuDevice.getMaterialData(deferMatDataIndexHnd);
-            GPU_PBR_MaterialData* deferMatData         = reinterpret_cast<GPU_PBR_MaterialData*>(deferMatDataBlob.data());
-            deferMatData->texture0                     = vuRenderer.swapChain.colorHnd.index;
-            deferMatData->texture1                     = vuRenderer.swapChain.normalHnd.index;
-            deferMatData->texture2                     = vuRenderer.swapChain.armHnd.index;
-            deferMatData->texture3                     = vuRenderer.swapChain.depthStencilHnd.index;
+            std::shared_ptr<u32>        deferMatDataIndexHnd = vuRenderer.vuDevice.createMaterialDataIndex();
+            std::shared_ptr<VuMaterial> deferMatHnd          = vuRenderer.vuDevice.
+                                                                 createMaterial({}, deferShaderHnd,
+                                                                                    deferMatDataIndexHnd);
+            std::span<byte, 64>   deferMatDataBlob = vuRenderer.vuDevice.getMaterialData(deferMatDataIndexHnd);
+            GPU_PBR_MaterialData* deferMatData     = reinterpret_cast<GPU_PBR_MaterialData*>(deferMatDataBlob.data());
+            deferMatData->texture0                 = vuRenderer.swapChain.colorHnd.get()->bindlessIndex;
+            deferMatData->texture1                 = vuRenderer.swapChain.normalHnd.get()->bindlessIndex;
+            deferMatData->texture2                 = vuRenderer.swapChain.armHnd.get()->bindlessIndex;
+            deferMatData->texture3                 = vuRenderer.swapChain.depthStencilHnd.get()->bindlessIndex;
 
 
             flecs::world world;
@@ -150,8 +123,8 @@ namespace Vu
 
                 //Rendering
                 {
-                    gPassShaderHnd.getResource()->tryRecompile();
-                    deferShaderHnd.getResource()->tryRecompile();
+                    gPassShaderHnd.get()->tryRecompile();
+                    deferShaderHnd.get()->tryRecompile();
 
                     vuRenderer.beginFrame();
                     drawMeshSystem.run();
@@ -159,7 +132,7 @@ namespace Vu
                     vuRenderer.beginLightningPass();
 
                     vuRenderer.bindMaterial(deferMatHnd);
-                    auto dataIndex = deferMatHnd.getResource()->materialDataHnd.index;
+                    u32 dataIndex = *deferMatHnd.get()->materialDataHnd.get();
                     vuRenderer.pushConstants({mat4x4(), dataIndex});
                     vkCmdDraw(vuRenderer.commandBuffers[vuRenderer.currentFrame], 3, 1, 0, 0);
 
@@ -204,10 +177,10 @@ namespace Vu
             }
 
             vuRenderer.waitIdle();
-            gPassShaderHnd.destroyHandle();
-            basicMatHnd.destroyHandle();
-            basicMatDataIndexHnd.destroyHandle();
-            mesh.uninit();
+            // gPassShaderHnd.destroyHandle();
+            // basicMatHnd.destroyHandle();
+            // basicMatDataIndexHnd.destroyHandle();
+            // mesh.uninit();
             vuRenderer.uninit();
         }
     };

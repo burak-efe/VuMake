@@ -22,36 +22,37 @@ namespace Vu
                     {
                         VuDevice* vuDevice = &ECS_VU_RENDERER->vuDevice;
 
-                        auto materialHnd = meshRenderer.materialHnd;
+                        std::shared_ptr<VuMaterial> materialHnd = meshRenderer.materialHnd;
 
-                        auto* matPtr = materialHnd.getResource();
+                        VuMaterial* matPtr       = materialHnd.get();
+                        uint32_t    matDataIndex = *matPtr->materialDataHnd;
 
                         //bind pipeline
                         ECS_VU_RENDERER->bindMaterial(materialHnd);
 
                         //push constant
-                        mat4x4 trs = transform.ToTRS();
+                        mat4x4           trs = transform.ToTRS();
                         GPU_PushConstant pc{
                             trs,
-                            matPtr->materialDataHnd.index,
+                            matDataIndex,
                             {
-                                meshRenderer.mesh->vertexBuffer.index,
-                                (u32)meshRenderer.mesh->vertexCount,
+                                meshRenderer.mesh->vertexBuffer->bindlessIndex,
+                                meshRenderer.mesh->vertexCount,
                                 0
                             }
                         };
                         ECS_VU_RENDERER->pushConstants(pc);
                         ECS_VU_RENDERER->bindMesh(*meshRenderer.mesh);
-                        ECS_VU_RENDERER->drawIndexed(meshRenderer.mesh->indexBuffer.getResource()->length);
+                        ECS_VU_RENDERER->drawIndexed(meshRenderer.mesh->indexBuffer->length);
                     });
     }
 
     inline flecs::system AddSpinningSystem(flecs::world& world)
     {
         return world.system<Transform, Spinn>("SpinningSystem")
-                    .each([](Transform& trs, Spinn& spinn)
+                    .each([](Transform& trs, const Spinn& spin)
                     {
-                        trs.Rotate(spinn.axis, spinn.angle * ctx::deltaAsSecond);
+                        trs.Rotate(spin.axis, spin.angle * ctx::deltaAsSecond);
                     });
     }
 
@@ -62,7 +63,8 @@ namespace Vu
                     {
                         if (ImGui::CollapsingHeader("Spin Components"))
                         {
-                            ImGui::SliderFloat(std::format("Radians/perSecond##{0}", e.id()).c_str(), &spinn.angle, 0.0f, 32.0f);
+                            ImGui::SliderFloat(std::format("Radians/perSecond##{0}", e.id()).c_str(), &spinn.angle,
+                                               0.0f, 32.0f);
                         }
                     });
     }
@@ -80,7 +82,7 @@ namespace Vu
                         //if (open) {
 
                         ImGui::Separator();
-                        ImGui::Text(e.name());
+                        ImGui::Text("%s",e.name().c_str());
                         ImGui::SliderFloat3(std::format("Position ##{0}", e.id()).c_str(),
                                             &trs.position.x, -8.0f, 8.0f);
                         // ImGui::Text(std::format("Rotation {0:}", glm::to_string(trs.rotation)).c_str());
@@ -97,7 +99,7 @@ namespace Vu
                         if (ImGui::CollapsingHeader("Camera Components"))
                         {
                             ImGui::Separator();
-                            ImGui::Text(e.name());
+                            ImGui::Text("%s\n", e.name().c_str());
                             ImGui::SliderFloat(std::format("FOV##{0}", e.id()).c_str(), &cam.fov, 20.0f, 140.0f);
                         }
                     });
@@ -176,8 +178,8 @@ namespace Vu
                             yOffset *= cam.sensitivity;
 
                             float smoothingFactor = 0.4f; // tweak this value
-                            float smoothedDeltaX  = (cam.lastX * smoothingFactor) + (xOffset * (1.0f - smoothingFactor));
-                            float smoothedDeltaY  = (cam.lastY * smoothingFactor) + (yOffset * (1.0f - smoothingFactor));
+                            float smoothedDeltaX = (cam.lastX * smoothingFactor) + (xOffset * (1.0f - smoothingFactor));
+                            float smoothedDeltaY = (cam.lastY * smoothingFactor) + (yOffset * (1.0f - smoothingFactor));
 
                             cam.yaw +=
                                 smoothedDeltaY;
@@ -202,7 +204,7 @@ namespace Vu
                         trs.SetEulerAngles(vec3(cam.yaw, cam.pitch, cam.roll));
 
                         quaternion asEuler            = fromEulerYXZ(vec3(cam.yaw, cam.pitch, cam.roll));
-                        vec3     rotatedTranslation = rotate(asEuler, movement);
+                        vec3       rotatedTranslation = rotate(asEuler, movement);
 
                         trs.position.x += rotatedTranslation.x;
                         trs.position.y += rotatedTranslation.y;

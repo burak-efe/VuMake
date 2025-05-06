@@ -7,27 +7,31 @@ namespace Vu
 {
     struct VuBufferCreateInfo
     {
-        VuName                   name           = "VuBuffer";
-        VkDeviceSize             length         = 1;
-        VkDeviceSize             strideInBytes  = 1;
-        VkBufferUsageFlags       vkUsageFlags   = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        VuName             name          = "VuBuffer";
+        VkDeviceSize       length        = 1;
+        VkDeviceSize       strideInBytes = 1;
+        VkBufferUsageFlags vkUsageFlags  = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                          VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VmaMemoryUsage           vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO;
-        VmaAllocationCreateFlags vmaCreateFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        VmaAllocationCreateFlags vmaCreateFlags =
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
     };
 
     struct VuBuffer
     {
-        VkDevice           device;
-        VmaAllocator       vma;
-        VuBufferCreateInfo lastCreateInfo;
+        VkDevice           device         = VK_NULL_HANDLE;
+        VmaAllocator       vma            = VK_NULL_HANDLE;
+        //VuBufferCreateInfo lastCreateInfo = {};
 
-        VuName            name;
-        VkBuffer          buffer;
-        VmaAllocation     allocation;
-        VmaAllocationInfo allocationInfo;
-        VkDeviceSize      length;
-        VkDeviceSize      stride;
-        void*             mapPtr;
+        VuName            name           = "VuBuffer";
+        VkBuffer          buffer         = VK_NULL_HANDLE;
+        VmaAllocation     allocation     = VK_NULL_HANDLE;
+        VmaAllocationInfo allocationInfo = {};
+        VkDeviceSize      length         = 0;
+        VkDeviceSize      stride         = 0;
+        void*             mapPtr         = VK_NULL_HANDLE;
+        u32orNull         bindlessIndex  = 0;
+
 
         void init(VkDevice device, VmaAllocator allocator, const VuBufferCreateInfo& info);
 

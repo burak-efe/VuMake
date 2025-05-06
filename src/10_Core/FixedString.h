@@ -10,7 +10,7 @@ namespace Vu
     concept ValidCounter = std::integral<T_counter>
                            && (Capacity - 1 <= static_cast<std::size_t>(std::numeric_limits<T_counter>::max()));
 
-    template <std::size_t Capacity,ValidCounter<Capacity> T_counter>
+    template <std::size_t Capacity, ValidCounter<Capacity> T_counter>
     struct FixedString
     {
         static_assert(std::is_integral_v<T_counter>, "T_counter must be an integral type");
