@@ -4,7 +4,7 @@
 #include "10_Core/VuCommon.h"
 #include "10_Core/math/VuFloat2.h"
 #include "10_Core/math/VuFloat3.h"
-#include "../08_LangUtils/VuPools.h"
+
 
 
 namespace Vu
@@ -16,8 +16,8 @@ namespace Vu
     {
         VuDevice*       vuDevice;
         u32          vertexCount;
-        VuHnd<VuBuffer> indexBuffer;
-        VuHnd<VuBuffer> vertexBuffer;
+        std::shared_ptr<VuBuffer> indexBuffer;
+        std::shared_ptr<VuBuffer> vertexBuffer;
 
 
         void init(VuDevice* vuDevice)
@@ -26,11 +26,11 @@ namespace Vu
         }
 
 
-        void uninit()
-        {
-            indexBuffer.destroyHandle();
-            vertexBuffer.destroyHandle();
-        }
+        // void uninit()
+        // {
+        //     indexBuffer.destroyHandle();
+        //     vertexBuffer.destroyHandle();
+        // }
 
         VkDeviceSize totalAttributesSizePerVertex()
         {

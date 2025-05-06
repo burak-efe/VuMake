@@ -17,35 +17,25 @@ namespace Vu
 {
     struct VuRenderer
     {
-        VkInstance               instance;
-        VkPhysicalDevice         physicalDevice;
-        VkDebugUtilsMessengerEXT debugMessenger;
-        VkSurfaceKHR             surface;
-        VuSwapChain              swapChain;
-        VuDevice                 vuDevice;
-        VuDisposeStack           disposeStack;
-        ImGui_ImplVulkanH_Window imguiMainWindowData;
+        VkInstance                                                instance{};
+        VkPhysicalDevice                                          physicalDevice{};
+        VuDevice                                                  vuDevice{};
+        VkDebugUtilsMessengerEXT                                  debugMessenger{};
+        VkSurfaceKHR                                              surface{};
+        VuSwapChain                                               swapChain{};
+        ImGui_ImplVulkanH_Window                                  imguiMainWindowData{};
+        VuDisposeStack                                            disposeStack{};
+        std::array<VkCommandBuffer, config::MAX_FRAMES_IN_FLIGHT> commandBuffers{};
+        std::array<VkSemaphore, config::MAX_FRAMES_IN_FLIGHT>     imageAvailableSemaphores{};
+        std::array<VkSemaphore, config::MAX_FRAMES_IN_FLIGHT>     renderFinishedSemaphores{};
+        std::array<VkFence, config::MAX_FRAMES_IN_FLIGHT>         inFlightFences{};
+        std::array<VuBuffer, config::MAX_FRAMES_IN_FLIGHT>        uniformBuffers{};
 
 
-        std::array<VkCommandBuffer, config::MAX_FRAMES_IN_FLIGHT> commandBuffers;
-        std::array<VkSemaphore, config::MAX_FRAMES_IN_FLIGHT>     imageAvailableSemaphores;
-        std::array<VkSemaphore, config::MAX_FRAMES_IN_FLIGHT>     renderFinishedSemaphores;
-        std::array<VkFence, config::MAX_FRAMES_IN_FLIGHT>         inFlightFences;
-        std::array<VuBuffer, config::MAX_FRAMES_IN_FLIGHT>        uniformBuffers;
+        u32 currentFrame{};
+        u32 currentFrameImageIndex{};
 
-
-        u32 currentFrame           = 0u;
-        u32 currentFrameImageIndex = 0u;
-
-        //VuRenderer( );
-
-
-        void init(PoolHandle imagePoolHnd,
-                  PoolHandle samplerPoolHnd,
-                  PoolHandle bufferPoolHnd,
-                  PoolHandle shaderPoolHnd,
-                  PoolHandle materialPoolHnd,
-                  PoolHandle materialDataIndexPoolHnd);
+        VuRenderer();
         void uninit();
         bool shouldWindowClose();
         void waitIdle();
@@ -55,7 +45,7 @@ namespace Vu
         void endFrame();
 
         void bindMesh(VuMesh& mesh);
-        void bindMaterial(VuHnd<VuMaterial> material);
+        void bindMaterial(std::shared_ptr<VuMaterial>& material);
         void pushConstants(const GPU_PushConstant& pushConstant);
         void drawIndexed(u32 indexCount);
         void beginImgui();

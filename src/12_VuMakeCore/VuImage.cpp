@@ -9,7 +9,6 @@
 void Vu::VuImage::init(VkDevice device, const VkPhysicalDeviceMemoryProperties& memProps, const VuImageCreateInfo& createInfo)
 {
     this->device         = device;
-    //this->physicalDevice = physicalDevice;
 
     lastCreateInfo = createInfo;
     createImage(device,

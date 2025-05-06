@@ -1,5 +1,6 @@
 #include "VuDevice.h"
 
+#include <memory_resource>
 #include <set>
 
 #include "10_Core/Color32.h"
@@ -8,67 +9,8 @@
 #include "11_Config/VuConfig.h"
 #include "12_VuMakeCore/VuCreateUtils.h"
 
-// Vu::VuImage* Vu::VuDevice::getImage(const VuHnd<VuImage> handle)
-// {
-//     return imagePool.getResource(handle);
-// }
-//
-// Vu::VuSampler* Vu::VuDevice::getSampler(const VuHnd<VuSampler> handle)
-// {
-//     return samplerPool.getResource(handle);
-// }
-//
-// Vu::VuBuffer* Vu::VuDevice::getBuffer(const VuHnd<VuBuffer> handle)
-// {
-//     return bufferPool.getResource(handle);
-// }
-//
-// Vu::VuShader* Vu::VuDevice::getShader(const VuHnd<VuShader> handle)
-// {
-//     return shaderPool.getResource(handle);
-// }
-//
-// Vu::VuMaterial* Vu::VuDevice::getMaterial(const VuHnd<VuMaterial> handle)
-// {
-//     return materialPool.getResource(handle);
-// }
-//
-// u32* Vu::VuDevice::getMaterialDataIndex(const VuHnd<u32> handle)
-// {
-//     return materialDataIndexPool.getResource(handle);
-// }
-//
-// void Vu::VuDevice::destroyHandle(VuHnd<VuImage> handle)
-// {
-//     imagePool.destroyHandle(handle);
-// }
-//
-// void Vu::VuDevice::destroyHandle(VuHnd<VuSampler> handle)
-// {
-//     samplerPool.destroyHandle(handle);
-// }
-//
-// void Vu::VuDevice::destroyHandle(VuHnd<VuBuffer> handle)
-// {
-//     bufferPool.destroyHandle(handle);
-// }
-//
-// void Vu::VuDevice::destroyHandle(VuHnd<VuShader> handle)
-// {
-//     shaderPool.destroyHandle(handle);
-// }
-//
-// void Vu::VuDevice::destroyHandle(VuHnd<VuMaterial> handle)
-// {
-//     materialPool.destroyHandle(handle);
-// }
-//
-// void Vu::VuDevice::destroyHandle(VuHnd<u32> handle)
-// {
-//     materialDataIndexPool.destroyHandle(handle);
-// }
 
-void Vu::VuDevice::registerBindlessBDA_Buffer(const VuBuffer& buffer)
+void Vu::VuDevice::registerBindlessBDA_Buffer(const VuBuffer& buffer) const
 {
     VkDescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = buffer.buffer;
@@ -88,7 +30,7 @@ void Vu::VuDevice::registerBindlessBDA_Buffer(const VuBuffer& buffer)
     }
 }
 
-void Vu::VuDevice::writeUBO_ToGlobalPool(const VuBuffer& buffer, u32 writeIndex, u32 setIndex)
+void Vu::VuDevice::writeUBO_ToGlobalPool(const VuBuffer& buffer, u32 writeIndex, u32 setIndex) const
 {
     VkDescriptorBufferInfo bufferInfo{
         .buffer = buffer.buffer,
@@ -107,13 +49,13 @@ void Vu::VuDevice::writeUBO_ToGlobalPool(const VuBuffer& buffer, u32 writeIndex,
     vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 }
 
-void Vu::VuDevice::registerToBindless(const VuBuffer& buffer, u32 bindlessIndex)
+void Vu::VuDevice::registerToBindless(const VuBuffer& buffer, u32 bindlessIndex) const
 {
     VkDeviceAddress address = buffer.getDeviceAddress();
     VkCheck(bdaBuffer.setData(&address, sizeof(VkDeviceAddress), bindlessIndex * sizeof(VkDeviceAddress)));
 }
 
-void Vu::VuDevice::registerToBindless(const VkImageView& imageView, u32 bindlessIndex)
+void Vu::VuDevice::registerToBindless(const VkImageView& imageView, u32 bindlessIndex) const
 {
     VkDescriptorImageInfo imageInfo{
         .sampler = VK_NULL_HANDLE,
@@ -135,7 +77,7 @@ void Vu::VuDevice::registerToBindless(const VkImageView& imageView, u32 bindless
     }
 }
 
-void Vu::VuDevice::registerToBindless(const VkSampler& sampler, u32 bindlessIndex)
+void Vu::VuDevice::registerToBindless(const VkSampler& sampler, u32 bindlessIndex) const
 {
     VkDescriptorImageInfo imageInfo{
         .sampler = sampler,
@@ -166,23 +108,6 @@ void Vu::VuDevice::uninit()
     // Logger::Trace("MaterialDataIndex Pool destroyed, leaked resource count: {}", materialDataIndexPool.getUsedSlotCount());
 }
 
-// void Vu::VuDevice::initInstance(const VuDeviceCreateInfo& info)
-// {
-//     CreateUtils::createInstance(enableValidation, validationLayers, instanceExtensions, instance);
-//     disposeStack.push([&]
-//     {
-//         vkDestroyInstance(instance, nullptr);
-//     });
-//
-//     if (enableValidation)
-//     {
-//         CreateUtils::createDebugMessenger(instance, debugMessenger);
-//         disposeStack.push([&]
-//         {
-//             CreateUtils::destroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-//         });
-//     }
-// }
 
 void Vu::VuDevice::initDevice(const VuDeviceCreateInfo& info)
 {
@@ -327,7 +252,8 @@ void Vu::VuDevice::initDefaultResources()
                            .name = "stagingBuffer",
                            .length = 1024 * 1024 * 64,
                            .vkUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                           .vmaCreateFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+                           .vmaCreateFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT |
+                                             VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
                        });
     disposeStack.push([&] { stagingBuffer.uninit(); });
     stagingBuffer.map();
@@ -336,13 +262,13 @@ void Vu::VuDevice::initDefaultResources()
                                       .name = "defaulttBuffer",
                                       .length = 4096,
                                       .strideInBytes = 1,
-                                      .vkUsageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                                      .vkUsageFlags =
+                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                                       .vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO,
                                       .vmaCreateFlags = 0
                                   });
-    disposeStack.push([&] { debugBufferHnd.destroyHandle(); });
-    assert(debugBufferHnd.index == 0);
 
+    //assert(debugBufferHnd.index == 0);
     std::vector<Color32> colorData;
     Color32              defaultColor = Color32(0.0f, 0.0f, 0.0f);
     Color32              magentaColor = Color32(1.0f, 0.0f, 1.0f);
@@ -359,22 +285,22 @@ void Vu::VuDevice::initDefaultResources()
     }
 
     defaultImageHandle = createImage({.width = 512, .height = 512, .format = VK_FORMAT_R8G8B8A8_SRGB});
-    disposeStack.push([&] { defaultImageHandle.destroyHandle(); });
-    uploadToImage(*defaultImageHandle.getResource(), reinterpret_cast<const byte*>(colorData.data()), colorData.size() * sizeof(Color32));
-    assert(defaultImageHandle.index == 0);
+    uploadToImage(*defaultImageHandle.get(), reinterpret_cast<const byte*>(colorData.data()),
+                  colorData.size() * sizeof(Color32));
+    //assert(defaultImageHandle.index == 0);
 
     Color32 normalColor = Color32(uint8_t(128), uint8_t(128), uint8_t(255), uint8_t(255));
     std::fill(colorData.begin(), colorData.end(), normalColor);
     defaultNormalImageHandle = createImage({.width = 512, .height = 512, .format = VK_FORMAT_R8G8B8A8_UNORM});
-    disposeStack.push([&] { defaultNormalImageHandle.destroyHandle(); });
-    uploadToImage(*defaultNormalImageHandle.getResource(), reinterpret_cast<const byte*>(colorData.data()),
+
+    uploadToImage(*defaultNormalImageHandle.get(), reinterpret_cast<const byte*>(colorData.data()),
                   colorData.size() * sizeof(Color32));
-    assert(defaultNormalImageHandle.index == 1);
+    //assert(defaultNormalImageHandle.index == 1);
 
     //TODO pass physical props max
     defaultSamplerHandle = createSampler({.maxAnisotropy = 16.0f});
-    disposeStack.push([&] { defaultSamplerHandle.destroyHandle(); });
-    assert(defaultSamplerHandle.index == 0);
+
+    //assert(defaultSamplerHandle.get(). == 0);
 
     materialDataBufferHandle = createBuffer({
                                                 .name = "materialDataBuffer",
@@ -386,9 +312,9 @@ void Vu::VuDevice::initDefaultResources()
                                                 .vmaCreateFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
                                                                   | VMA_ALLOCATION_CREATE_MAPPED_BIT,
                                             });
-    disposeStack.push([&] { materialDataBufferHandle.destroyHandle(); });
-    assert(materialDataBufferHandle.index == 1);
-    VuBuffer* matDataBuffer = materialDataBufferHandle.getResource();
+
+    assert(materialDataBufferHandle.get()->bindlessIndex == 1);
+    VuBuffer* matDataBuffer = materialDataBufferHandle.get();
     matDataBuffer->map();
 }
 
@@ -397,11 +323,23 @@ void Vu::VuDevice::initDescriptorPool(const VuDeviceCreateInfo& info)
     ZoneScoped;
     std::array<VkDescriptorPoolSize, 5> poolSizes{
         {
-            {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = info.uboCount * config::MAX_FRAMES_IN_FLIGHT},
+            {
+                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                .descriptorCount = info.uboCount * config::MAX_FRAMES_IN_FLIGHT
+            },
             {.type = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = info.samplerCount * config::MAX_FRAMES_IN_FLIGHT},
-            {.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, .descriptorCount = info.sampledImageCount * config::MAX_FRAMES_IN_FLIGHT},
-            {.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .descriptorCount = info.storageImageCount * config::MAX_FRAMES_IN_FLIGHT},
-            {.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = info.storageBufferCount * config::MAX_FRAMES_IN_FLIGHT},
+            {
+                .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                .descriptorCount = info.sampledImageCount * config::MAX_FRAMES_IN_FLIGHT
+            },
+            {
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                .descriptorCount = info.storageImageCount * config::MAX_FRAMES_IN_FLIGHT
+            },
+            {
+                .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                .descriptorCount = info.storageBufferCount * config::MAX_FRAMES_IN_FLIGHT
+            },
         },
     };
 
@@ -468,80 +406,12 @@ void Vu::VuDevice::EndSingleTimeCommands(VkCommandBuffer commandBuffer)
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
-VuHnd<Vu::VuImage> Vu::VuDevice::createImage(const VuImageCreateInfo& info)
+Vu::VuDevice::VuDevice(const VuDeviceCreateInfo& info)
+    : imgBindlessIndexAllocator{info.sampledImageCount, std::pmr::new_delete_resource()},
+      samplerBindlessIndexAllocator{info.samplerCount, std::pmr::new_delete_resource()},
+      bufferBindlessIndexAllocator{info.storageBufferCount, std::pmr::new_delete_resource()},
+      materialDataBindlessIndexAllocator{1024, std::pmr::new_delete_resource()}
 {
-    VuHnd<VuImage> handle(imagePoolHnd);
-    VuImage*       image = handle.getResource();
-    assert(image != nullptr);
-    image->init(device, memProperties, info);
-    registerToBindless(image->imageView, handle.index);
-    return handle;
-}
-
-VuHnd<Vu::VuBuffer> Vu::VuDevice::createBuffer(const VuBufferCreateInfo& info)
-{
-    VuHnd<VuBuffer> handle(bufferPoolHnd);
-    VuBuffer*       buffer = handle.getResource();
-    assert(buffer != nullptr);
-    buffer->init(device, vma, info);
-    registerToBindless(*buffer, handle.index);
-    return handle;
-}
-
-VuHnd<Vu::VuShader> Vu::VuDevice::createShader(path vertexPath, path fragPath, VuRenderPass* vuRenderPass)
-{
-    VuHnd<VuShader> handle(samplerPoolHnd);
-    VuShader*       resource = handle.getResource();
-    assert(resource != nullptr);
-    resource->init(this, vertexPath, fragPath, vuRenderPass);
-    return handle;
-}
-
-VuHnd<unsigned> Vu::VuDevice::createMaterialDataIndex()
-{
-    VuHnd<u32> handle(materialDataIndexPoolHnd);
-    u32*       resource = handle.getResource();
-    assert(resource != nullptr);
-    *resource = handle.index;
-    return handle;
-}
-
-VuHnd<Vu::VuMaterial> Vu::VuDevice::createMaterial(MaterialSettings matSettings,
-                                                   VuHnd<VuShader>  shaderHnd,
-                                                   VuHnd<u32>       materialDataHnd)
-{
-    VuHnd<VuMaterial> handle (materialPoolHnd);
-    VuMaterial*       resource = handle.getResource();
-    assert(resource != nullptr);
-    resource->init(this, matSettings, shaderHnd, materialDataHnd);
-    return handle;
-}
-
-std::span<std::byte, Vu::config::MATERIAL_DATA_SIZE> Vu::VuDevice::getMaterialData(VuHnd<u32> handle)
-{
-    VuBuffer* matDataBuffer = materialDataBufferHandle.getResource();
-    byte*     dataPtr       = static_cast<byte*>(matDataBuffer->mapPtr) + config::MATERIAL_DATA_SIZE * handle.index;
-    return std::span<std::byte, Vu::config::MATERIAL_DATA_SIZE>(dataPtr, config::MATERIAL_DATA_SIZE);
-    //return reinterpret_cast<GPU_PBR_MaterialData*>(dataPtr);
-}
-
-void Vu::VuDevice::bindMaterial(VkCommandBuffer cb, VuHnd<VuMaterial> material)
-{
-    auto*              mat      = material.getResource();
-    auto*              shader   = mat->shaderHnd.getResource();
-    VuGraphicsPipeline pipeline = shader->requestPipeline(mat->materialSettings);
-    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
-}
-
-void Vu::VuDevice::init(const VuDeviceCreateInfo& info)
-{
-    imagePoolHnd             = info.imagePoolHnd;
-    samplerPoolHnd           = info.samplerPoolHnd;
-    bufferPoolHnd            = info.bufferPoolHnd;
-    shaderPoolHnd            = info.shaderPoolHnd;
-    materialPoolHnd          = info.materialPoolHnd;
-    materialDataIndexPoolHnd = info.materialDataIndexPoolHnd;
-
     initDevice(info);
     initVMA();
     initCommandPool(info);
@@ -553,7 +423,18 @@ void Vu::VuDevice::init(const VuDeviceCreateInfo& info)
     initDefaultResources();
 }
 
-VuHnd<Vu::VuImage> Vu::VuDevice::createImageFromAsset(const path& path, VkFormat format)
+std::shared_ptr<Vu::VuImage> Vu::VuDevice::createImage(const VuImageCreateInfo& info)
+{
+    std::shared_ptr<VuImage> handle = std::make_shared<VuImage>();
+    VuImage*                 resource = handle.get();
+    resource->init(device, memProperties, info);
+    u32 bindlessIndex = imgBindlessIndexAllocator.allocate();
+    registerToBindless(resource->imageView, bindlessIndex);
+    resource->bindlessIndex = bindlessIndex;
+    return handle;
+}
+
+std::shared_ptr<Vu::VuImage> Vu::VuDevice::createImageFromAsset(const path& path, VkFormat format)
 {
     ZoneScoped;
     int   texWidth;
@@ -569,23 +450,81 @@ VuHnd<Vu::VuImage> Vu::VuDevice::createImageFromAsset(const path& path, VkFormat
         throw std::runtime_error("failed to load texture image!");
     }
 
-    u32            w      = texWidth;
-    u32            h      = texHeight;
-    VuHnd<VuImage> handle = createImage({.width = w, .height = h, .format = format});
-    uploadToImage(*handle.getResource(), pixels, imageSize);
+    u32                      w      = texWidth;
+    u32                      h      = texHeight;
+    std::shared_ptr<VuImage> handle = createImage({.width = w, .height = h, .format = format});
+    uploadToImage(*handle.get(), pixels, imageSize);
     stbi_image_free(pixels);
     return handle;
 }
 
-VuHnd<Vu::VuSampler> Vu::VuDevice::createSampler(const VuSamplerCreateInfo& info)
+std::shared_ptr<Vu::VuSampler> Vu::VuDevice::createSampler(const VuSamplerCreateInfo& info)
 {
-    VuHnd<VuSampler> handle  (samplerPoolHnd);
-    VuSampler*       resource = handle.getResource();
-    assert(resource != nullptr);
+    std::shared_ptr<VuSampler> handle = std::make_shared<VuSampler>();
+    VuSampler*                 resource = handle.get();
+
     resource->init(device, info);
-    registerToBindless(resource->vkSampler, handle.index);
+    uint32_t bindlessIndex = samplerBindlessIndexAllocator.allocate();
+    registerToBindless(resource->vkSampler, bindlessIndex);
+    resource->bindlessIndex = bindlessIndex;
     return handle;
 }
+
+std::shared_ptr<Vu::VuBuffer> Vu::VuDevice::createBuffer(const VuBufferCreateInfo& info)
+{
+    std::shared_ptr<VuBuffer> handle   = std::make_shared<VuBuffer>();
+    VuBuffer*                 resource = handle.get();
+
+    resource->init(device, vma, info);
+    u32 bindlessIndex = bufferBindlessIndexAllocator.allocate();
+    registerToBindless(*resource, bindlessIndex);
+    resource->bindlessIndex = bindlessIndex;
+    return handle;
+}
+
+std::shared_ptr<Vu::VuShader> Vu::VuDevice::createShader(path vertexPath, path fragPath, VuRenderPass* vuRenderPass)
+{
+    std::shared_ptr<VuShader> handle   = std::make_shared<VuShader>();
+    VuShader*                 resource = handle.get();
+    resource->init(this, vertexPath, fragPath, vuRenderPass);
+    return handle;
+}
+
+std::shared_ptr<unsigned> Vu::VuDevice::createMaterialDataIndex()
+{
+    std::shared_ptr<u32> handle        = std::make_shared<u32>();
+    u32*                 resource      = handle.get();
+    u32                  bindlessIndex = materialDataBindlessIndexAllocator.allocate();
+    *resource                          = bindlessIndex;
+    return handle;
+}
+
+std::shared_ptr<Vu::VuMaterial> Vu::VuDevice::createMaterial(MaterialSettings          matSettings,
+                                                             std::shared_ptr<VuShader> shaderHnd,
+                                                             std::shared_ptr<u32>      materialDataHnd)
+{
+    std::shared_ptr<VuMaterial> handle = std::make_shared<VuMaterial>();
+    VuMaterial*                 resource = handle.get();
+    assert(resource != nullptr);
+    *resource = VuMaterial{this, matSettings, shaderHnd, materialDataHnd};
+    return handle;
+}
+
+std::span<std::byte, Vu::config::MATERIAL_DATA_SIZE> Vu::VuDevice::getMaterialData(std::shared_ptr<u32> handle)
+{
+    VuBuffer* matDataBuffer = materialDataBufferHandle.get();
+    byte*     dataPtr       = static_cast<byte*>(matDataBuffer->mapPtr) + config::MATERIAL_DATA_SIZE * *handle;
+    return std::span<std::byte, Vu::config::MATERIAL_DATA_SIZE>(dataPtr, config::MATERIAL_DATA_SIZE);
+}
+
+void Vu::VuDevice::bindMaterial(VkCommandBuffer cb, std::shared_ptr<VuMaterial> material)
+{
+    auto*              mat      = material.get();
+    auto*              shader   = mat->shaderHnd.get();
+    VuGraphicsPipeline pipeline = shader->requestPipeline(mat->materialSettings);
+    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
+}
+
 
 void Vu::VuDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {

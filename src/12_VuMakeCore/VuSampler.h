@@ -15,6 +15,7 @@ namespace Vu
         VkDevice            device;
         VuSamplerCreateInfo lastCreateInfo;
         VkSampler           vkSampler;
+        u32orNull           bindlessIndex = 0;
 
         void init(const VkDevice device, const VuSamplerCreateInfo& createInfo);
 

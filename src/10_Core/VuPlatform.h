@@ -1,70 +1,139 @@
 #pragma once
 
+enum class OS
+{
+    UNKNOWN,
+    WINDOWS,
+    LINUX,
+    MACOS,
+    IOS,
+    ANDROID,
+};
+
+enum class Architecture
+{
+    UNKNOWN,
+    X86_32,
+    X86_64,
+    AARCH32,
+    AARCH64,
+};
+
+consteval OS getCurrentOS()
+{
 #if defined(_WIN32) // MSVC, GCC, Clang (Windows, 32 or 64-bit)
-#define OS_WINDOWS
+return  OS::WINDOWS;
 #endif
 
 #if defined(__APPLE__) && defined(__MACH__) // GCC, Clang (macOS/iOS)
 #include <TargetConditionals.h>
 #if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
-#define OS_IOS
+return OS::IOS;
 #else
-#define OS_MAC
+    return OS::MACOS;
 #endif
 #endif
 
 #if defined(__ANDROID__) // GCC, Clang (Android)
-#define OS_ANDROID
+    return OS::ANDROID;
 #endif
 
 #if defined(__linux__) && !defined(__ANDROID__) // GCC, Clang (Linux, but not Android)
-#define OS_LINUX
+    return OS::LINUX;
 #endif
 
-#if !defined(OS_WINDOWS) && !defined(OS_LINUX) && !defined(OS_MAC) && !defined(OS_ANDROID) && !defined(OS_IOS)
-#define OS_UNKNOWN
-#endif
+    return OS::UNKNOWN;
+};
 
-//--------------------------------
-// Architecture Detection
-//--------------------------------
-
+consteval Architecture getCurrentArchitecture()
+{
 #if defined(_M_X64)  || defined(__x86_64__)  || defined(_M_AMD64)      // MSVC (64-bit), GCC Clang (64-bit), MSVC (alternative name)
-#define ARCH_X86_64
+
+
+
+    return Architecture::X86_64;
 #endif
 
 #if defined(_M_IX86)  || defined(__i386__)   // MSVC (32-bit x86) GCC, Clang (32-bit x86)
-   #define ARCH_X86_32
+    return Architecture::X86_32;
 #endif
 
 #if defined(__aarch64__) || defined(_M_ARM64)     // GCC, Clang (ARM 64-bit). MSVC (ARM 64-bit)
-   #define ARCH_ARM_64
+    return Architecture::AARCH64;
 #endif
 
 #if defined(__arm__) || defined(_M_ARM)  // GCC, Clang (ARM 32-bit) MSVC (ARM 32-bit)
-   #define ARCH_ARM_32
+    return Architecture::AARCH32;
 #endif
 
-#if !defined(ARCH_X86_64) && !defined(ARCH_X86_32) && !defined(ARCH_ARM_64) && !defined(ARCH_ARM_32)
-   #define ARCH_UNKNOWN
-#endif
-#include <filesystem>
+    return Architecture::UNKNOWN;
+}
 
 
-#if defined(OS_WINDOWS) && defined(ARCH_X86_64)
-#define PLATFORM_SPECIFIC_PATH "/windows-x86_64"
-#elif  defined(OS_LINUX) && defined(ARCH_X86_64)
-#define PLATFORM_SPECIFIC_PATH "/linux-x86_64"
-#else
-#endif
-
-
-inline void addTagetDependentPath(std::filesystem::path& path)
+inline void appendTargetVariablePath(std::filesystem::path& path)
 {
-#if defined(OS_WINDOWS) && defined(ARCH_X86_64)
-    path.append("/windows-x86_64");
-#elif  defined(OS_LINUX) && defined(ARCH_X86_32)
-   path.append("/linux-x86_64");
-#else
-#endif
+    std::string apnd;
+
+    switch (OS os = getCurrentOS())
+    {
+    case OS::UNKNOWN:
+        apnd = "unknown";
+        break;
+    case OS::WINDOWS:
+        apnd = "windows";
+        break;
+    case OS::LINUX:
+        apnd = "linux";
+        break;
+    case OS::MACOS:
+        apnd = "macos";
+        break;
+    case OS::IOS:
+        apnd = "ios";
+        break;
+    case OS::ANDROID:
+        apnd = "android";
+        break;
+    }
+
+    switch (Architecture architecture = getCurrentArchitecture())
+    {
+    case Architecture::UNKNOWN:
+        apnd += "-unknown";
+        break;
+    case Architecture::X86_32:
+        apnd += "-x86_32";
+        break;
+    case Architecture::X86_64:
+        apnd += "-x86_64";
+        break;
+    case Architecture::AARCH32:
+        apnd += "-aarch32";
+        break;
+    case Architecture::AARCH64:
+        apnd += "-aarch64";
+        break;
+    }
+
+    path /= apnd;
+}
+
+inline void appendTargetVariableExtension(std::filesystem::path& path)
+{
+    switch (auto os = getCurrentOS())
+    {
+    case OS::UNKNOWN:
+        break;
+    case OS::WINDOWS:
+        path.replace_extension(".exe");
+        break;
+    case OS::LINUX:
+        break;
+    case OS::MACOS:
+        break;
+    case OS::IOS:
+        break;
+    case OS::ANDROID:
+        break;
+    }
 }

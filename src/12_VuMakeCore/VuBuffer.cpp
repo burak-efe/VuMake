@@ -1,17 +1,17 @@
 #include "VuBuffer.h"
 
-#include "../08_LangUtils/VuLogger.h"
+#include "08_LangUtils/VuLogger.h"
 
 namespace Vu
 {
     void VuBuffer::init(VkDevice device, VmaAllocator allocator, const VuBufferCreateInfo& info)
     {
-        vma            = allocator;
-        this->device   = device;
-        lastCreateInfo = info;
-        stride         = info.strideInBytes;
-        length         = info.length;
-        this->name     = info.name;
+        vma          = allocator;
+        this->device = device;
+        //lastCreateInfo = info;
+        stride     = info.strideInBytes;
+        length     = info.length;
+        this->name = info.name;
 
 
         VkBufferCreateInfo createInfo{
@@ -23,8 +23,9 @@ namespace Vu
         };
 
         VmaAllocationCreateInfo allocCreateInfo = {};
-        allocCreateInfo.usage                   = info.vmaMemoryUsage;
-        allocCreateInfo.flags                   = info.vmaCreateFlags;
+
+        allocCreateInfo.usage = info.vmaMemoryUsage;
+        allocCreateInfo.flags = info.vmaCreateFlags;
 
         VkCheck(vmaCreateBuffer(vma, &createInfo, &allocCreateInfo, &buffer, &allocation, &allocationInfo));
         Logger::Trace("{} init", name.c_str());

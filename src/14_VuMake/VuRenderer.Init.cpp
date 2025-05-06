@@ -15,18 +15,7 @@
 
 namespace Vu
 {
-    // VuRenderer::VuRenderer()
-    // {
-    //     init();
-    // }
-
-    void VuRenderer::init(PoolHandle imagePoolHnd,
-                          PoolHandle samplerPoolHnd,
-                          PoolHandle bufferPoolHnd,
-                          PoolHandle shaderPoolHnd,
-                          PoolHandle materialPoolHnd,
-                          PoolHandle materialDataIndexPoolHnd
-    )
+    VuRenderer::VuRenderer()
     {
         ScopeTimer timer;
         bool       isValidationEnabled = config::ENABLE_VALIDATION_LAYERS_LAYERS;
@@ -61,7 +50,10 @@ namespace Vu
             if (isValidationEnabled)
             {
                 CreateUtils::createDebugMessenger(instance, debugMessenger);
-                disposeStack.push([&] { CreateUtils::destroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr); });
+                disposeStack.push([&]
+                {
+                    CreateUtils::destroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+                });
             }
 
             volkLoadInstance(instance);
@@ -162,40 +154,36 @@ namespace Vu
                 .features = deviceFeatures,
             };
 
-            vuDevice.init({
-                              .instance = instance,
-                              .physicalDevice = physicalDevice,
-                              .enableValidationLayers = config::ENABLE_VALIDATION_LAYERS_LAYERS,
-                              .physicalDeviceFeatures2 = deviceFeatures2,
-                              .surface = surface,
-                              .deviceExtensions = config::DEVICE_EXTENSIONS,
+            vuDevice = VuDevice{
+                {
+                    .instance = instance,
+                    .physicalDevice = physicalDevice,
+                    .enableValidationLayers = config::ENABLE_VALIDATION_LAYERS_LAYERS,
+                    .physicalDeviceFeatures2 = deviceFeatures2,
+                    .surface = surface,
+                    .deviceExtensions = config::DEVICE_EXTENSIONS,
 
-                              .uboBinding = config::BINDLESS_UNIFORM_BUFFER_BINDING,
-                              .samplerBinding = config::BINDLESS_SAMPLER_BINDING,
-                              .sampledImageBinding = config::BINDLESS_SAMPLED_IMAGE_BINDING,
-                              .storageImageBinding = config::BINDLESS_STORAGE_IMAGE_BINDING,
-                              .storageBufferBinding = config::BINDLESS_STORAGE_BUFFER_BINDING,
+                    .uboBinding = config::BINDLESS_UNIFORM_BUFFER_BINDING,
+                    .samplerBinding = config::BINDLESS_SAMPLER_BINDING,
+                    .sampledImageBinding = config::BINDLESS_SAMPLED_IMAGE_BINDING,
+                    .storageImageBinding = config::BINDLESS_STORAGE_IMAGE_BINDING,
+                    .storageBufferBinding = config::BINDLESS_STORAGE_BUFFER_BINDING,
 
-                              .uboCount = config::BINDLESS_UNIFORM_BUFFER_COUNT,
-                              .samplerCount = config::BINDLESS_SAMPLER_COUNT,
-                              .sampledImageCount = config::BINDLESS_SAMPLED_IMAGE_COUNT,
-                              .storageImageCount = config::BINDLESS_STORAGE_IMAGE_COUNT,
-                              .storageBufferCount = config::BINDLESS_STORAGE_BUFFER_COUNT,
-                              .imagePoolHnd = imagePoolHnd,
-                              .samplerPoolHnd = samplerPoolHnd,
-                              .bufferPoolHnd = bufferPoolHnd,
-                              .shaderPoolHnd = shaderPoolHnd,
-                              .materialPoolHnd =  materialPoolHnd,
-                              .materialDataIndexPoolHnd = materialDataIndexPoolHnd,
-                          });
+                    .uboCount = config::BINDLESS_UNIFORM_BUFFER_COUNT,
+                    .samplerCount = config::BINDLESS_SAMPLER_COUNT,
+                    .sampledImageCount = config::BINDLESS_SAMPLED_IMAGE_COUNT,
+                    .storageImageCount = config::BINDLESS_STORAGE_IMAGE_COUNT,
+                    .storageBufferCount = config::BINDLESS_STORAGE_BUFFER_COUNT,
+                }
+            };
             disposeStack.push([&] { vuDevice.uninit(); });
         }
 
 
         //init swapchain
         {
-            swapChain = VuSwapChain{};
-            swapChain.init(&vuDevice, surface);
+            swapChain = {&vuDevice, surface};
+            //swapChain.init(&vuDevice, surface);
             disposeStack.push([&] { swapChain.uninit(); });
         }
 
@@ -223,11 +211,11 @@ namespace Vu
                 vuDevice.writeUBO_ToGlobalPool(uniformBuffers[i], 0, i);
             }
 
-            disposeStack.push([vr = *this]
+            disposeStack.push([this]
             {
                 for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
                 {
-                    auto v = vr.uniformBuffers;
+                    auto v = uniformBuffers;
                     v[i].uninit();
                 }
             });
@@ -262,13 +250,13 @@ namespace Vu
                 VkCheck(vkCreateFence(vuDevice.device, &fenceInfo, nullptr, &inFlightFences[i]));
             }
 
-            disposeStack.push([vr = *this, this]
+            disposeStack.push([ this]
             {
                 for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
                 {
-                    vkDestroySemaphore(vuDevice.device, vr.imageAvailableSemaphores[i], nullptr);
-                    vkDestroySemaphore(vuDevice.device, vr.renderFinishedSemaphores[i], nullptr);
-                    vkDestroyFence(vuDevice.device, vr.inFlightFences[i], nullptr);
+                    vkDestroySemaphore(vuDevice.device, imageAvailableSemaphores[i], nullptr);
+                    vkDestroySemaphore(vuDevice.device, renderFinishedSemaphores[i], nullptr);
+                    vkDestroyFence(vuDevice.device, inFlightFences[i], nullptr);
                 }
             });
         }
@@ -315,10 +303,10 @@ namespace Vu
         disposeStack.push([] { ImGui_ImplSDL3_Shutdown(); });
 
         ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance                  = vuDevice.instance;
-        init_info.PhysicalDevice            = vuDevice.physicalDevice;
-        init_info.Device                    = vuDevice.device;
-        init_info.QueueFamily               = VuSwapChain::findQueueFamilies(vuDevice.physicalDevice, surface).graphicsFamily.
+        init_info.Instance = vuDevice.instance;
+        init_info.PhysicalDevice = vuDevice.physicalDevice;
+        init_info.Device = vuDevice.device;
+        init_info.QueueFamily = VuSwapChain::findQueueFamilies(vuDevice.physicalDevice, surface).graphicsFamily.
             value();
         init_info.Queue               = vuDevice.graphicsQueue;
         init_info.DescriptorPool      = vuDevice.uiDescriptorPool;

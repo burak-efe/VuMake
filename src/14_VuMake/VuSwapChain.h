@@ -3,7 +3,6 @@
 #include "10_Core/VuCommon.h"
 #include "12_VuMakeCore/VuTypes.h"
 #include "12_VuMakeCore/VuImage.h"
-#include "08_LangUtils/VuPoolManager.h"
 #include "12_VuMakeCore/VuRenderPass.h"
 
 namespace Vu
@@ -12,15 +11,15 @@ namespace Vu
     {
         VuDevice*      vuDevice;
         VkSurfaceKHR   surface;
-        VkSwapchainKHR swapChain;
+        VkSwapchainKHR swapChain{};
 
         VuRenderPass gBufferPass;
         VuRenderPass lightningPass;
 
-        VuHnd<VuImage> colorHnd;
-        VuHnd<VuImage> normalHnd;
-        VuHnd<VuImage> armHnd;
-        VuHnd<VuImage> depthStencilHnd;
+        std::shared_ptr<VuImage> colorHnd;
+        std::shared_ptr<VuImage> normalHnd;
+        std::shared_ptr<VuImage> armHnd;
+        std::shared_ptr<VuImage> depthStencilHnd;
 
 
         std::vector<VkImage>     swapChainImages;
@@ -32,12 +31,16 @@ namespace Vu
         VkFormat        colorFormat;
         VkColorSpaceKHR colorSpace;
         VkFormat        swapChainImageFormat;
-        VkExtent2D      swapChainExtent;
-        uint32_t        imageCount;
+        VkExtent2D      swapChainExtent{};
+        uint32_t        imageCount{};
         uint32_t        queueNodeIndex = UINT32_MAX;
 
     public:
-        void init(VuDevice* vuDevice, VkSurfaceKHR surface);
+        VuSwapChain();
+
+        VuSwapChain(VuDevice* vuDevice, VkSurfaceKHR surface);
+
+        //void init(VuDevice* vuDevice, VkSurfaceKHR surface);
 
         void uninit();
 
