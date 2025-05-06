@@ -1,6 +1,7 @@
 #pragma once
 
-#include "10_Core/VuCommon.h"
+#include <vulkan/vulkan_core.h>     // for VkSamplerAddressMode, VkDevice
+#include "08_LangUtils/TypeDefs.h"  // for u32orNull
 
 namespace Vu
 {

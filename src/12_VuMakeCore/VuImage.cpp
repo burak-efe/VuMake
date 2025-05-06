@@ -1,10 +1,13 @@
 #include "VuImage.h"
 
-#include <filesystem>
-#include <iostream>
+#include <filesystem>          // for path
+#include <stdexcept>           // for runtime_error
+#include <string>              // for basic_string
 
-#include "VuBuffer.h"
-#include "VuUtils.h"
+#include "stb_image.h"         // for stbi_load, STBI_rgb_alpha, stbi_uc
+
+#include "10_Core/VuCommon.h"  // for VkCheck
+#include "VuUtils.h"           // for findMemoryTypeIndex
 
 void Vu::VuImage::init(VkDevice device, const VkPhysicalDeviceMemoryProperties& memProps, const VuImageCreateInfo& createInfo)
 {
@@ -27,7 +30,6 @@ void Vu::VuImage::init(VkDevice device, const VkPhysicalDeviceMemoryProperties& 
 
 void Vu::VuImage::loadImageFile(const std::filesystem::path& path, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& pixels)
 {
-    ZoneScoped;
     pixels = stbi_load(path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 }
 

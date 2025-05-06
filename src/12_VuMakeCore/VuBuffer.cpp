@@ -1,6 +1,7 @@
 #include "VuBuffer.h"
 
-#include "08_LangUtils/VuLogger.h"
+#include "08_LangUtils/VuLogger.h"  // for Logger
+#include "10_Core/VuCommon.h"       // for VkCheck
 
 namespace Vu
 {

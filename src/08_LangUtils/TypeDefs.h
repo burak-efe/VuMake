@@ -1,13 +1,12 @@
 #pragma once
 
-#include <climits>
-#include <cstdint>
-#include <cstddef>
-#include <span>
+
+ #include <climits>
+ #include <cstdint>
+ #include <vector>
+ #include <string>
 #include <stdexcept>
-#include <vector>
-#include <memory>
-#include <vector>
+
 
 using byte = std::byte;
 
@@ -57,12 +56,4 @@ consteval std::uint16_t operator""_u16(unsigned long long value)
         throw std::out_of_range("Value exceeds uint16_t range");
     }
     return static_cast<std::uint16_t>(value);
-}
-
-
-template <typename T_From, typename T_To>
-std::span<T_To> rpCastSpan(std::span<T_From> source)
-{
-    static_assert(sizeof(T_From) == sizeof(T_To), "T_From and T_To must be the same size for reinterpret casting.");
-    return std::span<T_To>(reinterpret_cast<T_To*>(source.data()), source.size());
 }

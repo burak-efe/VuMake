@@ -1,6 +1,8 @@
 #pragma once
 
-#include "10_Core/VuCommon.h"
+#include <span>                  // for span
+
+#include <vulkan/vulkan_core.h>  // for VkDevice, VkShaderModule, VkCompareOp
 
 namespace Vu
 {
@@ -9,18 +11,18 @@ namespace Vu
         VkDevice   device;
         VkPipeline pipeline;
 
-        void initGraphicsPipeline(const VkDevice         device,
-                                  const VkPipelineLayout pipelineLayout,
-                                  const VkShaderModule   vertShaderModule,
-                                  const VkShaderModule   fragShaderModule,
-                                  const VkRenderPass     renderPass,
+        void initGraphicsPipeline(VkDevice                                       device,
+                                  VkPipelineLayout                               pipelineLayout,
+                                  VkShaderModule                                 vertShaderModule,
+                                  VkShaderModule                                 fragShaderModule,
+                                  VkRenderPass                                   renderPass,
                                   std::span<VkPipelineColorBlendAttachmentState> colorBlends
-                                  );
+        );
 
         void uninit() const;
 
-        static VkPipelineDepthStencilStateCreateInfo fillDepthStencilCreateInfo(bool        bDepthTest,
-                                                                                bool        bDepthWrite,
-                                                                                VkCompareOp compareOp);
+        static VkPipelineDepthStencilStateCreateInfo fillDepthStencilCreateInfo(bool bDepthTest,
+            bool                                                                     bDepthWrite,
+            VkCompareOp                                                              compareOp);
     };
 }

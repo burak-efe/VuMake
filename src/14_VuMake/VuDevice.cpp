@@ -1,14 +1,22 @@
 #include "VuDevice.h"
 
-#include <memory_resource>
-#include <set>
+#include <algorithm>                           // for fill
+#include <array>                               // for array
+#include <cassert>                             // for assert
+#include <cstddef>                             // for size_t, byte
+#include <memory_resource>                     // for new_delete_resource
+#include <stdexcept>                           // for invalid_argument, runt...
 
-#include "10_Core/Color32.h"
-#include "08_LangUtils/VuLogger.h"
-#include "08_LangUtils/ScopeTimer.h"
-#include "11_Config/VuConfig.h"
-#include "12_VuMakeCore/VuCreateUtils.h"
+#include "08_LangUtils/VuLogger.h"             // for Logger
+#include "10_Core/Color32.h"                   // for Color32
+#include "11_Config/VuConfig.h"                // for MAX_FRAMES_IN_FLIGHT
+#include "12_VuMakeCore/VuCreateUtils.h"       // for createDevice, createPi...
+#include "12_VuMakeCore/VuGraphicsPipeline.h"  // for VuGraphicsPipeline
+#include "14_VuMake/VuShader.h"                // for VuShader
 
+#include "stb_image.h"                         // for stbi_image_free, stbi_uc
+
+namespace Vu { struct VuRenderPass; }
 
 void Vu::VuDevice::registerBindlessBDA_Buffer(const VuBuffer& buffer) const
 {
@@ -129,7 +137,6 @@ void Vu::VuDevice::initDevice(const VuDeviceCreateInfo& info)
 
 void Vu::VuDevice::initVMA()
 {
-    ZoneScoped;
     VmaVulkanFunctions vma_vulkan_func{
         .vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties,
         .vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties,
@@ -164,7 +171,6 @@ void Vu::VuDevice::initVMA()
 
 void Vu::VuDevice::initCommandPool(const VuDeviceCreateInfo& info)
 {
-    ZoneScoped;
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -182,7 +188,6 @@ void Vu::VuDevice::initPipelineLayout()
 
 void Vu::VuDevice::initBindlessDescriptorSetLayout(const VuDeviceCreateInfo& info)
 {
-    ZoneScoped;
     VkDescriptorSetLayoutBinding ubo{
         .binding = info.uboBinding,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -320,7 +325,6 @@ void Vu::VuDevice::initDefaultResources()
 
 void Vu::VuDevice::initDescriptorPool(const VuDeviceCreateInfo& info)
 {
-    ZoneScoped;
     std::array<VkDescriptorPoolSize, 5> poolSizes{
         {
             {
@@ -355,7 +359,6 @@ void Vu::VuDevice::initDescriptorPool(const VuDeviceCreateInfo& info)
 
 void Vu::VuDevice::initBindlessDescriptorSet()
 {
-    ZoneScoped;
     std::array<VkDescriptorSetLayout, config::MAX_FRAMES_IN_FLIGHT> globalDescLayout;
     globalDescLayout.fill(globalDescriptorSetLayout);
 
@@ -425,7 +428,7 @@ Vu::VuDevice::VuDevice(const VuDeviceCreateInfo& info)
 
 std::shared_ptr<Vu::VuImage> Vu::VuDevice::createImage(const VuImageCreateInfo& info)
 {
-    std::shared_ptr<VuImage> handle = std::make_shared<VuImage>();
+    std::shared_ptr<VuImage> handle   = std::make_shared<VuImage>();
     VuImage*                 resource = handle.get();
     resource->init(device, memProperties, info);
     u32 bindlessIndex = imgBindlessIndexAllocator.allocate();
@@ -436,7 +439,6 @@ std::shared_ptr<Vu::VuImage> Vu::VuDevice::createImage(const VuImageCreateInfo& 
 
 std::shared_ptr<Vu::VuImage> Vu::VuDevice::createImageFromAsset(const path& path, VkFormat format)
 {
-    ZoneScoped;
     int   texWidth;
     int   texHeight;
     int   texChannels;
@@ -460,7 +462,7 @@ std::shared_ptr<Vu::VuImage> Vu::VuDevice::createImageFromAsset(const path& path
 
 std::shared_ptr<Vu::VuSampler> Vu::VuDevice::createSampler(const VuSamplerCreateInfo& info)
 {
-    std::shared_ptr<VuSampler> handle = std::make_shared<VuSampler>();
+    std::shared_ptr<VuSampler> handle   = std::make_shared<VuSampler>();
     VuSampler*                 resource = handle.get();
 
     resource->init(device, info);
@@ -503,7 +505,7 @@ std::shared_ptr<Vu::VuMaterial> Vu::VuDevice::createMaterial(MaterialSettings   
                                                              std::shared_ptr<VuShader> shaderHnd,
                                                              std::shared_ptr<u32>      materialDataHnd)
 {
-    std::shared_ptr<VuMaterial> handle = std::make_shared<VuMaterial>();
+    std::shared_ptr<VuMaterial> handle   = std::make_shared<VuMaterial>();
     VuMaterial*                 resource = handle.get();
     assert(resource != nullptr);
     *resource = VuMaterial{this, matSettings, shaderHnd, materialDataHnd};

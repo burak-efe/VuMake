@@ -1,9 +1,15 @@
 #include "VuUtils.h"
 
-#include <iostream>
-#include <set>
+#include <stdint.h>           // for uint32_t, uint64_t
+#include <cstring>            // for strcmp
+#include <iostream>           // for basic_ostream, char_traits, operator<<
+#include <set>                // for set, _Rb_tree_const_iterator
+#include <stdexcept>          // for runtime_error
+#include <string>             // for basic_string, operator<<, operator<=>
+#include <vector>             // for vector
 
-#include "VuTypes.h"
+#include "11_Config/VuCtx.h"  // for vkSetDebugUtilsObjectNameEXT
+#include "VuTypes.h"          // for SwapChainSupportDetails, QueueFamilyInd...
 
 VkImageCreateInfo Vu::Utils::fillImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent)
 {
@@ -64,7 +70,7 @@ void Vu::Utils::giveDebugName(const VkDevice device, const VkObjectType objType,
         . objectHandle = reinterpret_cast<uint64_t>(objHandle),
         . pObjectName = debugName,
     };
-    vkSetDebugUtilsObjectNameEXT(device, &info);
+    ctx::vkSetDebugUtilsObjectNameEXT(device, &info);
 #endif
 }
 
@@ -149,7 +155,7 @@ bool Vu::Utils::checkValidationLayerSupport(std::span<const char*> validationLay
 
         for (const auto& layerProperties : availableLayers)
         {
-            if (strcmp(layerName, layerProperties.layerName) == 0)
+            if (std::strcmp(layerName, layerProperties.layerName) == 0)
             {
                 layerFound = true;
                 break;

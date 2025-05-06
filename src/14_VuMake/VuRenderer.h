@@ -1,61 +1,71 @@
 #pragma once
 
-#include "imgui.h"
-#include "imgui_impl_vulkan.h"
-#include "imgui_impl_sdl3.h"
+#include <array>                    // for array
+#include <functional>               // for function
+#include <memory>                   // for shared_ptr
+#include <stack>                    // for stack
 
-#include "10_Core/VuCommon.h"
+#include <vulkan/vulkan_core.h>     // for VkCommandBuffer, VkSemaphore, VkD...
+#include "imgui_impl_vulkan.h"      // for ImGui_ImplVulkanH_Window
 
-#include "VuMesh.h"
-#include "VuSwapChain.h"
-#include "VuMaterial.h"
-#include "VuDevice.h"
-#include "11_Config/VuConfig.h"
-
+#include "08_LangUtils/TypeDefs.h"  // for u32
+#include "11_Config/VuConfig.h"     // for MAX_FRAMES_IN_FLIGHT
+#include "12_VuMakeCore/VuTypes.h"  // for GPU_FrameConst (ptr only), GPU_Pu...
+#include "VuDevice.h"               // for VuDevice
+#include "VuSwapChain.h"            // for VuSwapChain
 
 namespace Vu
 {
-    struct VuRenderer
-    {
-        VkInstance                                                instance{};
-        VkPhysicalDevice                                          physicalDevice{};
-        VuDevice                                                  vuDevice{};
-        VkDebugUtilsMessengerEXT                                  debugMessenger{};
-        VkSurfaceKHR                                              surface{};
-        VuSwapChain                                               swapChain{};
-        ImGui_ImplVulkanH_Window                                  imguiMainWindowData{};
-        VuDisposeStack                                            disposeStack{};
-        std::array<VkCommandBuffer, config::MAX_FRAMES_IN_FLIGHT> commandBuffers{};
-        std::array<VkSemaphore, config::MAX_FRAMES_IN_FLIGHT>     imageAvailableSemaphores{};
-        std::array<VkSemaphore, config::MAX_FRAMES_IN_FLIGHT>     renderFinishedSemaphores{};
-        std::array<VkFence, config::MAX_FRAMES_IN_FLIGHT>         inFlightFences{};
-        std::array<VuBuffer, config::MAX_FRAMES_IN_FLIGHT>        uniformBuffers{};
+struct VuBuffer;
+struct VuMaterial;
+struct VuMesh;
+}
 
+namespace Vu
+{
+struct VuRenderer
+{
+    VkInstance               instance{};
+    VkPhysicalDevice         physicalDevice{};
+    VuDevice                 vuDevice{};
+    VkDebugUtilsMessengerEXT debugMessenger{};
+    VkSurfaceKHR             surface{};
+    VuSwapChain              swapChain{};
+    ImGui_ImplVulkanH_Window imguiMainWindowData{};
+    VuDisposeStack           disposeStack{};
 
-        u32 currentFrame{};
-        u32 currentFrameImageIndex{};
+    vector<VkCommandBuffer> commandBuffers{};
 
-        VuRenderer();
-        void uninit();
-        bool shouldWindowClose();
-        void waitIdle();
+    vector<VkSemaphore>     imageAvailableSemaphores{};
+    vector<VkSemaphore>     renderFinishedSemaphores{};
+    vector<VkFence>         inFlightFences{};
 
-        void beginFrame();
-        void beginLightningPass();
-        void endFrame();
+    vector<VuBuffer>        uniformBuffers{};
 
-        void bindMesh(VuMesh& mesh);
-        void bindMaterial(std::shared_ptr<VuMaterial>& material);
-        void pushConstants(const GPU_PushConstant& pushConstant);
-        void drawIndexed(u32 indexCount);
-        void beginImgui();
-        void endImgui();
-        void updateFrameConstantBuffer(GPU_FrameConst ubo);
+    u32 currentFrame{};
+    u32 currentFrameImageIndex{};
 
-    private:
-        void waitForFences();
-        void resetSwapChain();
-        void bindGlobalBindlessSet(const VkCommandBuffer& commandBuffer);
-        void initImGui();
-    };
+    VuRenderer();
+    void uninit();
+    bool shouldWindowClose();
+    void waitIdle();
+
+    void beginFrame();
+    void beginLightningPass();
+    void endFrame();
+
+    void bindMesh(VuMesh& mesh);
+    void bindMaterial(std::shared_ptr<VuMaterial>& material);
+    void pushConstants(const GPU_PushConstant& pushConstant);
+    void drawIndexed(u32 indexCount);
+    void beginImgui();
+    void endImgui();
+    void updateFrameConstantBuffer(GPU_FrameConst ubo);
+
+private:
+    void waitForFences();
+    void resetSwapChain();
+    void bindGlobalBindlessSet(const VkCommandBuffer& commandBuffer);
+    void initImGui();
+};
 }

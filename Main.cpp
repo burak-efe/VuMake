@@ -1,8 +1,14 @@
-#include "08_LangUtils/VuLogger.h"
-#include "30_Scenes/Scene0.h"
+#include <cstdlib>                    // for EXIT_SUCCESS
+#include <cstdio>                      // for puts
+#include <exception>                   // for exception
+#include <iostream>                    // for char_traits, basic_ostream
+#include <memory>                      // for make_unique, unique_ptr
+
+#include "08_LangUtils/VuLogger.h"     // for LogLevel, Logger
+#include "30_Scenes/Scene0.h"          // for Scene0
 
 #define GTSPS_IMPLEMENTATION
-#include "GetTimeSinceProcessStart.h"
+#include "GetTimeSinceProcessStart.h"  // for GetTimeSinceProcessStart
 
 int main(int argc, char* argv[])
 {
@@ -19,7 +25,6 @@ int main(int argc, char* argv[])
     {
         std::puts(e.what());
     }
-
 
     return EXIT_SUCCESS;
 }

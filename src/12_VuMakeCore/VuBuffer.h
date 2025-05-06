@@ -1,7 +1,12 @@
 ﻿#pragma once
 
-#include "10_Core/VuCommon.h"
-#include "VuTypes.h"
+#include <vulkan/vulkan_core.h>     // for VkDeviceSize, VK_NULL_HANDLE, VkB...
+#include <span>                     // for span
+
+#include "vk_mem_alloc.h"           // for VmaAllocationCreateFlagBits, VmaM...
+
+#include "08_LangUtils/TypeDefs.h"  // for byte, u32orNull
+#include "VuTypes.h"                // for VuName
 
 namespace Vu
 {

@@ -1,19 +1,27 @@
 #include "VuShader.h"
 
-#include <iostream>
+#include <cstdlib>                             // for system
+#include <algorithm>                           // for max
+#include <cassert>                             // for assert
+#include <filesystem>                          // for path
+#include <format>                              // for format
+#include <optional>                            // for optional
+#include <span>                                // for span
+#include <string>                              // for basic_string, string
+#include <utility>                             // for pair
+#include <vector>                              // for vector
 
-#include "10_Core/VuIO.h"
-#include "11_Config/VuCtx.h"
-#include "11_Config/VuConfig.h"
-#include "12_VuMakeCore/VuGraphicsPipeline.h"
-
-#include "VuDevice.h"
-#include "../08_LangUtils/VuLogger.h"
-#include "12_VuMakeCore/VuRenderPass.h"
+#include "08_LangUtils/VuLogger.h"             // for Logger
+#include "08_LangUtils/TypeDefs.h"             // for u32
+#include "10_Core/VuIO.h"                      // for getlastModifiedTime
+#include "11_Config/VuConfig.h"                // for getShaderCompilerPath
+#include "12_VuMakeCore/VuGraphicsPipeline.h"  // for VuGraphicsPipeline
+#include "12_VuMakeCore/VuRenderPass.h"        // for VuRenderPass
+#include "14_VuMake/VuMaterial.h"              // for MaterialSettings, hash
+#include "VuDevice.h"                          // for VuDevice
 
 void Vu::VuShader::init(VuDevice* vuDevice, path vertexShaderPath, path fragmentShaderPath, VuRenderPass* vuRenderPass)
 {
-    ZoneScoped;
     this->vuDevice           = vuDevice;
     this->vertexShaderPath   = vertexShaderPath;
     this->fragmentShaderPath = fragmentShaderPath;

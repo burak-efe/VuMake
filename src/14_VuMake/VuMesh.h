@@ -108,7 +108,7 @@ namespace Vu
             const std::span<vec2> uvs,
             std::span<vec4>       tangents)
         {
-            ZoneScoped;
+
 
             u32 vertexCount   = positions.size();
             u32 triangleCount = indices.size() / 3;

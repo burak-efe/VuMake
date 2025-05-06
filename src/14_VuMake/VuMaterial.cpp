@@ -1,7 +1,7 @@
 #include "VuMaterial.h"
 
-#include "11_Config/VuCtx.h"
-#include "VuDevice.h"
+#include "12_VuMakeCore/VuGraphicsPipeline.h"  // for VuGraphicsPipeline
+#include "14_VuMake/VuShader.h"                // for VuShader
 
 Vu::VuMaterial::VuMaterial() = default;
 

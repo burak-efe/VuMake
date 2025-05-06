@@ -1,10 +1,12 @@
 #pragma once
 
-#include <span>
+#include <span>                     // for span
 
-#include "10_Core/VuCommon.h"
+#include <vulkan/vulkan_core.h>     // for VkInstance, VkDevice, VkPhysicalD...
 
-#include "VuTypes.h"
+#include "08_LangUtils/TypeDefs.h"  // for u32
+
+namespace Vu { struct QueueFamilyIndices; }
 
 namespace Vu::CreateUtils
 {
@@ -26,19 +28,10 @@ namespace Vu::CreateUtils
                       VkQueue&                         outGraphicsQueue,
                       VkQueue&                         outPresentQueue);
 
-    void createPipelineLayout(const VkDevice                         device,
-                              const std::span<VkDescriptorSetLayout> descriptorSetLayouts,
-                              const u32                              pushConstantSizeAsByte,
-                              VkPipelineLayout&                      outPipelineLayout);
+    void createPipelineLayout(VkDevice                         device,
+                              std::span<VkDescriptorSetLayout> descriptorSetLayouts,
+                              u32                              pushConstantSizeAsByte,
+                              VkPipelineLayout&                outPipelineLayout);
 
-    VkResult createDebugUtilsMessengerEXT(VkInstance                                instance,
-                                          const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                          const VkAllocationCallbacks*              pAllocator,
-                                          VkDebugUtilsMessengerEXT*                 pDebugMessenger);
-
-    void destroyDebugUtilsMessengerEXT(VkInstance                   instance,
-                                       VkDebugUtilsMessengerEXT     debugMessenger,
-                                       const VkAllocationCallbacks* pAllocator);
-
-    void createDebugMessenger(const VkInstance& instance, VkDebugUtilsMessengerEXT& outDebugMessenger);
+     void createDebugMessenger(const VkInstance& instance, VkDebugUtilsMessengerEXT& outDebugMessenger);
 }

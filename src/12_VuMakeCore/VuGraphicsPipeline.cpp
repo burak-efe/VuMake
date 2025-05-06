@@ -1,6 +1,11 @@
 #include "VuGraphicsPipeline.h"
 
-#include "11_Config/VuCtx.h"
+#include <cstdint>                 // for uint32_t
+#include <array>                    // for array
+#include <vector>                   // for vector
+
+#include "08_LangUtils/TypeDefs.h"  // for u32
+#include "10_Core/VuCommon.h"       // for VkCheck
 
 void Vu::VuGraphicsPipeline::initGraphicsPipeline(
     const VkDevice         device,

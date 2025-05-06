@@ -1,9 +1,7 @@
 #pragma once
 
-#include <cstdint>
-#include <algorithm>
-
-#include "VuCommon.h"
+#include <algorithm>                // for clamp
+#include "08_LangUtils/TypeDefs.h"  // for u8, u32
 
 namespace Vu
 {

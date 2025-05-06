@@ -4,6 +4,7 @@
 #include <stack>
 #include <optional>
 
+#include "08_LangUtils/TypeDefs.h"
 #include "10_Core/FixedString.h"
 #include "10_Core/VuCommon.h"
 #include "10_Core/math/VuFloat4.h"
@@ -87,7 +88,6 @@ namespace Vu
 
         static QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice device, const VkSurfaceKHR surface)
         {
-            ZoneScoped;
             //Logic to find graphics queue family
             QueueFamilyIndices indices;
 

@@ -1,6 +1,10 @@
 #pragma once
 
-#include "10_Core/VuCommon.h"
+#include <span>                     // for span
+
+#include <vulkan/vulkan_core.h>     // for VkFormat, VkPhysicalDevice, VkBool32
+
+#include "08_LangUtils/TypeDefs.h"  // for u32
 
 namespace Vu::Utils
 {
@@ -13,7 +17,7 @@ namespace Vu::Utils
                                VkMemoryPropertyFlags                   requiredProperties);
 
 
-    void giveDebugName(const VkDevice device, const VkObjectType objType, const void* objHandle, const char* debugName);
+    void giveDebugName( VkDevice device,  VkObjectType objType, const void* objHandle, const char* debugName);
 
 
     VkBool32 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,

@@ -1,12 +1,19 @@
 #pragma once
 
-#include "10_Core/VuCommon.h"
-#include "12_VuMakeCore/VuTypes.h"
-#include "12_VuMakeCore/VuImage.h"
-#include "12_VuMakeCore/VuRenderPass.h"
+#include <stdint.h>                      // for uint32_t, UINT32_MAX
+#include <vulkan/vulkan_core.h>          // for VkSurfaceKHR, VkCommandBuffer
+#include <memory>                        // for shared_ptr
+#include <vector>                        // for vector
+
+#include "08_LangUtils/TypeDefs.h"       // for u32
+#include "12_VuMakeCore/VuRenderPass.h"  // for VuRenderPass
+#include "12_VuMakeCore/VuTypes.h"       // for QueueFamilyIndices
 
 namespace Vu
 {
+    struct VuImage;
+    struct VuDevice;
+
     struct VuSwapChain
     {
         VuDevice*      vuDevice;
