@@ -25,45 +25,45 @@ void Vu::VuDevice::registerBindlessBDA_Buffer(const VuBuffer& buffer) const
 {
     vk::DescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = buffer.buffer;
-    bufferInfo.range  = buffer.length * buffer.stride;
+    bufferInfo.range  = buffer.sizeInBytes;
 
     for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
     {
         vk::WriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrite.dstSet          = globalDescriptorSets[i];
         descriptorWrite.dstBinding      = config::BINDLESS_STORAGE_BUFFER_BINDING;
         descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptorWrite.descriptorType  = vk::DescriptorType::eStorageBuffer;
         descriptorWrite.descriptorCount = 1;
         descriptorWrite.pBufferInfo     = &bufferInfo;
-        vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+
+        device.updateDescriptorSets(descriptorWrite, {});
     }
 }
 
 void Vu::VuDevice::writeUBO_ToGlobalPool(const VuBuffer& buffer, u32 writeIndex, u32 setIndex) const
 {
     vk::DescriptorBufferInfo bufferInfo{
-            .buffer = buffer.buffer,
-            .offset = 0,
-            .range = sizeof(GPU_FrameConst)
+            .buffer{buffer.buffer},
+            .offset{0},
+            .range{sizeof(GPU_FrameConst)}
     };
 
     vk::WriteDescriptorSet descriptorWrite{};
-    descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrite.dstSet          = globalDescriptorSets[setIndex];
     descriptorWrite.dstBinding      = 0;
     descriptorWrite.dstArrayElement = 0;
-    descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrite.descriptorType  = vk::DescriptorType::eUniformBuffer;
     descriptorWrite.descriptorCount = 1;
     descriptorWrite.pBufferInfo     = &bufferInfo;
-    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+    device.updateDescriptorSets(descriptorWrite, {});
 }
 
 void Vu::VuDevice::registerToBindless(const VuBuffer& buffer, u32 bindlessIndex) const
 {
     vk::DeviceAddress address = buffer.getDeviceAddress();
-    vk::Check(bdaBuffer.setData(&address, sizeof(vk::DeviceAddress), bindlessIndex * sizeof(vk::DeviceAddress)));
+    //TODO handle error
+    auto res = bdaBuffer.setData(&address, sizeof(vk::DeviceAddress), bindlessIndex * sizeof(vk::DeviceAddress));
 }
 
 void Vu::VuDevice::registerToBindless(const vk::ImageView& imageView, u32 bindlessIndex) const
@@ -77,14 +77,13 @@ void Vu::VuDevice::registerToBindless(const vk::ImageView& imageView, u32 bindle
     for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
     {
         vk::WriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrite.dstSet          = globalDescriptorSets[i];
         descriptorWrite.dstBinding      = config::BINDLESS_SAMPLED_IMAGE_BINDING;
         descriptorWrite.dstArrayElement = bindlessIndex;
-        descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        descriptorWrite.descriptorType  = vk::DescriptorType::eSampledImage;
         descriptorWrite.descriptorCount = 1;
         descriptorWrite.pImageInfo      = &imageInfo;
-        vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+        device.updateDescriptorSets(descriptorWrite, {});
     }
 }
 
@@ -96,27 +95,20 @@ void Vu::VuDevice::registerToBindless(const vk::Sampler& sampler, u32 bindlessIn
 
     for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
     {
-        vk::WriteDescriptorSet samplerWrite{};
-        samplerWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        samplerWrite.dstSet          = globalDescriptorSets[i];
-        samplerWrite.dstBinding      = config::BINDLESS_SAMPLER_BINDING;
-        samplerWrite.dstArrayElement = bindlessIndex;
-        samplerWrite.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
-        samplerWrite.descriptorCount = 1;
-        samplerWrite.pImageInfo      = &imageInfo;
-        vkUpdateDescriptorSets(device, 1, &samplerWrite, 0, nullptr);
+        vk::WriteDescriptorSet descriptorWrite{};
+        descriptorWrite.dstSet          = globalDescriptorSets[i];
+        descriptorWrite.dstBinding      = config::BINDLESS_SAMPLER_BINDING;
+        descriptorWrite.dstArrayElement = bindlessIndex;
+        descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pImageInfo      = &imageInfo;
+        device.updateDescriptorSets(descriptorWrite, {});
     }
 }
 
 void Vu::VuDevice::uninit()
 {
     disposeStack.disposeAll();
-    // Logger::Trace("Image Pool destroyed, leaked resource count: {}", imagePool.getUsedSlotCount());
-    // Logger::Trace("Sampler Pool destroyed, leaked resource count: {}", samplerPool.getUsedSlotCount());
-    // Logger::Trace("Buffer Pool destroyed, leaked resource count: {}", bufferPool.getUsedSlotCount());
-    // Logger::Trace("Shader Pool destroyed, leaked resource count: {}", shaderPool.getUsedSlotCount());
-    // Logger::Trace("Material Pool destroyed, leaked resource count: {}", materialPool.getUsedSlotCount());
-    // Logger::Trace("MaterialDataIndex Pool destroyed, leaked resource count: {}", materialDataIndexPool.getUsedSlotCount());
 }
 
 
@@ -140,47 +132,14 @@ void Vu::VuDevice::initDevice(const VuDeviceCreateInfo& info)
     disposeStack.push([&] { vkDestroyDevice(device, nullptr); });
 }
 
-void Vu::VuDevice::initVMA()
-{
-    VmaVulkanFunctions vma_vulkan_func{
-            .vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties,
-            .vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties,
-            .vkAllocateMemory = vkAllocateMemory,
-            .vkFreeMemory = vkFreeMemory,
-            .vkMapMemory = vkMapMemory,
-            .vkUnmapMemory = vkUnmapMemory,
-            .vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges,
-            .vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges,
-            .vkBindBufferMemory = vkBindBufferMemory,
-            .vkBindImageMemory = vkBindImageMemory,
-            .vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements,
-            .vkGetImageMemoryRequirements = vkGetImageMemoryRequirements,
-            .vkCreateBuffer = vkCreateBuffer,
-            .vkDestroyBuffer = vkDestroyBuffer,
-            .vkCreateImage = vkCreateImage,
-            .vkDestroyImage = vkDestroyImage,
-            .vkCmdCopyBuffer = vkCmdCopyBuffer,
-    };
-
-    VmaAllocatorCreateInfo createInfo{
-            .flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
-            .physicalDevice = physicalDevice,
-            .device = device,
-            .pVulkanFunctions = &vma_vulkan_func,
-            .instance = instance,
-    };
-
-    vk::Check(vmaCreateAllocator(&createInfo, &vma));
-    disposeStack.push([&] { vmaDestroyAllocator(vma); });
-}
 
 void Vu::VuDevice::initCommandPool(const VuDeviceCreateInfo& info)
 {
     vk::CommandPoolCreateInfo poolInfo{};
-    poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-    vk::Check(vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool));
+    //Todo
+    auto res = vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool);
     disposeStack.push([&] { vkDestroyCommandPool(device, commandPool, nullptr); });
 }
 
@@ -233,21 +192,20 @@ void Vu::VuDevice::initBindlessDescriptorSetLayout(const VuDeviceCreateInfo& inf
     };
 
     vk::DescriptorSetLayoutCreateInfo globalSetLayout{
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT,
             .bindingCount = descriptorSetLayoutBindings.size(),
             .pBindings = descriptorSetLayoutBindings.data(),
     };
 
     const vk::DescriptorBindingFlagsEXT flag =
-            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT
-            | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT
-            | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
+            vk::DescriptorBindingFlagBitsEXT::ePartiallyBound |
+            vk::DescriptorBindingFlagBitsEXT::eUpdateAfterBind |
+            vk::DescriptorBindingFlagBitsEXT::eUpdateUnusedWhilePending;
+
 
     std::array descriptorSetLayoutFlags{flag, flag, flag, flag, flag};
 
     vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT binding_flags{};
-    binding_flags.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
     binding_flags.bindingCount  = descriptorSetLayoutFlags.size();
     binding_flags.pBindingFlags = descriptorSetLayoutFlags.data();
     globalSetLayout.pNext       = &binding_flags;
@@ -294,14 +252,14 @@ void Vu::VuDevice::initDefaultResources()
         }
     }
 
-    defaultImageHandle = createImage({.width = 512, .height = 512, .format = VK_FORMAT_R8G8B8A8_SRGB});
+    defaultImageHandle = createImage({.width = 512, .height = 512, .format = vk::Format::eR8G8B8A8Srgb});
     uploadToImage(*defaultImageHandle.get(), reinterpret_cast<const byte*>(colorData.data()),
                   colorData.size() * sizeof(Color32));
     //assert(defaultImageHandle.index == 0);
 
     Color32 normalColor = Color32(uint8_t(128), uint8_t(128), uint8_t(255), uint8_t(255));
     std::fill(colorData.begin(), colorData.end(), normalColor);
-    defaultNormalImageHandle = createImage({.width = 512, .height = 512, .format = VK_FORMAT_R8G8B8A8_UNORM});
+    defaultNormalImageHandle = createImage({.width = 512, .height = 512, .format = vk::Format::eR8G8B8A8Unorm});
 
     uploadToImage(*defaultNormalImageHandle.get(), reinterpret_cast<const byte*>(colorData.data()),
                   colorData.size() * sizeof(Color32));
@@ -413,6 +371,7 @@ void Vu::VuDevice::EndSingleTimeCommands(vk::CommandBuffer commandBuffer)
     vkQueueWaitIdle(graphicsQueue);
 
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+
 }
 
 std::expected<Vu::VuDevice, vk::Result> Vu::VuDevice::make(const VuDeviceCreateInfo& createInfo)
@@ -435,11 +394,7 @@ Vu::VuDevice::VuDevice(const VuDeviceCreateInfo& info) :
     bufferBindlessIndexAllocator{info.storageBufferCount, std::pmr::new_delete_resource()},
     materialDataBindlessIndexAllocator{1024, std::pmr::new_delete_resource()}
 {
-    vk::ins
-    raiiContext.createInstance()
-
     initDevice(info);
-    initVMA();
     initCommandPool(info);
     initBindlessDescriptorSetLayout(info);
     initDescriptorPool(info);
@@ -558,39 +513,41 @@ void Vu::VuDevice::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::De
     copyRegion.srcOffset = 0;
     copyRegion.dstOffset = 0;
     copyRegion.size      = size;
-    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+    commandBuffer.copyBuffer(srcBuffer, dstBuffer, copyRegion);
     EndSingleTimeCommands(commandBuffer);
 }
 
 void Vu::VuDevice::uploadToImage(const VuImage& vuImage, const byte* data, const vk::DeviceSize size)
 {
-    vk::Check(stagingBuffer.setData(data, size));
+    //todo
+    auto res = stagingBuffer.setData(data, size);
 
     transitionImageLayout(vuImage.image,
-                          VK_IMAGE_LAYOUT_UNDEFINED,
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+                          vk::ImageLayout::eUndefined,
+                          vk::ImageLayout::eTransferDstOptimal);
 
     copyBufferToImage(stagingBuffer.buffer,
                       vuImage.image,
                       vuImage.lastCreateInfo.width,
-                      vuImage.lastCreateInfo.width);
+                      vuImage.lastCreateInfo.height);
 
     transitionImageLayout(vuImage.image,
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                          vk::ImageLayout::eTransferDstOptimal,
+                          vk::ImageLayout::eShaderReadOnlyOptimal);
 }
+
 
 void Vu::VuDevice::transitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
 {
-    vk::CommandBuffer      commandBuffer = BeginSingleTimeCommands();
+    vk::CommandBuffer commandBuffer = BeginSingleTimeCommands();
+
     vk::ImageMemoryBarrier barrier{};
-    barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout                       = oldLayout;
     barrier.newLayout                       = newLayout;
     barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
     barrier.image                           = image;
-    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
     barrier.subresourceRange.baseArrayLayer = 0;
@@ -599,38 +556,38 @@ void Vu::VuDevice::transitionImageLayout(vk::Image image, vk::ImageLayout oldLay
     vk::PipelineStageFlags sourceStage;
     vk::PipelineStageFlags destinationStage;
 
-    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+    if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal)
     {
-        barrier.srcAccessMask = 0;
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.srcAccessMask = {};
+        barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 
-        sourceStage      = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        sourceStage      = vk::PipelineStageFlagBits::eTopOfPipe;
+        destinationStage = vk::PipelineStageFlagBits::eTransfer;
     }
-    else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+    else if (oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal)
     {
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+        barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
-        sourceStage      = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        sourceStage      = vk::PipelineStageFlagBits::eTransfer;
+        destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
     }
     else
     {
-        throw std::invalid_argument("unsupported layout transition!");
+        throw std::invalid_argument("Unsupported layout transition!");
     }
 
-    vkCmdPipelineBarrier(
-            commandBuffer,
+    commandBuffer.pipelineBarrier(
             sourceStage, destinationStage,
-            0,
-            0, nullptr,
-            0, nullptr,
-            1, &barrier
+            {},
+            nullptr,
+            nullptr,
+            barrier
             );
 
     EndSingleTimeCommands(commandBuffer);
 }
+
 
 void Vu::VuDevice::waitIdle()
 {
