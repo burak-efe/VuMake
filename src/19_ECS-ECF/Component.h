@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 
-#include "10_Core/VuCommon.h"
+#include "10_Core/Common.h"
 #include "10_Core/math/VuFloat3.h"
 
 namespace Vu {

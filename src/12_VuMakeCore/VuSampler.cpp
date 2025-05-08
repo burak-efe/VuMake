@@ -1,13 +1,14 @@
 #include "VuSampler.h"
 
-#include "10_Core/VuCommon.h"
+#include "VuCommon.h"
+#include "10_Core/Common.h"
 
-void Vu::VuSampler::init(const VkDevice device,const VuSamplerCreateInfo& createInfo)
+void Vu::VuSampler::init(const vk::Device device,const VuSamplerCreateInfo& createInfo)
 {
     this->device = device;
     lastCreateInfo = createInfo;
 
-    VkSamplerCreateInfo samplerInfo{};
+    vk::SamplerCreateInfo samplerInfo{};
     samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter               = VK_FILTER_LINEAR;
     samplerInfo.minFilter               = VK_FILTER_LINEAR;
@@ -25,7 +26,7 @@ void Vu::VuSampler::init(const VkDevice device,const VuSamplerCreateInfo& create
     samplerInfo.minLod                  = 0.0f;
     samplerInfo.maxLod                  = 0.0f;
 
-    VkCheck(vkCreateSampler(device, &samplerInfo, nullptr, &vkSampler));
+    vk::Check(vkCreateSampler(device, &samplerInfo, nullptr, &vkSampler));
 }
 
 void Vu::VuSampler::uninit() const

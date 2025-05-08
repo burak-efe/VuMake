@@ -2,7 +2,6 @@
 
 #include "SDL3/SDL.h"
 
-//TODO
 #include "12_VuMakeCore/VuTypes.h"
 
 namespace Vu

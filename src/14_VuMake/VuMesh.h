@@ -1,7 +1,7 @@
 #pragma once
 
 #include "VuDevice.h"
-#include "10_Core/VuCommon.h"
+#include "10_Core/Common.h"
 #include "10_Core/math/VuFloat2.h"
 #include "10_Core/math/VuFloat3.h"
 
@@ -32,30 +32,30 @@ namespace Vu
         //     vertexBuffer.destroyHandle();
         // }
 
-        VkDeviceSize totalAttributesSizePerVertex()
+        vk::DeviceSize totalAttributesSizePerVertex()
         {
             //pos, norm, tan , uv
             return sizeof(vec3) + sizeof(vec3) + sizeof(vec4) + sizeof(vec2);
         }
 
-        VkDeviceSize getNormalOffsetAsByte() const
+        vk::DeviceSize getNormalOffsetAsByte() const
         {
             return sizeof(vec3) * vertexCount;
         }
 
-        VkDeviceSize getTangentOffsetAsByte() const
+        vk::DeviceSize getTangentOffsetAsByte() const
         {
             return (sizeof(vec3) + sizeof(vec3)) * vertexCount;
         }
 
-        VkDeviceSize getUV_OffsetAsByte() const
+        vk::DeviceSize getUV_OffsetAsByte() const
         {
             return (sizeof(vec3) + sizeof(vec3) + sizeof(vec4)) * vertexCount;
         }
 
-        static std::array<VkVertexInputBindingDescription, 4> getBindingDescription()
+        static std::array<vk::VertexInputBindingDescription, 4> getBindingDescription()
         {
-            std::array<VkVertexInputBindingDescription, 4> bindingDescriptions{};
+            std::array<vk::VertexInputBindingDescription, 4> bindingDescriptions{};
             bindingDescriptions[0].binding   = 0;
             bindingDescriptions[0].stride    = sizeof(vec3);
             bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -75,9 +75,9 @@ namespace Vu
             return bindingDescriptions;
         }
 
-        static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions()
+        static std::array<vk::VertexInputAttributeDescription, 4> getAttributeDescriptions()
         {
-            std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
+            std::array<vk::VertexInputAttributeDescription, 4> attributeDescriptions{};
             attributeDescriptions[0].binding  = 0;
             attributeDescriptions[0].location = 0;
             attributeDescriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;

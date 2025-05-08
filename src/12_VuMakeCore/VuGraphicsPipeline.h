@@ -2,27 +2,27 @@
 
 #include <span>                  // for span
 
-#include <vulkan/vulkan_core.h>  // for VkDevice, VkShaderModule, VkCompareOp
+#include <vulkan/vulkan_core.h>  // for vk::Device, vk::ShaderModule, vk::CompareOp
 
 namespace Vu
 {
     struct VuGraphicsPipeline
     {
-        VkDevice   device;
-        VkPipeline pipeline;
+        vk::Device   device;
+        vk::Pipeline pipeline;
 
-        void initGraphicsPipeline(VkDevice                                       device,
-                                  VkPipelineLayout                               pipelineLayout,
-                                  VkShaderModule                                 vertShaderModule,
-                                  VkShaderModule                                 fragShaderModule,
-                                  VkRenderPass                                   renderPass,
-                                  std::span<VkPipelineColorBlendAttachmentState> colorBlends
+        void initGraphicsPipeline(vk::Device                                       device,
+                                  vk::PipelineLayout                               pipelineLayout,
+                                  vk::ShaderModule                                 vertShaderModule,
+                                  vk::ShaderModule                                 fragShaderModule,
+                                  vk::RenderPass                                   renderPass,
+                                  std::span<vk::PipelineColorBlendAttachmentState> colorBlends
         );
 
         void uninit() const;
 
-        static VkPipelineDepthStencilStateCreateInfo fillDepthStencilCreateInfo(bool bDepthTest,
+        static vk::PipelineDepthStencilStateCreateInfo fillDepthStencilCreateInfo(bool bDepthTest,
             bool                                                                     bDepthWrite,
-            VkCompareOp                                                              compareOp);
+            vk::CompareOp                                                              compareOp);
     };
 }

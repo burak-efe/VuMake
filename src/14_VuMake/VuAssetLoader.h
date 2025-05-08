@@ -6,7 +6,7 @@
 #include "fastgltf/core.hpp"
 #include "fastgltf/tools.hpp"
 
-#include "10_Core/VuCommon.h"
+#include "10_Core/Common.h"
 #include "10_Core/CollectionUtils.h"
 #include "VuDevice.h"
 #include "VuMesh.h"
@@ -20,8 +20,6 @@ struct VuAssetLoader
 {
     static void LoadGltf(VuDevice& vuDevice, std::filesystem::path gltfPath, VuMesh& dstMesh)
     {
-        ZoneScoped;
-
         fastgltf::Parser parser;
 
         auto data = fastgltf::GltfDataBuffer::FromPath(gltfPath);
@@ -142,7 +140,6 @@ struct VuAssetLoader
 
         //pos
         {
-            ZoneScopedN("Positions");
             fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec3>(asset.get(), positionAccessor,
                                                                         [&](fastgltf::math::f32vec3 pos,
                                                                             std::size_t             idx)
@@ -153,7 +150,6 @@ struct VuAssetLoader
 
         //normal
         {
-            ZoneScopedN("Normals");
             auto* normalIt       = primitive.findAttribute("NORMAL");
             auto& normalAccessor = asset->accessors[normalIt->accessorIndex];
 
@@ -166,7 +162,6 @@ struct VuAssetLoader
         }
         //uv
         {
-            ZoneScopedN("UVs");
             fastgltf::Attribute* uvIter     = primitive.findAttribute("TEXCOORD_0");
             fastgltf::Accessor&  uvAccessor = asset->accessors[uvIter->accessorIndex];
 
@@ -180,7 +175,6 @@ struct VuAssetLoader
 
         //tangent
         {
-            ZoneScopedN("Tangents");
             auto*               tangentIt          = primitive.findAttribute("TANGENT");
             fastgltf::Accessor& tangentAccessor    = asset->accessors[tangentIt->accessorIndex];
             auto                tangentbufferIndex = tangentAccessor.bufferViewIndex.value();

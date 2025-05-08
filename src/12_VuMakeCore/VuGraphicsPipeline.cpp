@@ -4,27 +4,28 @@
 #include <array>                    // for array
 #include <vector>                   // for vector
 
+#include "VuCommon.h"
 #include "08_LangUtils/TypeDefs.h"  // for u32
-#include "10_Core/VuCommon.h"       // for VkCheck
+#include "10_Core/Common.h"       // for vk::Check
 
 void Vu::VuGraphicsPipeline::initGraphicsPipeline(
-    const VkDevice         device,
-    const VkPipelineLayout pipelineLayout,
-    const VkShaderModule   vertShaderModule,
-    const VkShaderModule   fragShaderModule,
-    const VkRenderPass     renderPass,
-    std::span<VkPipelineColorBlendAttachmentState> colorBlends
+    const vk::Device         device,
+    const vk::PipelineLayout pipelineLayout,
+    const vk::ShaderModule   vertShaderModule,
+    const vk::ShaderModule   fragShaderModule,
+    const vk::RenderPass     renderPass,
+    std::span<vk::PipelineColorBlendAttachmentState> colorBlends
     )
 {
     this->device = device;
-    VkPipelineShaderStageCreateInfo vertShaderStageInfo{
+    vk::PipelineShaderStageCreateInfo vertShaderStageInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
         .stage = VK_SHADER_STAGE_VERTEX_BIT,
         .module = vertShaderModule,
         .pName = "main",
     };
 
-    VkPipelineShaderStageCreateInfo fragShaderStageInfo{
+    vk::PipelineShaderStageCreateInfo fragShaderStageInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
         .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
         .module = fragShaderModule,
@@ -33,7 +34,7 @@ void Vu::VuGraphicsPipeline::initGraphicsPipeline(
 
     auto shaderStages = std::array{vertShaderStageInfo, fragShaderStageInfo};
 
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo{
+    vk::PipelineVertexInputStateCreateInfo vertexInputInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .vertexBindingDescriptionCount = 0,
         .pVertexBindingDescriptions = nullptr,
@@ -41,19 +42,19 @@ void Vu::VuGraphicsPipeline::initGraphicsPipeline(
         .pVertexAttributeDescriptions = nullptr,
     };
 
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly{
+    vk::PipelineInputAssemblyStateCreateInfo inputAssembly{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
         .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         .primitiveRestartEnable = VK_FALSE,
     };
 
-    VkPipelineViewportStateCreateInfo viewportState{
+    vk::PipelineViewportStateCreateInfo viewportState{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
         .viewportCount = 1,
         .scissorCount = 1,
     };
 
-    VkPipelineRasterizationStateCreateInfo rasterizer{
+    vk::PipelineRasterizationStateCreateInfo rasterizer{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
         .depthClampEnable = VK_FALSE,
         .rasterizerDiscardEnable = VK_FALSE,
@@ -64,13 +65,13 @@ void Vu::VuGraphicsPipeline::initGraphicsPipeline(
         .lineWidth = 1.0f,
     };
 
-    VkPipelineMultisampleStateCreateInfo multisampling{
+    vk::PipelineMultisampleStateCreateInfo multisampling{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
         .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
         .sampleShadingEnable = VK_FALSE,
     };
 
-    VkPipelineColorBlendStateCreateInfo colorBlending{
+    vk::PipelineColorBlendStateCreateInfo colorBlending{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
         .logicOpEnable = VK_FALSE,
         .logicOp = VK_LOGIC_OP_COPY,
@@ -80,17 +81,17 @@ void Vu::VuGraphicsPipeline::initGraphicsPipeline(
     };
 
     //dynamic state
-    std::vector<VkDynamicState> dynamicStates = {
+    std::vector<vk::DynamicState> dynamicStates = {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR,
     };
 
-    VkPipelineDynamicStateCreateInfo dynamicState{};
+    vk::PipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicState.dynamicStateCount = static_cast<u32>(dynamicStates.size());
     dynamicState.pDynamicStates    = dynamicStates.data();
 
-    VkGraphicsPipelineCreateInfo pipelineInfo{
+    vk::GraphicsPipelineCreateInfo pipelineInfo{
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         .stageCount = 2,
         .pStages = shaderStages.data(),
@@ -107,9 +108,9 @@ void Vu::VuGraphicsPipeline::initGraphicsPipeline(
         .basePipelineHandle = VK_NULL_HANDLE
     };
 
-    VkPipelineDepthStencilStateCreateInfo depth = fillDepthStencilCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
+    vk::PipelineDepthStencilStateCreateInfo depth = fillDepthStencilCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
     pipelineInfo.pDepthStencilState             = &depth;
-    VkCheck(vkCreateGraphicsPipelines(device,VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
+    vk::Check(vkCreateGraphicsPipelines(device,VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
 }
 
 void Vu::VuGraphicsPipeline::uninit() const
@@ -117,10 +118,10 @@ void Vu::VuGraphicsPipeline::uninit() const
     vkDestroyPipeline(device, pipeline, nullptr);
 }
 
-VkPipelineDepthStencilStateCreateInfo Vu::VuGraphicsPipeline::fillDepthStencilCreateInfo(bool        bDepthTest, bool bDepthWrite,
-                                                                                         VkCompareOp compareOp)
+vk::PipelineDepthStencilStateCreateInfo Vu::VuGraphicsPipeline::fillDepthStencilCreateInfo(bool        bDepthTest, bool bDepthWrite,
+                                                                                         vk::CompareOp compareOp)
 {
-    VkPipelineDepthStencilStateCreateInfo info = {};
+    vk::PipelineDepthStencilStateCreateInfo info = {};
     info.sType                                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     info.depthTestEnable                       = bDepthTest ? VK_TRUE : VK_FALSE;
     info.depthWriteEnable                      = bDepthWrite ? VK_TRUE : VK_FALSE;

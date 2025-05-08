@@ -1,61 +1,61 @@
 ﻿#pragma once
 
-#include <vulkan/vulkan_core.h>     // for VkDeviceSize, VK_NULL_HANDLE, VkB...
 #include <span>                     // for span
 
-#include "vk_mem_alloc.h"           // for VmaAllocationCreateFlagBits, VmaM...
-
 #include "08_LangUtils/TypeDefs.h"  // for byte, u32orNull
+#include "VuCommon.h"
 #include "VuTypes.h"                // for VuName
 
 namespace Vu
 {
-    struct VuBufferCreateInfo
-    {
-        VuName             name          = "VuBuffer";
-        VkDeviceSize       length        = 1;
-        VkDeviceSize       strideInBytes = 1;
-        VkBufferUsageFlags vkUsageFlags  = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-                                          VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        VmaMemoryUsage           vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO;
-        VmaAllocationCreateFlags vmaCreateFlags =
-            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-    };
+struct VuDeviceAllocator;
+}
 
-    struct VuBuffer
-    {
-        VkDevice           device         = VK_NULL_HANDLE;
-        VmaAllocator       vma            = VK_NULL_HANDLE;
-        //VuBufferCreateInfo lastCreateInfo = {};
-
-        VuName            name           = "VuBuffer";
-        VkBuffer          buffer         = VK_NULL_HANDLE;
-        VmaAllocation     allocation     = VK_NULL_HANDLE;
-        VmaAllocationInfo allocationInfo = {};
-        VkDeviceSize      length         = 0;
-        VkDeviceSize      stride         = 0;
-        void*             mapPtr         = VK_NULL_HANDLE;
-        u32orNull         bindlessIndex  = 0;
+namespace Vu
+{
+struct VuBufferCreateInfo
+{
+    VuName               name         = "VuBuffer";
+    vk::DeviceSize       sizeInBytes  = 1;
+    vk::BufferUsageFlags vkUsageFlags = vk::BufferUsageFlagBits::eStorageBuffer
+                                        | vk::BufferUsageFlagBits::eShaderDeviceAddress;
+    vk::MemoryAllocateFlags vkMemoryAllocateFlags = vk::MemoryAllocateFlagBits::eDeviceAddress;
+    vk::MemoryPropertyFlags vkMemoryPropertyFlags = vk::MemoryPropertyFlagBits::eDeviceLocal
+                                                    | vk::MemoryPropertyFlagBits::eHostVisible
+                                                    | vk::MemoryPropertyFlagBits::eHostCoherent;
+};
 
 
-        void init(VkDevice device, VmaAllocator allocator, const VuBufferCreateInfo& info);
+struct VuBuffer
+{
+    std::shared_ptr<vk::raii::Device> device       = VK_NULL_HANDLE;
+    vk::raii::DeviceMemory            deviceMemory = VK_NULL_HANDLE;
+    vk::raii::Buffer                  buffer       = VK_NULL_HANDLE;
 
-        void uninit();
+    void* mapPtr = VK_NULL_HANDLE;
 
-        void map();
+    vk::DeviceSize sizeInBytes   = 0;
+    u32orNull      bindlessIndex = 0;
+    VuName         name          = "VuBuffer";
 
-        void unmap();
 
-        [[nodiscard]] VkDeviceAddress getDeviceAddress() const;
+    void init(std::shared_ptr<vk::raii::Device> device, const VuBufferCreateInfo& createInfo,
+              VuDeviceAllocator&                allocator);
 
-        VkResult setData(const void* data, VkDeviceSize byteSize, VkDeviceSize offset = 0) const;
+    void uninit();
 
-        [[nodiscard]] VkDeviceSize getSizeInBytes() const;
+    void map();
 
-        [[nodiscard]] std::span<byte> getMappedSpan(VkDeviceSize start, VkDeviceSize bytelenght) const;
+    void unmap();
 
-        static VkDeviceSize alignedSize(VkDeviceSize value, VkDeviceSize alignment);
-    };
+    [[nodiscard]] vk::DeviceAddress getDeviceAddress() const;
 
-    //static_assert(std::is_default_constructible_v<VuBuffer>);
+    vk::Result setData(const void* data, vk::DeviceSize byteSize, vk::DeviceSize offset = 0) const;
+
+    [[nodiscard]] vk::DeviceSize getSizeInBytes() const;
+
+    [[nodiscard]] std::span<byte> getMappedSpan(vk::DeviceSize start, vk::DeviceSize bytelenght) const;
+
+    static vk::DeviceSize alignedSize(vk::DeviceSize value, vk::DeviceSize alignment);
+};
 }

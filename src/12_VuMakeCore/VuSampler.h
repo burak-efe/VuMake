@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>     // for VkSamplerAddressMode, VkDevice
+#include <vulkan/vulkan_core.h>     // for vk::SamplerAddressMode, vk::Device
 #include "08_LangUtils/TypeDefs.h"  // for u32orNull
 
 namespace Vu
@@ -8,17 +8,17 @@ namespace Vu
     struct VuSamplerCreateInfo
     {
         float                maxAnisotropy = 16.0f;
-        VkSamplerAddressMode addressMode   = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        vk::SamplerAddressMode addressMode   = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     };
 
     struct VuSampler
     {
-        VkDevice            device;
+        vk::Device            device;
         VuSamplerCreateInfo lastCreateInfo;
-        VkSampler           vkSampler;
+        vk::Sampler           vkSampler;
         u32orNull           bindlessIndex = 0;
 
-        void init(const VkDevice device, const VuSamplerCreateInfo& createInfo);
+        void init(const vk::Device device, const VuSamplerCreateInfo& createInfo);
 
         void uninit() const;
     };

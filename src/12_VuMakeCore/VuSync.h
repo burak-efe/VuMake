@@ -1,12 +1,12 @@
 #pragma once
 
-#include "10_Core/VuCommon.h"
+#include "10_Core/Common.h"
 
 
 namespace VuSync {
 
-    inline VkImageMemoryBarrier ImageMemoryBarrier() {
-        VkImageMemoryBarrier imageMemoryBarrier{};
+    inline vk::ImageMemoryBarrier ImageMemoryBarrier() {
+        vk::ImageMemoryBarrier imageMemoryBarrier{};
         imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -14,17 +14,17 @@ namespace VuSync {
     }
 
     inline void InsertImageMemoryBarrier(
-        VkCommandBuffer cmdbuffer,
-        VkImage image,
-        VkAccessFlags srcAccessMask,
-        VkAccessFlags dstAccessMask,
-        VkImageLayout oldImageLayout,
-        VkImageLayout newImageLayout,
-        VkPipelineStageFlags srcStageMask,
-        VkPipelineStageFlags dstStageMask,
-        VkImageSubresourceRange subresourceRange) {
+        vk::CommandBuffer cmdbuffer,
+        vk::Image image,
+        vk::AccessFlags srcAccessMask,
+        vk::AccessFlags dstAccessMask,
+        vk::ImageLayout oldImageLayout,
+        vk::ImageLayout newImageLayout,
+        vk::PipelineStageFlags srcStageMask,
+        vk::PipelineStageFlags dstStageMask,
+        vk::ImageSubresourceRange subresourceRange) {
 
-        VkImageMemoryBarrier imageMemoryBarrier = ImageMemoryBarrier();
+        vk::ImageMemoryBarrier imageMemoryBarrier = ImageMemoryBarrier();
         imageMemoryBarrier.srcAccessMask = srcAccessMask;
         imageMemoryBarrier.dstAccessMask = dstAccessMask;
         imageMemoryBarrier.oldLayout = oldImageLayout;
@@ -48,19 +48,19 @@ namespace VuSync {
 
     //
     // inline void InsertImageMemoryBarrier2(
-    //     VkCommandBuffer cmdbuffer,
-    //     VkImage image,
-    //     VkAccessFlags2 srcAccessMask,
-    //     VkAccessFlags2 dstAccessMask,
-    //     VkImageLayout oldImageLayout,
-    //     VkImageLayout newImageLayout,
-    //     VkPipelineStageFlags2 srcStageMask,
-    //     VkPipelineStageFlags2 dstStageMask,
-    //     VkImageSubresourceRange subresourceRange
+    //     vk::CommandBuffer cmdbuffer,
+    //     vk::Image image,
+    //     vk::AccessFlags2 srcAccessMask,
+    //     vk::AccessFlags2 dstAccessMask,
+    //     vk::ImageLayout oldImageLayout,
+    //     vk::ImageLayout newImageLayout,
+    //     vk::PipelineStageFlags2 srcStageMask,
+    //     vk::PipelineStageFlags2 dstStageMask,
+    //     vk::ImageSubresourceRange subresourceRange
     //
     // ) {
     //
-    //     VkImageMemoryBarrier2 imageMemoryBarrier2{
+    //     vk::ImageMemoryBarrier2 imageMemoryBarrier2{
     //         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
     //         .srcStageMask = srcStageMask,
     //         .srcAccessMask = srcAccessMask,
@@ -74,9 +74,9 @@ namespace VuSync {
     //         .subresourceRange = subresourceRange
     //     };
     //
-    //     VkDependencyFlags dependencyFlags = 0;
+    //     vk::DependencyFlags dependencyFlags = 0;
     //
-    //     VkDependencyInfo dependInfo{
+    //     vk::DependencyInfo dependInfo{
     //         .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
     //         .pNext = nullptr,
     //         .dependencyFlags = dependencyFlags,

@@ -8,37 +8,36 @@
 #include <string>                   // for basic_string, string
 #include <vector>                   // for vector
 
-#include "10_Core/VuCommon.h"       // for VkCheck
-#include "11_Config/VuCtx.h"        // for vkCreateDebugUtilsMessengerEXT
+#include "VuCommon.h"
+#include "10_Core/Common.h"       // for vk::Check
+#include "../10_Core/VuCtx.h"
 #include "12_VuMakeCore/VuTypes.h"  // for QueueFamilyIndices
 #include "VuUtils.h"                // for fillDebugMessengerCreateInfo,
 
-void Vu::CreateUtils::createInstance(bool                   enableValidationLayers,
-                                     std::span<const char*> validationLayers,
-                                     std::span<const char*> extensions,
-                                     VkInstance&            outInstance)
+std::expected<vk::raii::Instance, vk::Result>
+Vu::CreateUtils::createInstance(vk::raii::Context&     raiiContext,
+                                bool                   enableValidationLayers,
+                                std::span<const char*> validationLayers,
+                                std::span<const char*> extensions)
 {
     if (enableValidationLayers && !Utils::checkValidationLayerSupport(validationLayers))
     {
         throw std::runtime_error("validation layers requested, but not available!");
     }
 
-    VkApplicationInfo appInfo{};
-    appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    vk::ApplicationInfo appInfo{};
     appInfo.pApplicationName   = "VuMake";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName        = "No Engine";
     appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion         = VK_API_VERSION_1_2;
 
-    VkInstanceCreateInfo instanceCreateInfo{};
-    instanceCreateInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instanceCreateInfo.pApplicationInfo = &appInfo;
-
+    vk::InstanceCreateInfo instanceCreateInfo{};
+    instanceCreateInfo.pApplicationInfo        = &appInfo;
     instanceCreateInfo.enabledExtensionCount   = static_cast<uint32_t>(extensions.size());
     instanceCreateInfo.ppEnabledExtensionNames = extensions.data();
 
-    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+    vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
     if (enableValidationLayers)
     {
         instanceCreateInfo.enabledLayerCount   = static_cast<uint32_t>(validationLayers.size());
@@ -47,59 +46,54 @@ void Vu::CreateUtils::createInstance(bool                   enableValidationLaye
 
         instanceCreateInfo.pNext = &debugCreateInfo;
     }
-    //create
-    {
-        VkCheck(vkCreateInstance(&instanceCreateInfo, nullptr, &outInstance));
-    }
+
+    return raiiContext.createInstance(instanceCreateInfo);
 }
 
-void Vu::CreateUtils::createPhysicalDevice(const VkInstance&      instance,
-                                           const VkSurfaceKHR&    surface,
-                                           std::span<const char*> enabledExtensions,
-                                           VkPhysicalDevice&      outPhysicalDevice)
+std::expected<vk::PhysicalDevice, vk::Result>
+Vu::CreateUtils::createPhysicalDevice(const vk::Instance&    instance,
+                                      const vk::SurfaceKHR&  surface,
+                                      std::span<const char*> enabledExtensions)
 {
-    outPhysicalDevice    = VK_NULL_HANDLE;
+
     uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+
+    RET_ON_FAIL(instance.enumeratePhysicalDevices(&deviceCount, nullptr));
 
     if (deviceCount == 0)
     {
-        throw std::runtime_error("failed to find GPUs with Vulkan support!");
+        return std::unexpected{vk::Result::eErrorInitializationFailed};
     }
 
-    std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+    std::vector<vk::PhysicalDevice> devices(deviceCount);
+    RET_ON_FAIL(instance.enumeratePhysicalDevices( &deviceCount, devices.data()));
 
     for (const auto& device : devices)
     {
         if (Utils::isDeviceSupportExtensions(device, surface, enabledExtensions))
         {
-            outPhysicalDevice = device;
-            break;
+            return device;
         }
     }
 
-    if (outPhysicalDevice == VK_NULL_HANDLE)
-    {
-        throw std::runtime_error(std::string("failed to find a suitable GPU!"));
-    }
+    return std::unexpected{vk::Result::eErrorInitializationFailed};
 }
 
-void Vu::CreateUtils::createDevice(const VkPhysicalDeviceFeatures2& features,
-                                   const QueueFamilyIndices&        indices,
-                                   const VkPhysicalDevice&          physicalDevice,
-                                   std::span<const char*>           enabledExtensions,
-                                   VkDevice&                        outDevice,
-                                   VkQueue&                         outGraphicsQueue,
-                                   VkQueue&                         outPresentQueue)
+void Vu::CreateUtils::createDevice(const vk::PhysicalDeviceFeatures2& features,
+                                   const QueueFamilyIndices&          indices,
+                                   const vk::PhysicalDevice&          physicalDevice,
+                                   std::span<const char*>             enabledExtensions,
+                                   vk::Device&                        outDevice,
+                                   vk::Queue&                         outGraphicsQueue,
+                                   vk::Queue&                         outPresentQueue)
 {
-    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
-    std::set<uint32_t>                   uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+    std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos{};
+    std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies)
     {
-        VkDeviceQueueCreateInfo queueCreateInfo{};
+        vk::DeviceQueueCreateInfo queueCreateInfo{};
         queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueFamilyIndex = queueFamily;
         queueCreateInfo.queueCount       = 1;
@@ -107,7 +101,7 @@ void Vu::CreateUtils::createDevice(const VkPhysicalDeviceFeatures2& features,
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-    VkDeviceCreateInfo createInfo{};
+    vk::DeviceCreateInfo createInfo{};
     createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.pNext                   = &features;
     createInfo.queueCreateInfoCount    = static_cast<uint32_t>(queueCreateInfos.size());
@@ -117,7 +111,7 @@ void Vu::CreateUtils::createDevice(const VkPhysicalDeviceFeatures2& features,
     createInfo.ppEnabledExtensionNames = enabledExtensions.data();
     //create
     {
-        VkCheck(vkCreateDevice(physicalDevice, &createInfo, nullptr, &outDevice));
+        vk::Check(vkCreateDevice(physicalDevice, &createInfo, nullptr, &outDevice));
     }
 
     //queue
@@ -127,60 +121,32 @@ void Vu::CreateUtils::createDevice(const VkPhysicalDeviceFeatures2& features,
     }
 }
 
-void Vu::CreateUtils::createPipelineLayout(const VkDevice                         device,
-                                           const std::span<VkDescriptorSetLayout> descriptorSetLayouts,
-                                           const u32                              pushConstantSizeAsByte,
-                                           VkPipelineLayout&                      outPipelineLayout)
+void Vu::CreateUtils::createPipelineLayout(const vk::Device                         device,
+                                           const std::span<vk::DescriptorSetLayout> descriptorSetLayouts,
+                                           const u32                                pushConstantSizeAsByte,
+                                           vk::PipelineLayout&                      outPipelineLayout)
 {
     //push constants
-    VkPushConstantRange pcRange{
-        .stageFlags = VK_SHADER_STAGE_ALL,
-        .offset = 0,
-        .size = pushConstantSizeAsByte,
+    vk::PushConstantRange pcRange{
+            .stageFlags = VK_SHADER_STAGE_ALL,
+            .offset = 0,
+            .size = pushConstantSizeAsByte,
     };
 
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount         = descriptorSetLayouts.size();
     pipelineLayoutInfo.pSetLayouts            = descriptorSetLayouts.data();
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges    = &pcRange;
 
-    VkCheck(vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &outPipelineLayout));
+    vk::Check(vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &outPipelineLayout));
 }
 
-// VkResult Vu::CreateUtils::createDebugUtilsMessengerEXT(VkInstance                                instance,
-//                                                        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-//                                                        const VkAllocationCallbacks*              pAllocator,
-//                                                        VkDebugUtilsMessengerEXT*                 pDebugMessenger)
-// {
-//     auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-//         vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
-//     if (func != nullptr)
-//     {
-//         return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-//     }
-//     else
-//     {
-//         return VK_ERROR_EXTENSION_NOT_PRESENT;
-//     }
-// }
-//
-// void Vu::CreateUtils::destroyDebugUtilsMessengerEXT(VkInstance                   instance,
-//                                                     VkDebugUtilsMessengerEXT     debugMessenger,
-//                                                     const VkAllocationCallbacks* pAllocator)
-// {
-//     auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-//         vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
-//     if (func != nullptr)
-//     {
-//         func(instance, debugMessenger, pAllocator);
-//     }
-// }
 
-void Vu::CreateUtils::createDebugMessenger(const VkInstance& instance, VkDebugUtilsMessengerEXT& outDebugMessenger)
+void Vu::CreateUtils::createDebugMessenger(const vk::Instance& instance, vk::DebugUtilsMessengerEXT& outDebugMessenger)
 {
-    VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+    vk::DebugUtilsMessengerCreateInfoEXT createInfo{};
     Utils::fillDebugMessengerCreateInfo(createInfo);
-    VkCheck(Vu::ctx::vkCreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &outDebugMessenger));
+    vk::Check(Vu::ctx::vkCreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &outDebugMessenger));
 }

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 
-#include "10_Core/VuCommon.h"
+#include "10_Core/Common.h"
 #include "10_Core/Color32.h"
 #include "10_Core/collections/VuAllocator.h"
 

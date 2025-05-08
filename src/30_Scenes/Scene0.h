@@ -2,10 +2,9 @@
 
 #include <filesystem>
 
-#include "tracy/Tracy.hpp"
 #include "imgui_internal.h"
 
-#include "11_Config/VuCtx.h"
+#include "../10_Core/VuCtx.h"
 #include "14_VuMake/VuAssetLoader.h"
 #include "14_VuMake/VuRenderer.h"
 #include "20_Components/Camera.h"

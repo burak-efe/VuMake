@@ -8,12 +8,12 @@
 #include <string>             // for basic_string, operator<<, operator<=>
 #include <vector>             // for vector
 
-#include "11_Config/VuCtx.h"  // for vkSetDebugUtilsObjectNameEXT
+#include "../10_Core/VuCtx.h"
 #include "VuTypes.h"          // for SwapChainSupportDetails, QueueFamilyInd...
 
-VkImageCreateInfo Vu::Utils::fillImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent)
+vk::ImageCreateInfo Vu::Utils::fillImageCreateInfo(vk::Format format, vk::ImageUsageFlags usageFlags, vk::Extent3D extent)
 {
-    VkImageCreateInfo info = {};
+    vk::ImageCreateInfo info = {};
     info.sType             = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     info.pNext             = nullptr;
     info.imageType         = VK_IMAGE_TYPE_2D;
@@ -27,9 +27,9 @@ VkImageCreateInfo Vu::Utils::fillImageCreateInfo(VkFormat format, VkImageUsageFl
     return info;
 }
 
-VkImageViewCreateInfo Vu::Utils::fillImageViewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags)
+vk::ImageViewCreateInfo Vu::Utils::fillImageViewCreateInfo(vk::Format format, vk::Image image, vk::ImageAspectFlags aspectFlags)
 {
-    VkImageViewCreateInfo info           = {};
+    vk::ImageViewCreateInfo info           = {};
     info.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     info.pNext                           = nullptr;
     info.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
@@ -43,71 +43,75 @@ VkImageViewCreateInfo Vu::Utils::fillImageViewCreateInfo(VkFormat format, VkImag
     return info;
 }
 
-u32 Vu::Utils::findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memoryProperties, u32 typeFilter,
-    VkMemoryPropertyFlags requiredProperties)
+std::expected<u32, vk::Result> Vu::Utils::findMemoryTypeIndex(const vk::PhysicalDeviceMemoryProperties& memoryProperties,
+                                                       u32                                     typeFilter,
+                                                       vk::MemoryPropertyFlags                   requiredProperties)
 {
     for (u32 i = 0; i < memoryProperties.memoryTypeCount; ++i)
     {
         const bool isTypeSuitable        = (typeFilter & (1 << i)) != 0;
-        const bool hasRequiredProperties = (memoryProperties.memoryTypes[i].propertyFlags & requiredProperties) == requiredProperties;
+        const bool hasRequiredProperties = (memoryProperties.memoryTypes[i].propertyFlags & requiredProperties) ==
+                                           requiredProperties;
 
         if (isTypeSuitable && hasRequiredProperties)
         {
             return i;
         }
     }
-
-    throw std::runtime_error("Failed to find suitable memory type!");
+    return std::unexpected{VK_ERROR_OUT_OF_DEVICE_MEMORY};
 }
 
-void Vu::Utils::giveDebugName(const VkDevice device, const VkObjectType objType, const void* objHandle, const char* debugName)
+void Vu::Utils::giveDebugName(const vk::Device device, const vk::ObjectType objType, const void* objHandle,
+                              const char*    debugName)
 {
 #ifndef NDEBUG
-    VkDebugUtilsObjectNameInfoEXT info{
-        . sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-        . pNext = nullptr,
-        . objectType = objType,
-        . objectHandle = reinterpret_cast<uint64_t>(objHandle),
-        . pObjectName = debugName,
+    vk::DebugUtilsObjectNameInfoEXT info{
+            . sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+            . pNext = nullptr,
+            . objectType = objType,
+            . objectHandle = reinterpret_cast<uint64_t>(objHandle),
+            . pObjectName = debugName,
     };
     ctx::vkSetDebugUtilsObjectNameEXT(device, &info);
 #endif
 }
 
-VkBool32 Vu::Utils::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
-{
-    std::cout << "###############################################################################################################\n"
-        << "[VALIDATION]: " << pCallbackData->pMessage << "\n"
-        << "###############################################################################################################\n"
-        << std::endl;
-    return VK_FALSE;
-}
+// vk::Bool32 Vu::Utils::debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
+//                                   vk::DebugUtilsMessageTypeFlagsEXT             messageType,
+//                                   const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+// {
+//     std::cout <<
+//             "###############################################################################################################\n"
+//             << "[VALIDATION]: " << pCallbackData->pMessage << "\n"
+//             << "###############################################################################################################\n"
+//             << std::endl;
+//     return VK_FALSE;
+// }
 
-void Vu::Utils::fillDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
-{
-    createInfo                 = {};
-    createInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    createInfo.messageSeverity = //VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-                             VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                             VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    createInfo.pfnUserCallback = debugCallback;
-}
+// void Vu::Utils::fillDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo)
+// {
+//     createInfo                 = {};
+//     createInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+//     createInfo.messageSeverity = //VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+//             VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+//             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+//     createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+//                              VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+//                              VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+//     createInfo.pfnUserCallback = debugCallback;
+// }
 
-bool Vu::Utils::checkDeviceExtensionSupport(VkPhysicalDevice device, std::span<const char*> requestedExtensions)
+bool Vu::Utils::checkDeviceExtensionSupport(vk::PhysicalDevice device, std::span<const char*> requestedExtensions)
 {
     uint32_t extensionCount = 0;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
-    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    std::vector<vk::ExtensionProperties> availableExtensions(extensionCount);
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
     std::set<std::string> requested(requestedExtensions.begin(), requestedExtensions.end());
 
-    for (const VkExtensionProperties extension : availableExtensions)
+    for (const vk::ExtensionProperties extension : availableExtensions)
     {
         requested.erase(extension.extensionName);
     }
@@ -124,7 +128,8 @@ bool Vu::Utils::checkDeviceExtensionSupport(VkPhysicalDevice device, std::span<c
     return false;
 }
 
-bool Vu::Utils::isDeviceSupportExtensions(VkPhysicalDevice device, VkSurfaceKHR surface, std::span<const char*> enabledExtensions)
+bool Vu::Utils::isDeviceSupportExtensions(vk::PhysicalDevice       device, vk::SurfaceKHR surface,
+                                          std::span<const char*> enabledExtensions)
 {
     QueueFamilyIndices indices             = QueueFamilyIndices::findQueueFamilies(device, surface);
     bool               extensionsSupported = checkDeviceExtensionSupport(device, enabledExtensions);
@@ -132,41 +137,41 @@ bool Vu::Utils::isDeviceSupportExtensions(VkPhysicalDevice device, VkSurfaceKHR 
     if (extensionsSupported)
     {
         SwapChainSupportDetails swapChainSupport = SwapChainSupportDetails::querySwapChainSupport(device, surface);
-        swapChainAdequate                        = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
     }
 
-    VkPhysicalDeviceFeatures supportedFeatures;
+    vk::PhysicalDeviceFeatures supportedFeatures;
     vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
     return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 }
 
-bool Vu::Utils::checkValidationLayerSupport(std::span<const char*> validationLayers)
-{
-    uint32_t layerCount;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-    for (const auto layerName : validationLayers)
-    {
-        bool layerFound = false;
-
-        for (const auto& layerProperties : availableLayers)
-        {
-            if (std::strcmp(layerName, layerProperties.layerName) == 0)
-            {
-                layerFound = true;
-                break;
-            }
-        }
-
-        if (!layerFound)
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
+// bool Vu::Utils::checkValidationLayerSupport(std::span<const char*> validationLayers)
+// {
+//     uint32_t layerCount;
+//     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+//
+//     std::vector<vk::LayerProperties> availableLayers(layerCount);
+//     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+//
+//     for (const auto layerName : validationLayers)
+//     {
+//         bool layerFound = false;
+//
+//         for (const auto& layerProperties : availableLayers)
+//         {
+//             if (std::strcmp(layerName, layerProperties.layerName) == 0)
+//             {
+//                 layerFound = true;
+//                 break;
+//             }
+//         }
+//
+//         if (!layerFound)
+//         {
+//             return false;
+//         }
+//     }
+//
+//     return true;
+// }

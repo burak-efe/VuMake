@@ -4,14 +4,16 @@
 #include <stdexcept>           // for runtime_error
 #include <string>              // for basic_string
 
-#include "stb_image.h"         // for stbi_load, STBI_rgb_alpha, stbi_uc
+#include "VuCommon.h"
+#include "../../external/header_onlys/stb_image.h"
 
-#include "10_Core/VuCommon.h"  // for VkCheck
+#include "10_Core/Common.h"  // for vk::Check
 #include "VuUtils.h"           // for findMemoryTypeIndex
 
-void Vu::VuImage::init(VkDevice device, const VkPhysicalDeviceMemoryProperties& memProps, const VuImageCreateInfo& createInfo)
+void Vu::VuImage::init(vk::Device                 device, const vk::PhysicalDeviceMemoryProperties& memProps,
+                       const VuImageCreateInfo& createInfo)
 {
-    this->device         = device;
+    this->device = device;
 
     lastCreateInfo = createInfo;
     createImage(device,
@@ -28,7 +30,8 @@ void Vu::VuImage::init(VkDevice device, const VkPhysicalDeviceMemoryProperties& 
 }
 
 
-void Vu::VuImage::loadImageFile(const std::filesystem::path& path, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& pixels)
+void Vu::VuImage::loadImageFile(const std::filesystem::path& path, int& texWidth, int& texHeight, int& texChannels,
+                                stbi_uc*&                    pixels)
 {
     pixels = stbi_load(path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 }
@@ -40,18 +43,18 @@ void Vu::VuImage::uninit()
     vkDestroyImageView(device, imageView, nullptr);
 }
 
-void Vu::VuImage::createImage(const VkDevice                          device,
-                              const VkPhysicalDeviceMemoryProperties& memProps,
+void Vu::VuImage::createImage(const vk::Device                          device,
+                              const vk::PhysicalDeviceMemoryProperties& memProps,
                               const uint32_t                          width,
                               const uint32_t                          height,
-                              const VkFormat                          format,
-                              const VkImageTiling                     tiling,
-                              const VkImageUsageFlags                 usage,
-                              const VkMemoryPropertyFlags             properties,
-                              VkImage&                                image,
-                              VkDeviceMemory&                         imageMemory)
+                              const vk::Format                          format,
+                              const vk::ImageTiling                     tiling,
+                              const vk::ImageUsageFlags                 usage,
+                              const vk::MemoryPropertyFlags             properties,
+                              vk::Image&                                image,
+                              vk::DeviceMemory&                         imageMemory)
 {
-    VkImageCreateInfo imageInfo{};
+    vk::ImageCreateInfo imageInfo{};
     imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType     = VK_IMAGE_TYPE_2D;
     imageInfo.extent.width  = width;
@@ -71,13 +74,16 @@ void Vu::VuImage::createImage(const VkDevice                          device,
         throw std::runtime_error("failed to create image!");
     }
 
-    VkMemoryRequirements memRequirements;
+    vk::MemoryRequirements memRequirements;
     vkGetImageMemoryRequirements(device, image, &memRequirements);
 
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize  = memRequirements.size;
-    allocInfo.memoryTypeIndex = Utils::findMemoryTypeIndex(memProps, memRequirements.memoryTypeBits, properties);
+    vk::MemoryAllocateInfo allocInfo{};
+    allocInfo.sType          = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+
+
+    allocInfo.memoryTypeIndex = Utils::findMemoryTypeIndex(memProps, memRequirements.memoryTypeBits, properties).
+            value();
 
     if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
     {
@@ -87,13 +93,13 @@ void Vu::VuImage::createImage(const VkDevice                          device,
     vkBindImageMemory(device, image, imageMemory, 0);
 }
 
-void Vu::VuImage::createImageView(VkDevice           device,
-                                  VkFormat           format,
-                                  VkImage            image,
-                                  VkImageAspectFlags imageAspect,
-                                  VkImageView&       outImageView)
+void Vu::VuImage::createImageView(vk::Device           device,
+                                  vk::Format           format,
+                                  vk::Image            image,
+                                  vk::ImageAspectFlags imageAspect,
+                                  vk::ImageView&       outImageView)
 {
-    VkImageViewCreateInfo viewInfo{};
+    vk::ImageViewCreateInfo viewInfo{};
     viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image                           = image;
     viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
@@ -104,5 +110,5 @@ void Vu::VuImage::createImageView(VkDevice           device,
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount     = 1;
 
-    VkCheck(vkCreateImageView(device, &viewInfo, nullptr, &outImageView));
+    vk::Check(vkCreateImageView(device, &viewInfo, nullptr, &outImageView));
 }

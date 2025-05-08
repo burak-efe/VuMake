@@ -4,68 +4,71 @@
 #include <vector>
 #include <unordered_map>
 
-#include "10_Core/VuCommon.h"
+#include "10_Core/Common.h"
 #include "Component.h"
 
 namespace Vu
 {
 
 
-    struct GameObject
+struct GameObject
+{
+    std::string name;
+    bool        active = true;
+
+private:
+    std::vector<std::unique_ptr<Component>>         components;
+    std::unordered_map<std::type_index, Component*> componentMap;
+
+public:
+    // Add a component of type T
+    template <typename T, typename... Args>
+    T* AddComponent(Args&&... args)
     {
-        std::string name;
-        bool   active = true;
+        static_assert(std::is_base_of_v<Component, T>, "T must be a Component");
 
-    private:
-        std::vector<std::unique_ptr<Component>>         components;
-        std::unordered_map<std::type_index, Component*> componentMap;
+        auto comp        = std::make_unique<T>(std::forward<Args>(args)...);
+        comp->gameObject = this;
 
-    public:
-        // Add a component of type T
-        template <typename T, typename... Args>
-        T* AddComponent(Args&&... args)
+        T* ptr = comp.get();
+        components.emplace_back(std::move(comp));
+        componentMap[std::type_index(typeid(T))] = ptr;
+
+        ptr->Start(); // Call Start() immediately after adding
+        return ptr;
+    }
+
+    // Get component of type T
+    template <typename T>
+    T* GetComponent()
+    {
+        auto it = componentMap.find(std::type_index(typeid(T)));
+        if (it != componentMap.end())
+            return static_cast<T*>(it->second);
+        return nullptr;
+    }
+
+    // Check for component
+    template <typename T>
+    bool HasComponent()
+    {
+        return GetComponent<T>() != nullptr;
+    }
+
+    // Update all components
+    void Update()
+    {
+        if (!active)
+            return;
+        for (auto& comp : components)
         {
-            static_assert(std::is_base_of_v<Component, T>, "T must be a Component");
-
-            auto comp        = std::make_unique<T>(std::forward<Args>(args)...);
-            comp->gameObject = this;
-
-            T* ptr = comp.get();
-            components.emplace_back(std::move(comp));
-            componentMap[std::type_index(typeid(T))] = ptr;
-
-            ptr->Start(); // Call Start() immediately after adding
-            return ptr;
-        }
-
-        // Get component of type T
-        template <typename T>
-        T* GetComponent()
-        {
-            auto it = componentMap.find(std::type_index(typeid(T)));
-            if (it != componentMap.end())
-                return static_cast<T*>(it->second);
-            return nullptr;
-        }
-
-        // Check for component
-        template <typename T>
-        bool HasComponent()
-        {
-            return GetComponent<T>() != nullptr;
-        }
-
-        // Update all components
-        void Update()
-        {
-            if (!active) return;
-            for (auto& comp : components)
+            if (comp->enabled)
             {
-                if (comp->enabled)
-                {
-                    comp->Update();
-                }
+                comp->Update();
             }
         }
-    };
+    }
+};
+
+
 }

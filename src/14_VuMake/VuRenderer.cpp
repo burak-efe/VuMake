@@ -9,9 +9,9 @@
 #include "SDL3/SDL_events.h"         // for SDL_WaitEvent, SDL_Event, SDL_Ev...
 #include "SDL3/SDL_video.h"          // for SDL_GetWindowFlags, SDL_GetWindo...
 
-#include "10_Core/VuCommon.h"        // for VkCheck
-#include "11_Config/VuConfig.h"      // for MAX_FRAMES_IN_FLIGHT, PUSH_CONST...
-#include "11_Config/VuCtx.h"         // for window, sdlEvent
+#include "10_Core/Common.h"        // for vk::Check
+#include "../10_Core/VuConfig.h"
+#include "../10_Core/VuCtx.h"
 #include "12_VuMakeCore/VuBuffer.h"  // for VuBuffer
 #include "14_VuMake/VuMesh.h"        // for VuMesh
 #include "14_VuMake/VuSwapChain.h"   // for VuSwapChain
@@ -42,7 +42,7 @@ void VuRenderer::waitForFences()
 void VuRenderer::beginFrame()
 {
     waitForFences();
-    VkResult result = vkAcquireNextImageKHR(vuDevice.device,
+    vk::Result result = vkAcquireNextImageKHR(vuDevice.device,
                                             swapChain.swapChain,
                                             UINT64_MAX,
                                             imageAvailableSemaphores[currentFrame],
@@ -62,13 +62,13 @@ void VuRenderer::beginFrame()
     vkResetFences(vuDevice.device, 1, &inFlightFences[currentFrame]);
     vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 
-    VkCommandBufferBeginInfo beginInfo{};
+    vk::CommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    VkCheck(vkBeginCommandBuffer(commandBuffers[currentFrame], &beginInfo));
+    vk::Check(vkBeginCommandBuffer(commandBuffers[currentFrame], &beginInfo));
     swapChain.beginGBufferPass(commandBuffers[currentFrame], currentFrameImageIndex);
 
-    VkViewport viewport{};
+    vk::Viewport viewport{};
     viewport.x        = 0.0f;
     viewport.y        = (float)swapChain.swapChainExtent.height;
     viewport.width    = (float)swapChain.swapChainExtent.width;
@@ -77,7 +77,7 @@ void VuRenderer::beginFrame()
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(commandBuffers[currentFrame], 0, 1, &viewport);
 
-    VkRect2D scissor{};
+    vk::Rect2D scissor{};
     scissor.offset = {0, 0};
     scissor.extent = swapChain.swapChainExtent;
     vkCmdSetScissor(commandBuffers[currentFrame], 0, 1, &scissor);
@@ -86,15 +86,15 @@ void VuRenderer::beginFrame()
 
 void VuRenderer::beginLightningPass()
 {
-    VkCommandBuffer cb = commandBuffers[currentFrame];
+    vk::CommandBuffer cb = commandBuffers[currentFrame];
     swapChain.endRenderPass(cb);
 
-    VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+    vk::PipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
                                     VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+    vk::PipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-    VkMemoryBarrier memoryBarrier = {};
+    vk::MemoryBarrier memoryBarrier = {};
     memoryBarrier.sType           = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
     memoryBarrier.srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
                                   VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
@@ -108,16 +108,16 @@ void VuRenderer::beginLightningPass()
 
 void VuRenderer::endFrame()
 {
-    VkCommandBuffer cb = commandBuffers[currentFrame];
+    vk::CommandBuffer cb = commandBuffers[currentFrame];
     swapChain.endRenderPass(cb);
-    VkCheck(vkEndCommandBuffer(cb));
+    vk::Check(vkEndCommandBuffer(cb));
 
 
-    VkSemaphore          waitSemaphores[]   = {imageAvailableSemaphores[currentFrame]};
-    VkPipelineStageFlags waitStages[]       = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    VkSemaphore          signalSemaphores[] = {renderFinishedSemaphores[currentFrameImageIndex]};
+    vk::Semaphore          waitSemaphores[]   = {imageAvailableSemaphores[currentFrame]};
+    vk::PipelineStageFlags waitStages[]       = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    vk::Semaphore          signalSemaphores[] = {renderFinishedSemaphores[currentFrameImageIndex]};
 
-    VkSubmitInfo submitInfo{};
+    vk::SubmitInfo submitInfo{};
     submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.pNext                = VK_NULL_HANDLE;
     submitInfo.waitSemaphoreCount   = 1u;
@@ -128,11 +128,11 @@ void VuRenderer::endFrame()
     submitInfo.signalSemaphoreCount = 1u;
     submitInfo.pSignalSemaphores    = signalSemaphores;
 
-    VkCheck(vkQueueSubmit(vuDevice.graphicsQueue, 1u, &submitInfo, inFlightFences[currentFrame]));
+    vk::Check(vkQueueSubmit(vuDevice.graphicsQueue, 1u, &submitInfo, inFlightFences[currentFrame]));
 
-    VkSwapchainKHR swapChains[] = {swapChain.swapChain};
+    vk::SwapchainKHR swapChains[] = {swapChain.swapChain};
 
-    VkPresentInfoKHR presentInfo{};
+    vk::PresentInfoKHR presentInfo{};
     presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.pNext              = nullptr;
     presentInfo.waitSemaphoreCount = 1u;
@@ -203,7 +203,7 @@ void VuRenderer::endImgui()
 
 void VuRenderer::updateFrameConstantBuffer(GPU_FrameConst ubo)
 {
-    VkCheck(uniformBuffers[currentFrame].setData(&ubo, sizeof(ubo)));
+    vk::Check(uniformBuffers[currentFrame].setData(&ubo, sizeof(ubo)));
 }
 
 
