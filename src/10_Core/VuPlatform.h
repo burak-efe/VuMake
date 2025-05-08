@@ -49,8 +49,6 @@ consteval Architecture getCurrentArchitecture()
 {
 #if defined(_M_X64)  || defined(__x86_64__)  || defined(_M_AMD64)      // MSVC (64-bit), GCC Clang (64-bit), MSVC (alternative name)
 
-
-
     return Architecture::X86_64;
 #endif
 
