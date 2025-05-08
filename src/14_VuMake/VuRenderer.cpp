@@ -115,7 +115,7 @@ void VuRenderer::endFrame()
 
     VkSemaphore          waitSemaphores[]   = {imageAvailableSemaphores[currentFrame]};
     VkPipelineStageFlags waitStages[]       = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    VkSemaphore          signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+    VkSemaphore          signalSemaphores[] = {renderFinishedSemaphores[currentFrameImageIndex]};
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;

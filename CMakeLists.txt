@@ -18,7 +18,7 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 ####################################################################################################
 find_program(iwyu_path NAMES include-what-you-use PATHS "${CMAKE_SOURCE_DIR}/build_utils" REQUIRED)
-set_property(TARGET ${PROJECT_NAME}  PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
 #set_property(TARGET VuLibs PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
 ####################################################################################################
 # Precompiled Headers
@@ -56,16 +56,6 @@ FetchContent_MakeAvailable(fetch_fastgltf)
 target_link_libraries(VuLibs INTERFACE fastgltf)
 ####################################################################################################
 FetchContent_Declare(
-        fetch_flecs
-        GIT_REPOSITORY https://github.com/SanderMertens/flecs
-        GIT_TAG v4.0.4
-        GIT_SHALLOW TRUE
-        GIT_PROGRESS TRUE
-)
-FetchContent_MakeAvailable(fetch_flecs)
-target_link_libraries(VuLibs INTERFACE flecs::flecs_static)
-####################################################################################################
-FetchContent_Declare(
         fetch_tracy
         GIT_REPOSITORY https://github.com/wolfpld/tracy.git
         GIT_TAG v0.11.1
@@ -76,6 +66,17 @@ FetchContent_MakeAvailable(fetch_tracy)
 option(TRACY_ENABLE "" ON)
 option(TRACY_STATIC "" OFF)
 target_link_libraries(VuLibs INTERFACE TracyClient)
+####################################################################################################
+#FetchContent_Declare(
+#        fetch_flecs
+#        GIT_REPOSITORY https://github.com/SanderMertens/flecs
+#        GIT_TAG v4.0.4
+#        GIT_SHALLOW TRUE
+#        GIT_PROGRESS TRUE
+#)
+#FetchContent_MakeAvailable(fetch_flecs)
+#add_subdirectory(external/flecs)
+#target_link_libraries(VuLibs INTERFACE flecs::flecs_static)
 ####################################################################################################
 set(SDL_SHARED FALSE BOOL)
 set(SDL_STATIC TRUE BOOL)

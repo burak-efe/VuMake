@@ -113,6 +113,8 @@ VkPresentModeKHR VuSwapChain::chooseSwapPresentMode(const std::vector<VkPresentM
     //         return availablePresentMode;
     //     }
     // }
+    return VK_PRESENT_MODE_IMMEDIATE_KHR;
+    return VK_PRESENT_MODE_MAILBOX_KHR;
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
