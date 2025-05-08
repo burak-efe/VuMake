@@ -3,9 +3,9 @@
 #include <ctime>                               // for size_t, time_t
 #include <unordered_map>                       // for unordered_map
 
-#include <vulkan/vulkan_core.h>                // for VkShaderModule, VkRend...
+#include <vulkan/vulkan_core.h>                // for vk::ShaderModule, vk::Rend...
 
-#include "10_Core/VuCommon.h"                  // for path
+#include "10_Core/Common.h"                  // for path
 #include "12_VuMakeCore/VuGraphicsPipeline.h"  // for VuGraphicsPipeline
 #include "VuMaterial.h"                        // for hash, MaterialSettings
 
@@ -19,7 +19,7 @@ struct VuGraphicsShaderCreateInfo
 {
     path         vertexShaderPath;
     path         fragmentShaderPath;
-    VkRenderPass renderPass;
+    vk::RenderPass renderPass;
 };
 
 struct VuShader
@@ -30,8 +30,8 @@ struct VuShader
     VuRenderPass* vuRenderPass       = nullptr;
 
     time_t         lastModifiedTime     = 0;
-    VkShaderModule vertexShaderModule   = {};
-    VkShaderModule fragmentShaderModule = {};
+    vk::ShaderModule vertexShaderModule   = {};
+    vk::ShaderModule fragmentShaderModule = {};
 
     std::unordered_map<MaterialSettings, VuGraphicsPipeline> compiledPipelines = {};
 
@@ -46,6 +46,6 @@ struct VuShader
 
     static path compileToSpirv(const path& shaderCodePath);
 
-    static VkShaderModule createShaderModule(VuDevice* vuDevice, const void* code, size_t size);
+    static vk::ShaderModule createShaderModule(VuDevice* vuDevice, const void* code, size_t size);
 };
 }

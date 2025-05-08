@@ -5,14 +5,13 @@
 #include <memory>                   // for shared_ptr
 #include <stack>                    // for stack
 
-#include <vulkan/vulkan_core.h>     // for VkCommandBuffer, VkSemaphore, VkD...
-#include "imgui_impl_vulkan.h"      // for ImGui_ImplVulkanH_Window
-
 #include "08_LangUtils/TypeDefs.h"  // for u32
-#include "11_Config/VuConfig.h"     // for MAX_FRAMES_IN_FLIGHT
+#include "../10_Core/VuConfig.h"
 #include "12_VuMakeCore/VuTypes.h"  // for GPU_FrameConst (ptr only), GPU_Pu...
 #include "VuDevice.h"               // for VuDevice
 #include "VuSwapChain.h"            // for VuSwapChain
+
+struct ImGui_ImplVulkanH_Window;
 
 namespace Vu
 {
@@ -25,23 +24,20 @@ namespace Vu
 {
 struct VuRenderer
 {
-    VkInstance               instance{};
-    VkPhysicalDevice         physicalDevice{};
-    VuDevice                 vuDevice{};
-    VkDebugUtilsMessengerEXT debugMessenger{};
-    VkSurfaceKHR             surface{};
-    VuSwapChain              swapChain{};
-    ImGui_ImplVulkanH_Window imguiMainWindowData{};
-    VuDisposeStack           disposeStack{};
+    // vk::Instance               instance{};
+    // vk::PhysicalDevice         physicalDevice{};
 
-    vector<VkCommandBuffer> commandBuffers{};
-
-    vector<VkSemaphore>     imageAvailableSemaphores{};
-    vector<VkSemaphore>     renderFinishedSemaphores{};
-    vector<VkFence>         inFlightFences{};
-
-    vector<VuBuffer>        uniformBuffers{};
-
+    VuDevice                   vuDevice;
+    //vk::DebugUtilsMessengerEXT debugMessenger{};
+    vk::SurfaceKHR             surface{};
+    VuSwapChain                swapChain{};
+    ImGui_ImplVulkanH_Window*  imguiMainWindowData{};
+    VuDisposeStack             disposeStack{};
+    vector<vk::CommandBuffer> commandBuffers{};
+    vector<vk::Semaphore> imageAvailableSemaphores{};
+    vector<vk::Semaphore> renderFinishedSemaphores{};
+    vector<vk::Fence>     inFlightFences{};
+    vector<VuBuffer> uniformBuffers{};
     u32 currentFrame{};
     u32 currentFrameImageIndex{};
 
@@ -65,7 +61,7 @@ struct VuRenderer
 private:
     void waitForFences();
     void resetSwapChain();
-    void bindGlobalBindlessSet(const VkCommandBuffer& commandBuffer);
+    void bindGlobalBindlessSet(const vk::CommandBuffer& commandBuffer);
     void initImGui();
 };
 }

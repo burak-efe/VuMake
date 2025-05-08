@@ -11,35 +11,27 @@ add_executable(${PROJECT_NAME} Main.cpp)
 add_library(VuLibs INTERFACE)
 target_link_libraries(${PROJECT_NAME} PRIVATE VuLibs)
 ####################################################################################################
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+####################################################################################################
 #target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
 #target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
 ####################################################################################################
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
-####################################################################################################
 find_program(iwyu_path NAMES include-what-you-use PATHS "${CMAKE_SOURCE_DIR}/build_utils" REQUIRED)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
-#set_property(TARGET VuLibs PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
 ####################################################################################################
-# Precompiled Headers
 #target_precompile_headers(${PROJECT_NAME} PRIVATE
-#        <cstdint> <cassert> <cstdlib> <chrono> <iostream> <filesystem>
-#        <format> <algorithm> <functional> <mutex> <ranges> <array>
-#        <span> <vector> <stack> <string> )
+#        <cstdint> <cassert> <cstdlib> <chrono> <iostream> <filesystem> <format> <algorithm>
+#        <functional> <mutex> <ranges> <array> <span> <vector> <stack> <string> )
 ####################################################################################################
-#Add Sources
 add_sources_recursively(VuLibs src)
 add_sources_recursively(VuLibs external)
 target_include_directories(VuLibs INTERFACE src)
-target_include_directories(VuLibs INTERFACE external)
-####################################################################################################
-#imgui
 target_include_directories(VuLibs INTERFACE external/imgui)
+target_include_directories(VuLibs INTERFACE external/header_onlys)
 ####################################################################################################
-#Header Only
-target_include_directories(VuLibs INTERFACE external/stb)
-####################################################################################################
-#Vulkan
+target_compile_definitions(VuLibs INTERFACE VULKAN_HPP_RAII_NO_EXCEPTIONS)
+#target_compile_definitions(VuLibs INTERFACE VULKAN_HPP_EXPECTED=tl::expected)
 find_package(Vulkan 1.4.304 REQUIRED)
 target_include_directories(VuLibs INTERFACE ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(VuLibs INTERFACE ${Vulkan_LIBRARIES})
@@ -54,29 +46,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(fetch_fastgltf)
 target_link_libraries(VuLibs INTERFACE fastgltf)
-####################################################################################################
-FetchContent_Declare(
-        fetch_tracy
-        GIT_REPOSITORY https://github.com/wolfpld/tracy.git
-        GIT_TAG v0.11.1
-        GIT_SHALLOW TRUE
-        GIT_PROGRESS TRUE
-)
-FetchContent_MakeAvailable(fetch_tracy)
-option(TRACY_ENABLE "" ON)
-option(TRACY_STATIC "" OFF)
-target_link_libraries(VuLibs INTERFACE TracyClient)
-####################################################################################################
-#FetchContent_Declare(
-#        fetch_flecs
-#        GIT_REPOSITORY https://github.com/SanderMertens/flecs
-#        GIT_TAG v4.0.4
-#        GIT_SHALLOW TRUE
-#        GIT_PROGRESS TRUE
-#)
-#FetchContent_MakeAvailable(fetch_flecs)
-#add_subdirectory(external/flecs)
-#target_link_libraries(VuLibs INTERFACE flecs::flecs_static)
 ####################################################################################################
 set(SDL_SHARED FALSE BOOL)
 set(SDL_STATIC TRUE BOOL)
@@ -94,27 +63,28 @@ FetchContent_MakeAvailable(fetch_SDL)
 set_property(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/_deps/fetch_sdl-src" PROPERTY EXCLUDE_FROM_ALL TRUE)
 target_link_libraries(VuLibs INTERFACE SDL3::SDL3-static)
 ####################################################################################################
-FetchContent_Declare(
-        fetch_VMA
-        GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
-        GIT_TAG v3.1.0
-        GIT_SHALLOW TRUE
-        GIT_PROGRESS TRUE
-)
-FetchContent_MakeAvailable(fetch_VMA)
-target_link_libraries(VuLibs INTERFACE VulkanMemoryAllocator)
-target_include_directories(VuLibs INTERFACE GPUOpen::VulkanMemoryAllocator)
+#FetchContent_Declare(
+#        fetch_tracy
+#        GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+#        GIT_TAG v0.11.1
+#        GIT_SHALLOW TRUE
+#        GIT_PROGRESS TRUE
+#)
+#FetchContent_MakeAvailable(fetch_tracy)
+#option(TRACY_ENABLE "" ON)
+#option(TRACY_STATIC "" OFF)
+#target_link_libraries(VuLibs INTERFACE TracyClient)
 ####################################################################################################
 #FetchContent_Declare(
-#        fetch_volk
-#        GIT_REPOSITORY https://github.com/zeux/volk
-#        GIT_TAG vulkan-sdk-1.4.304.1
+#        fetch_VMA
+#        GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+#        GIT_TAG v3.1.0
+#        GIT_SHALLOW TRUE
+#        GIT_PROGRESS TRUE
 #)
-#FetchContent_MakeAvailable(fetch_volk)
-#if (WIN32)
-#    set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR)
-#endif ()
-#target_link_libraries(VuLibs INTERFACE volk)
+#FetchContent_MakeAvailable(fetch_VMA)
+#target_link_libraries(VuLibs INTERFACE VulkanMemoryAllocator)
+#target_include_directories(VuLibs INTERFACE GPUOpen::VulkanMemoryAllocator)
 ####################################################################################################
 #Create a symlink to the assets folder in the build directory
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -127,6 +97,5 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         ${CMAKE_SOURCE_DIR}/bin $<TARGET_FILE_DIR:${PROJECT_NAME}>/bin)
 
 #Alert if forbidden text used
-search_text_files("${CMAKE_SOURCE_DIR}/src" "#include <vector>")
-
+search_text_files("${CMAKE_SOURCE_DIR}/src" "std::vector|std::stack|vk_mem")
 add_subdirectory(test)

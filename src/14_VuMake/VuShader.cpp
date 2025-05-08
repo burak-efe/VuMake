@@ -14,7 +14,7 @@
 #include "08_LangUtils/VuLogger.h"             // for Logger
 #include "08_LangUtils/TypeDefs.h"             // for u32
 #include "10_Core/VuIO.h"                      // for getlastModifiedTime
-#include "11_Config/VuConfig.h"                // for getShaderCompilerPath
+#include "../10_Core/VuConfig.h"
 #include "12_VuMakeCore/VuGraphicsPipeline.h"  // for VuGraphicsPipeline
 #include "12_VuMakeCore/VuRenderPass.h"        // for VuRenderPass
 #include "14_VuMake/VuMaterial.h"              // for MaterialSettings, hash
@@ -111,16 +111,16 @@ Vu::VuGraphicsPipeline& Vu::VuShader::requestPipeline(MaterialSettings materialS
     return compiledPipelines[materialSettings];
 }
 
-VkShaderModule Vu::VuShader::createShaderModule(VuDevice* vuDevice, const void* code, size_t size)
+vk::ShaderModule Vu::VuShader::createShaderModule(VuDevice* vuDevice, const void* code, size_t size)
 {
-    VkShaderModuleCreateInfo createInfo{};
+    vk::ShaderModuleCreateInfo createInfo{};
     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = size;
     createInfo.pCode    = static_cast<const u32*>(code);
     createInfo.pNext    = nullptr;
 
-    VkShaderModule shaderModule;
-    VkCheck(vkCreateShaderModule(vuDevice->device, &createInfo, nullptr, &shaderModule));
+    vk::ShaderModule shaderModule;
+    vk::Check(vkCreateShaderModule(vuDevice->device, &createInfo, nullptr, &shaderModule));
     return shaderModule;
 }
 

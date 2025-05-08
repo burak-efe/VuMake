@@ -10,7 +10,7 @@
 #include <string>                         // for char_traits, basic_string
 #include <vector>                         // for vector
 
-#include <vulkan/vulkan_core.h>           // for VK_FALSE, VK_TRUE, VkStruct...
+
 #include "SDL3/SDL_init.h"                // for SDL_Init, SDL_Quit, SDL_INI...
 #include "SDL3/SDL_video.h"               // for SDL_CreateWindow, SDL_Destr...
 #include "SDL3/SDL_vulkan.h"              // for SDL_Vulkan_CreateSurface
@@ -21,9 +21,10 @@
 
 #include "08_LangUtils/ScopeTimer.h"      // for ScopeTimer
 #include "08_LangUtils/TypeDefs.h"        // for u32
-#include "10_Core/VuCommon.h"             // for VkCheck
-#include "11_Config/VuConfig.h"           // for MAX_FRAMES_IN_FLIGHT, DEVIC...
-#include "11_Config/VuCtx.h"              // for window, loadExtensionFunctions
+#include "10_Core/Common.h"             // for vk::Check
+#include "../10_Core/VuConfig.h"
+#include "../10_Core/VuCtx.h"
+#include "12_VuMakeCore/VuCommon.h"
 #include "12_VuMakeCore/VuBuffer.h"       // for VuBuffer
 #include "12_VuMakeCore/VuCreateUtils.h"  // for createDebugMessenger, creat...
 #include "12_VuMakeCore/VuRenderPass.h"   // for VuRenderPass
@@ -59,42 +60,41 @@ VuRenderer::VuRenderer()
             instanceExtensions.push_back(extension);
         }
 
-        CreateUtils::createInstance(isValidationEnabled, config::VALIDATION_LAYERS, instanceExtensions, instance);
-        disposeStack.push([&] { vkDestroyInstance(instance, nullptr); });
+
+        // CreateUtils::createInstance(isValidationEnabled, config::VALIDATION_LAYERS, instanceExtensions);
+        // disposeStack.push([&] { vkDestroyInstance(instance, nullptr); });
 
 
-        Vu::ctx::loadExtensionFunctions(instance);
+        //Vu::ctx::loadExtensionFunctions(instance);
 
 
-        if (isValidationEnabled)
-        {
-            CreateUtils::createDebugMessenger(instance, debugMessenger);
-            disposeStack.push([&]
-            {
-                //CreateUtils::destroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-                ctx::vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-            });
-        }
+        // if (isValidationEnabled)
+        // {
+        //     CreateUtils::createDebugMessenger(instance, debugMessenger);
+        //     disposeStack.push([&]
+        //     {
+        //         //CreateUtils::destroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+        //         ctx::vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+        //     });
+        // }
     }
     //init surface
     {
-        bool res = SDL_Vulkan_CreateSurface(ctx::window, instance, nullptr, &surface);
+
+        bool res = SDL_Vulkan_CreateSurface(ctx::window, instance, nullptr, reinterpret_cast<VkSurfaceKHR*>(&surface));
         assert(res == true);
         disposeStack.push([&] { SDL_Vulkan_DestroySurface(vuDevice.instance, surface, nullptr); });
     }
 
-    CreateUtils::createPhysicalDevice(instance, surface, config::DEVICE_EXTENSIONS, physicalDevice);
+    //CreateUtils::createPhysicalDevice(instance, surface, config::DEVICE_EXTENSIONS, physicalDevice);
 
     //init device
     {
-        VkPhysicalDeviceSynchronization2FeaturesKHR sync2Features{
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
-                .pNext = nullptr,
+        vk::PhysicalDeviceSynchronization2FeaturesKHR sync2Features{
                 .synchronization2 = VK_TRUE
         };
 
-        VkPhysicalDeviceVulkan11Features vk11_features{
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
+        vk::PhysicalDeviceVulkan11Features vk11_features{
                 .pNext = &sync2Features,
                 .storageBuffer16BitAccess = VK_FALSE,
                 .uniformAndStorageBuffer16BitAccess = VK_FALSE,
@@ -110,9 +110,7 @@ VuRenderer::VuRenderer()
                 .shaderDrawParameters = VK_FALSE
         };
 
-        VkPhysicalDeviceVulkan12Features vk12_features{
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
-                .pNext = &vk11_features,
+        vk::PhysicalDeviceVulkan12Features vk12_features{
                 .samplerMirrorClampToEdge = VK_FALSE,
                 .drawIndirectCount = VK_FALSE,
                 .storageBuffer8BitAccess = VK_FALSE,
@@ -162,11 +160,11 @@ VuRenderer::VuRenderer()
                 .subgroupBroadcastDynamicId = VK_FALSE,
         };
 
-        VkPhysicalDeviceFeatures deviceFeatures{};
+        vk::PhysicalDeviceFeatures deviceFeatures{};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
         deviceFeatures.shaderInt64       = VK_TRUE;
 
-        VkPhysicalDeviceFeatures2 deviceFeatures2{
+        vk::PhysicalDeviceFeatures2 deviceFeatures2{
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
                 .pNext = &vk12_features,
                 .features = deviceFeatures,
@@ -209,7 +207,7 @@ VuRenderer::VuRenderer()
         uniformBuffers.resize(config::MAX_FRAMES_IN_FLIGHT);
         for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
         {
-            VkDeviceSize bufferSize = sizeof(GPU_FrameConst);
+            vk::DeviceSize bufferSize = sizeof(GPU_FrameConst);
 
             uniformBuffers[i] = VuBuffer{};
             uniformBuffers[i].init(vuDevice.device, vuDevice.vma, {
@@ -242,11 +240,11 @@ VuRenderer::VuRenderer()
     {
         commandBuffers.resize(config::MAX_FRAMES_IN_FLIGHT);
 
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        vk::CommandBufferAllocateInfo allocInfo{};
         allocInfo.commandPool        = vuDevice.commandPool;
-        allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.level              = vk::CommandBufferLevel::ePrimary;
         allocInfo.commandBufferCount = static_cast<u32>(commandBuffers.size());
+
         VkCheck(vkAllocateCommandBuffers(vuDevice.device, &allocInfo, commandBuffers.data()));
         for (u32 i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -256,10 +254,10 @@ VuRenderer::VuRenderer()
     }
     //init sync objects
     {
-        VkSemaphoreCreateInfo semaphoreInfo{};
+        vk::SemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-        VkFenceCreateInfo fenceInfo{};
+        vk::FenceCreateInfo fenceInfo{};
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
@@ -269,9 +267,9 @@ VuRenderer::VuRenderer()
         inFlightFences.resize(swapChainImageCount);
         for (size_t i = 0; i < swapChainImageCount; i++)
         {
-            VkCheck(vkCreateSemaphore(vuDevice.device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]));
-            VkCheck(vkCreateSemaphore(vuDevice.device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]));
-            VkCheck(vkCreateFence(vuDevice.device, &fenceInfo, nullptr, &inFlightFences[i]));
+            vk::Check(vkCreateSemaphore(vuDevice.device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]));
+            vk::Check(vkCreateSemaphore(vuDevice.device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]));
+            vk::Check(vkCreateFence(vuDevice.device, &fenceInfo, nullptr, &inFlightFences[i]));
         }
 
         disposeStack.push([ this, swapChainImageCount ]
@@ -290,19 +288,19 @@ VuRenderer::VuRenderer()
 
 void VuRenderer::initImGui()
 {
-    VkDescriptorPoolSize pool_sizes[] =
+    vk::DescriptorPoolSize pool_sizes[] =
     {
             {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
     };
 
-    VkDescriptorPoolCreateInfo poolInfo{};
+    vk::DescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = 1;
     poolInfo.pPoolSizes    = pool_sizes;
     poolInfo.maxSets       = 1000;
     poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-    VkCheck(vkCreateDescriptorPool(vuDevice.device, &poolInfo, nullptr, &vuDevice.uiDescriptorPool));
+    vk::Check(vkCreateDescriptorPool(vuDevice.device, &poolInfo, nullptr, &vuDevice.uiDescriptorPool));
     disposeStack.push([&]
     {
         vkDestroyDescriptorPool(vuDevice.device, vuDevice.uiDescriptorPool, nullptr);
@@ -345,7 +343,7 @@ void VuRenderer::initImGui()
     disposeStack.push([] { ImGui_ImplVulkan_DestroyFontsTexture(); });
 }
 
-void VuRenderer::bindGlobalBindlessSet(const VkCommandBuffer& commandBuffer)
+void VuRenderer::bindGlobalBindlessSet(const vk::CommandBuffer& commandBuffer)
 {
     vkCmdBindDescriptorSets(commandBuffer,
                             VK_PIPELINE_BIND_POINT_GRAPHICS,

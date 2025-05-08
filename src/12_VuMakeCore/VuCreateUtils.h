@@ -2,36 +2,39 @@
 
 #include <span>                     // for span
 
-#include <vulkan/vulkan_core.h>     // for VkInstance, VkDevice, VkPhysicalD...
-
 #include "08_LangUtils/TypeDefs.h"  // for u32
+#include "VuCommon.h"
 
-namespace Vu { struct QueueFamilyIndices; }
+namespace Vu
+{
+struct QueueFamilyIndices;
+}
 
 namespace Vu::CreateUtils
 {
-    void createInstance(bool                   enableValidationLayers,
-                        std::span<const char*> validationLayers,
-                        std::span<const char*> extensions,
-                        VkInstance&            outInstance);
+std::expected<vk::raii::Instance, vk::Result>
+createInstance(vk::raii::Context&     raiiContext,
+               bool                   enableValidationLayers,
+               std::span<const char*> validationLayers,
+               std::span<const char*> extensions);
 
-    void createPhysicalDevice(const VkInstance&      instance,
-                              const VkSurfaceKHR&    surface,
-                              std::span<const char*> enabledExtensions,
-                              VkPhysicalDevice&      outPhysicalDevice);
+std::expected<vk::PhysicalDevice, vk::Result>
+createPhysicalDevice(const vk::Instance&    instance,
+                     const vk::SurfaceKHR&  surface,
+                     std::span<const char*> enabledExtensions);
 
-    void createDevice(const VkPhysicalDeviceFeatures2& features,
-                      const QueueFamilyIndices&        indices,
-                      const VkPhysicalDevice&          physicalDevice,
-                      std::span<const char*>           enabledExtensions,
-                      VkDevice&                        outDevice,
-                      VkQueue&                         outGraphicsQueue,
-                      VkQueue&                         outPresentQueue);
+void createDevice(const vk::PhysicalDeviceFeatures2& features,
+                  const QueueFamilyIndices&          indices,
+                  const vk::PhysicalDevice&          physicalDevice,
+                  std::span<const char*>             enabledExtensions,
+                  vk::Device&                        outDevice,
+                  vk::Queue&                         outGraphicsQueue,
+                  vk::Queue&                         outPresentQueue);
 
-    void createPipelineLayout(VkDevice                         device,
-                              std::span<VkDescriptorSetLayout> descriptorSetLayouts,
-                              u32                              pushConstantSizeAsByte,
-                              VkPipelineLayout&                outPipelineLayout);
+void createPipelineLayout(vk::Device                         device,
+                          std::span<vk::DescriptorSetLayout> descriptorSetLayouts,
+                          u32                                pushConstantSizeAsByte,
+                          vk::PipelineLayout&                outPipelineLayout);
 
-     void createDebugMessenger(const VkInstance& instance, VkDebugUtilsMessengerEXT& outDebugMessenger);
+void createDebugMessenger(const vk::Instance& instance, vk::DebugUtilsMessengerEXT& outDebugMessenger);
 }

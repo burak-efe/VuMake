@@ -1,37 +1,39 @@
 #pragma once
 
+#include <expected>
 #include <span>                     // for span
 
-#include <vulkan/vulkan_core.h>     // for VkFormat, VkPhysicalDevice, VkBool32
 
 #include "08_LangUtils/TypeDefs.h"  // for u32
+#include "12_VuMakeCore/VuCommon.h"
+
 
 namespace Vu::Utils
 {
-    VkImageCreateInfo fillImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent);
+vk::ImageCreateInfo fillImageCreateInfo(vk::Format format, vk::ImageUsageFlags usageFlags, vk::Extent3D extent);
 
-    VkImageViewCreateInfo fillImageViewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags);
+vk::ImageViewCreateInfo fillImageViewCreateInfo(vk::Format format, vk::Image image, vk::ImageAspectFlags aspectFlags);
 
-    u32 findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memoryProperties,
-                               u32                                  typeFilter,
-                               VkMemoryPropertyFlags                   requiredProperties);
-
-
-    void giveDebugName( VkDevice device,  VkObjectType objType, const void* objHandle, const char* debugName);
+std::expected<u32, vk::Result> findMemoryTypeIndex(const vk::PhysicalDeviceMemoryProperties& memoryProperties,
+                                                 u32                                     typeFilter,
+                                                 vk::MemoryPropertyFlags                   requiredProperties);
 
 
-    VkBool32 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
-                           VkDebugUtilsMessageTypeFlagsEXT             messageType,
-                           const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                           void*                                       pUserData);
-
-    void fillDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+void giveDebugName(vk::Device device, vk::ObjectType objType, const void* objHandle, const char* debugName);
 
 
-    bool checkDeviceExtensionSupport(VkPhysicalDevice device, std::span<const char*> requestedExtensions);
+// vk::Bool32 debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
+//                        vk::DebugUtilsMessageTypeFlagsEXT             messageType,
+//                        const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
+//                        void*                                       pUserData);
 
-    bool isDeviceSupportExtensions(VkPhysicalDevice       device, VkSurfaceKHR surface,
-                                   std::span<const char*> enabledExtensions);
+// void fillDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo);
+//
 
-    bool checkValidationLayerSupport(std::span<const char*> validationLayers);
+bool checkDeviceExtensionSupport(vk::PhysicalDevice device, std::span<const char*> requestedExtensions);
+
+bool isDeviceSupportExtensions(vk::PhysicalDevice       device, vk::SurfaceKHR surface,
+                               std::span<const char*> enabledExtensions);
+
+// bool checkValidationLayerSupport(std::span<const char*> validationLayers);
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "10_Core/VuCommon.h"
+#include "10_Core/Common.h"
 
 #include "VuUtils.h"
 
@@ -8,19 +8,19 @@ namespace Vu
 {
     struct VuRenderPass
     {
-        VkDevice     device;
-        VkFormat     colorFormat;
-        VkFormat     depthStencilFormat;
-        VkFormat     normalFormat;
-        VkRenderPass renderPass;
+        vk::Device     device;
+        vk::Format     colorFormat;
+        vk::Format     depthStencilFormat;
+        vk::Format     normalFormat;
+        vk::RenderPass renderPass;
 
-        std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates;
+        std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachmentStates;
 
-        void initAsGBufferPass(VkDevice device,
-                               VkFormat colorFormat,
-                               VkFormat normalFormat,
-                               VkFormat aoRoughMetalFormat,
-                               VkFormat depthStencilFormat
+        void initAsGBufferPass(vk::Device device,
+                               vk::Format colorFormat,
+                               vk::Format normalFormat,
+                               vk::Format aoRoughMetalFormat,
+                               vk::Format depthStencilFormat
         )
         {
             this->device             = device;
@@ -28,7 +28,7 @@ namespace Vu
             this->normalFormat       = normalFormat;
             this->depthStencilFormat = depthStencilFormat;
 
-            VkAttachmentDescription colorAttachment{
+            vk::AttachmentDescription colorAttachment{
                 .format = colorFormat,
                 .samples = VK_SAMPLE_COUNT_1_BIT,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -39,7 +39,7 @@ namespace Vu
                 .finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
             };
 
-            VkAttachmentDescription normalAttachment{
+            vk::AttachmentDescription normalAttachment{
                 .format = normalFormat,
                 .samples = VK_SAMPLE_COUNT_1_BIT,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -50,7 +50,7 @@ namespace Vu
                 .finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
             };
 
-            VkAttachmentDescription armAttachment{
+            vk::AttachmentDescription armAttachment{
                 .format = aoRoughMetalFormat,
                 .samples = VK_SAMPLE_COUNT_1_BIT,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -62,7 +62,7 @@ namespace Vu
             };
 
 
-            VkAttachmentDescription depthAttachment{};
+            vk::AttachmentDescription depthAttachment{};
             depthAttachment.format         = depthStencilFormat;
             depthAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
             depthAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -74,7 +74,7 @@ namespace Vu
 
             std::array attachments = {colorAttachment, normalAttachment, armAttachment, depthAttachment};
 
-            std::array<VkAttachmentReference, 3> colorRefs = {
+            std::array<vk::AttachmentReference, 3> colorRefs = {
                 {
                     {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
                     {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
@@ -82,19 +82,19 @@ namespace Vu
                 }
             };
 
-            VkAttachmentReference depthRef{
+            vk::AttachmentReference depthRef{
                 .attachment = colorRefs.size(),
                 .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
             };
 
-            VkSubpassDescription subpass{
+            vk::SubpassDescription subpass{
                 .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
                 .colorAttachmentCount = colorRefs.size(),
                 .pColorAttachments = colorRefs.data(),
                 .pDepthStencilAttachment = &depthRef
             };
 
-            VkSubpassDependency dependency{};
+            vk::SubpassDependency dependency{};
             dependency.srcSubpass      = VK_SUBPASS_EXTERNAL;
             dependency.dstSubpass      = 0;
             dependency.srcStageMask    = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
@@ -104,7 +104,7 @@ namespace Vu
             dependency.dependencyFlags = 0;
 
 
-            VkRenderPassCreateInfo renderPassInfo{
+            vk::RenderPassCreateInfo renderPassInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
                 .attachmentCount = static_cast<uint32_t>(attachments.size()),
                 .pAttachments = attachments.data(),
@@ -114,7 +114,7 @@ namespace Vu
                 .pDependencies = &dependency
             };
 
-            VkCheck(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
+            vk::Check(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
             Utils::giveDebugName(device, VK_OBJECT_TYPE_RENDER_PASS, renderPass, "GBuffer Render Pass");
 
             colorBlendAttachmentStates.resize(3);
@@ -127,12 +127,12 @@ namespace Vu
         }
 
 
-        void initAsLightningPass(VkDevice device, VkFormat colorFormat)
+        void initAsLightningPass(vk::Device device, vk::Format colorFormat)
         {
             this->device      = device;
             this->colorFormat = colorFormat;
 
-            VkAttachmentDescription colorAttachment{};
+            vk::AttachmentDescription colorAttachment{};
             colorAttachment.format         = colorFormat;
             colorAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
             colorAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -143,16 +143,16 @@ namespace Vu
             colorAttachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 
-            VkAttachmentReference colorAttachmentRef{};
+            vk::AttachmentReference colorAttachmentRef{};
             colorAttachmentRef.attachment = 0;
             colorAttachmentRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-            VkSubpassDescription subpass{};
+            vk::SubpassDescription subpass{};
             subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
             subpass.colorAttachmentCount = 1;
             subpass.pColorAttachments    = &colorAttachmentRef;
 
-            VkSubpassDependency dependency{};
+            vk::SubpassDependency dependency{};
             dependency.srcSubpass      = VK_SUBPASS_EXTERNAL;
             dependency.dstSubpass      = 0;
             dependency.srcStageMask    = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
@@ -163,7 +163,7 @@ namespace Vu
 
             std::array attachments = {colorAttachment};
 
-            VkRenderPassCreateInfo renderPassInfo{
+            vk::RenderPassCreateInfo renderPassInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
                 .attachmentCount = static_cast<uint32_t>(attachments.size()),
                 .pAttachments = attachments.data(),
@@ -173,7 +173,7 @@ namespace Vu
                 .pDependencies = &dependency
             };
 
-            VkCheck(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
+            vk::Check(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
             Utils::giveDebugName(device, VK_OBJECT_TYPE_RENDER_PASS, renderPass, "Lightning Render Pass");
 
             colorBlendAttachmentStates.resize(1);

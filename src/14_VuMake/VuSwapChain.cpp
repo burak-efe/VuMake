@@ -9,8 +9,8 @@
 #include <optional>                 // for optional, operator!=
 #include <string>                   // for basic_string
 
-#include "10_Core/VuCommon.h"       // for VkCheck
-#include "11_Config/VuCtx.h"        // for window
+#include "10_Core/Common.h"       // for vk::Check
+#include "10_Core/VuCtx.h"
 #include "12_VuMakeCore/VuImage.h"  // for VuImage, VuImageCreateInfo
 #include "12_VuMakeCore/VuUtils.h"  // for giveDebugName
 #include "SDL3/SDL_video.h"         // for SDL_GetWindowSize
@@ -18,13 +18,15 @@
 
 namespace Vu
 {
+
+
 VuSwapChain::VuSwapChain():
     vuDevice(nullptr), surface(nullptr), gBufferPass(), lightningPass(), colorFormat(),
     colorSpace(), swapChainImageFormat()
 {
 }
 
-VuSwapChain::VuSwapChain(VuDevice* vuDevice, VkSurfaceKHR surface) :
+VuSwapChain::VuSwapChain(VuDevice* vuDevice, vk::SurfaceKHR surface) :
     vuDevice{vuDevice}, surface{surface}
 {
     createSwapChain(surface);
@@ -92,7 +94,7 @@ void VuSwapChain::uninit()
 }
 
 
-VkSurfaceFormatKHR VuSwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+vk::SurfaceFormatKHR VuSwapChain::chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats)
 {
     for (const auto& availableFormat : availableFormats)
     {
@@ -105,7 +107,7 @@ VkSurfaceFormatKHR VuSwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurf
     return availableFormats[0];
 }
 
-VkPresentModeKHR VuSwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+vk::PresentModeKHR VuSwapChain::chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes)
 {
     //TODO present mode
     // for (const auto& availablePresentMode: availablePresentModes) {
@@ -118,7 +120,7 @@ VkPresentModeKHR VuSwapChain::chooseSwapPresentMode(const std::vector<VkPresentM
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D VuSwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+vk::Extent2D VuSwapChain::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities)
 {
     if (capabilities.currentExtent.width != std::numeric_limits<u32>::max())
     {
@@ -127,7 +129,7 @@ VkExtent2D VuSwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabil
     int width, height;
     SDL_GetWindowSize(ctx::window, &width, &height);
     std::cout << "width: " << width << std::endl;
-    VkExtent2D actualExtent = {
+    vk::Extent2D actualExtent = {
             static_cast<u32>(width),
             static_cast<u32>(height)
     };
@@ -138,12 +140,12 @@ VkExtent2D VuSwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabil
     return actualExtent;
 }
 
-QueueFamilyIndices VuSwapChain::findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
+QueueFamilyIndices VuSwapChain::findQueueFamilies(vk::PhysicalDevice device, vk::SurfaceKHR surface)
 {
     QueueFamilyIndices indices;
     u32                queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    std::vector<vk::QueueFamilyProperties> queueFamilies(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
     int i = 0;
 
@@ -153,7 +155,7 @@ QueueFamilyIndices VuSwapChain::findQueueFamilies(VkPhysicalDevice device, VkSur
         {
             indices.graphicsFamily = i;
         }
-        VkBool32 presentSupport = false;
+        vk::Bool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
         if (presentSupport)
         {
@@ -168,7 +170,7 @@ QueueFamilyIndices VuSwapChain::findQueueFamilies(VkPhysicalDevice device, VkSur
     return indices;
 }
 
-void VuSwapChain::resetSwapChain(VkSurfaceKHR surface)
+void VuSwapChain::resetSwapChain(vk::SurfaceKHR surface)
 {
     for (auto imageView : swapChainImageViews)
     {
@@ -185,15 +187,15 @@ void VuSwapChain::resetSwapChain(VkSurfaceKHR surface)
     createFramebuffers();
 }
 
-void VuSwapChain::beginGBufferPass(VkCommandBuffer commandBuffer, u32 frameIndex)
+void VuSwapChain::beginGBufferPass(vk::CommandBuffer commandBuffer, u32 frameIndex)
 {
-    std::array<VkClearValue, 4> clearValues{};
+    std::array<vk::ClearValue, 4> clearValues{};
     clearValues[0].color        = {{0, 0, 0, 1.0f}};
     clearValues[1].color        = {{0, 0, 0, 1.0f}};
     clearValues[3].color        = {{0, 0, 0, 1.0f}};
     clearValues[3].depthStencil = {1.0f, 0};
 
-    VkRenderPassBeginInfo renderPassInfo{};
+    vk::RenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass        = gBufferPass.renderPass;
     renderPassInfo.framebuffer       = gPassFrameBuffers[frameIndex];
@@ -205,15 +207,15 @@ void VuSwapChain::beginGBufferPass(VkCommandBuffer commandBuffer, u32 frameIndex
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void VuSwapChain::beginLightningPass(VkCommandBuffer commandBuffer, u32 frameIndex)
+void VuSwapChain::beginLightningPass(vk::CommandBuffer commandBuffer, u32 frameIndex)
 {
-    std::array<VkClearValue, 1> clearValues = {
+    std::array<vk::ClearValue, 1> clearValues = {
             {
                     {.color = {{0.0f, 0.0f, 0.f, 1.0f}}}
             }
     };
 
-    VkRenderPassBeginInfo renderPassInfo{};
+    vk::RenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass        = lightningPass.renderPass;
     renderPassInfo.framebuffer       = lightningFrameBuffers[frameIndex];
@@ -225,22 +227,22 @@ void VuSwapChain::beginLightningPass(VkCommandBuffer commandBuffer, u32 frameInd
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void VuSwapChain::endRenderPass(VkCommandBuffer commandBuffer)
+void VuSwapChain::endRenderPass(vk::CommandBuffer commandBuffer)
 {
     vkCmdEndRenderPass(commandBuffer);
 }
 
-void VuSwapChain::createSwapChain(VkSurfaceKHR surfaceKHR)
+void VuSwapChain::createSwapChain(vk::SurfaceKHR surfaceKHR)
 {
     SwapChainSupportDetails swapChainSupport =
             SwapChainSupportDetails::querySwapChainSupport(vuDevice->physicalDevice, surfaceKHR);
-    VkExtent2D         extend        = chooseSwapExtent(swapChainSupport.capabilities);
-    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-    VkPresentModeKHR   presentMode   = chooseSwapPresentMode(swapChainSupport.presentModes);
-    u32                imageCount    = swapChainSupport.capabilities.minImageCount;
+    vk::Extent2D         extend        = chooseSwapExtent(swapChainSupport.capabilities);
+    vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+    vk::PresentModeKHR   presentMode   = chooseSwapPresentMode(swapChainSupport.presentModes);
+    u32                  imageCount    = swapChainSupport.capabilities.minImageCount;
 
 
-    VkSwapchainCreateInfoKHR createInfo{};
+    vk::SwapchainCreateInfoKHR createInfo{};
     createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     createInfo.surface          = surfaceKHR;
     createInfo.minImageCount    = imageCount;
@@ -271,7 +273,7 @@ void VuSwapChain::createSwapChain(VkSurfaceKHR surfaceKHR)
     createInfo.oldSwapchain   = VK_NULL_HANDLE;
     //
     {
-        VkCheck(vkCreateSwapchainKHR(vuDevice->device, &createInfo, nullptr, &swapChain));
+        vk::Check(vkCreateSwapchainKHR(vuDevice->device, &createInfo, nullptr, &swapChain));
         Utils::giveDebugName(vuDevice->device, VK_OBJECT_TYPE_SWAPCHAIN_KHR, swapChain, "Swapcahin");
     }
 
@@ -286,13 +288,13 @@ void VuSwapChain::createSwapChain(VkSurfaceKHR surfaceKHR)
     swapChainExtent      = extend;
 }
 
-void VuSwapChain::createImageViews(VkDevice device)
+void VuSwapChain::createImageViews(vk::Device device)
 {
     swapChainImageViews.resize(swapChainImages.size());
 
     for (size_t i = 0; i < swapChainImages.size(); i++)
     {
-        VkImageViewCreateInfo createInfo{};
+        vk::ImageViewCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         createInfo.image = swapChainImages[i];
 
@@ -311,7 +313,7 @@ void VuSwapChain::createImageViews(VkDevice device)
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount     = 1;
 
-        VkCheck(vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]));
+        vk::Check(vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]));
     }
 }
 
@@ -320,13 +322,13 @@ void VuSwapChain::createFramebuffers()
     gPassFrameBuffers.resize(swapChainImageViews.size());
     for (size_t i = 0; i < swapChainImageViews.size(); i++)
     {
-        std::array<VkImageView, 4> attachments = {
+        std::array<vk::ImageView, 4> attachments = {
                 colorHnd.get()->imageView,
                 normalHnd.get()->imageView,
                 armHnd.get()->imageView,
                 depthStencilHnd.get()->imageView,
         };
-        VkFramebufferCreateInfo framebufferInfo{};
+        vk::FramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass      = gBufferPass.renderPass;
         framebufferInfo.attachmentCount = attachments.size();
@@ -334,7 +336,7 @@ void VuSwapChain::createFramebuffers()
         framebufferInfo.width           = swapChainExtent.width;
         framebufferInfo.height          = swapChainExtent.height;
         framebufferInfo.layers          = 1;
-        VkCheck(vkCreateFramebuffer(vuDevice->device, &framebufferInfo, nullptr, &gPassFrameBuffers[i]));
+        vk::Check(vkCreateFramebuffer(vuDevice->device, &framebufferInfo, nullptr, &gPassFrameBuffers[i]));
         auto name = std::format("gpass framebuffer [{}]", i);
         Utils::giveDebugName(vuDevice->device, VK_OBJECT_TYPE_FRAMEBUFFER, gPassFrameBuffers[i], name.c_str());
     }
@@ -343,10 +345,10 @@ void VuSwapChain::createFramebuffers()
     lightningFrameBuffers.resize(swapChainImageViews.size());
     for (size_t i = 0; i < swapChainImageViews.size(); i++)
     {
-        std::array<VkImageView, 1> attachments = {
+        std::array<vk::ImageView, 1> attachments = {
                 swapChainImageViews[i],
         };
-        VkFramebufferCreateInfo framebufferInfo{};
+        vk::FramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass      = lightningPass.renderPass;
         framebufferInfo.attachmentCount = attachments.size();
@@ -354,9 +356,11 @@ void VuSwapChain::createFramebuffers()
         framebufferInfo.width           = swapChainExtent.width;
         framebufferInfo.height          = swapChainExtent.height;
         framebufferInfo.layers          = 1;
-        VkCheck(vkCreateFramebuffer(vuDevice->device, &framebufferInfo, nullptr, &lightningFrameBuffers[i]));
+        vk::Check(vkCreateFramebuffer(vuDevice->device, &framebufferInfo, nullptr, &lightningFrameBuffers[i]));
         auto name = std::format("framebuffer [{}]", i);
         Utils::giveDebugName(vuDevice->device, VK_OBJECT_TYPE_FRAMEBUFFER, lightningFrameBuffers[i], name.c_str());
     }
 }
+
+
 }

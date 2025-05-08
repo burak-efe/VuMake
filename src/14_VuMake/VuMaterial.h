@@ -5,7 +5,7 @@
 #include <memory>                   // for shared_ptr
 #include <string_view>              // for hash
 
-#include <vulkan/vulkan_core.h>     // for VkCullModeFlagBits, VkCullModeFlags
+#include "12_VuMakeCore/VuCommon.h"
 
 #include "08_LangUtils/TypeDefs.h"  // for u32
 
@@ -19,7 +19,7 @@ struct VuShader;
 struct MaterialSettings
 {
     bool            isTransparent = false;
-    VkCullModeFlags cullMode      = VK_CULL_MODE_BACK_BIT;
+    vk::CullModeFlags cullMode      = VK_CULL_MODE_BACK_BIT;
 
     friend bool operator==(const MaterialSettings& lhs, const MaterialSettings& rhs)
     {
@@ -68,7 +68,7 @@ struct hash<Vu::MaterialSettings>
     std::size_t operator()(const Vu::MaterialSettings& settings) const
     {
         std::size_t h1 = std::hash<bool>()(settings.isTransparent);
-        std::size_t h2 = std::hash<VkFlags>()(settings.cullMode);
+        std::size_t h2 = std::hash<vk::Flags>()(settings.cullMode);
 
         return h1 ^ (h2 << 1);
     }

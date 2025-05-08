@@ -1,6 +1,7 @@
 #pragma once
 
-#include "10_Core/VuCommon.h"
+#include "10_Core/Common.h"
+#include "10_Core/math/VuFloat4x4.h"
 #include "10_Core/math/VuQuaternion.h"
 
 namespace Vu {

@@ -1,76 +1,79 @@
 #pragma once
 
 #include <stdint.h>                      // for uint32_t, UINT32_MAX
-#include <vulkan/vulkan_core.h>          // for VkSurfaceKHR, VkCommandBuffer
+
 #include <memory>                        // for shared_ptr
 #include <vector>                        // for vector
 
+#include "12_VuMakeCore/VuCommon.h"
 #include "08_LangUtils/TypeDefs.h"       // for u32
 #include "12_VuMakeCore/VuRenderPass.h"  // for VuRenderPass
 #include "12_VuMakeCore/VuTypes.h"       // for QueueFamilyIndices
 
 namespace Vu
 {
-    struct VuImage;
-    struct VuDevice;
-
-    struct VuSwapChain
-    {
-        VuDevice*      vuDevice;
-        VkSurfaceKHR   surface;
-        VkSwapchainKHR swapChain{};
-
-        VuRenderPass gBufferPass;
-        VuRenderPass lightningPass;
-
-        std::shared_ptr<VuImage> colorHnd;
-        std::shared_ptr<VuImage> normalHnd;
-        std::shared_ptr<VuImage> armHnd;
-        std::shared_ptr<VuImage> depthStencilHnd;
 
 
-        std::vector<VkImage>     swapChainImages;
-        std::vector<VkImageView> swapChainImageViews;
+struct VuImage;
+struct VuDevice;
 
-        std::vector<VkFramebuffer> lightningFrameBuffers;
-        std::vector<VkFramebuffer> gPassFrameBuffers;
+struct VuSwapChain
+{
+    VuDevice*        vuDevice;
+    vk::SurfaceKHR   surface;
+    vk::SwapchainKHR swapChain{};
 
-        VkFormat        colorFormat;
-        VkColorSpaceKHR colorSpace;
-        VkFormat        swapChainImageFormat;
-        VkExtent2D      swapChainExtent{};
-        uint32_t        imageCount{};
-        uint32_t        queueNodeIndex = UINT32_MAX;
+    VuRenderPass gBufferPass;
+    VuRenderPass lightningPass;
 
-    public:
-        VuSwapChain();
+    std::shared_ptr<VuImage> colorHnd;
+    std::shared_ptr<VuImage> normalHnd;
+    std::shared_ptr<VuImage> armHnd;
+    std::shared_ptr<VuImage> depthStencilHnd;
 
-        VuSwapChain(VuDevice* vuDevice, VkSurfaceKHR surface);
 
-        //void init(VuDevice* vuDevice, VkSurfaceKHR surface);
+    std::vector<vk::Image>     swapChainImages;
+    std::vector<vk::ImageView> swapChainImageViews;
 
-        void uninit();
+    std::vector<vk::Framebuffer> lightningFrameBuffers;
+    std::vector<vk::Framebuffer> gPassFrameBuffers;
 
-        void resetSwapChain(VkSurfaceKHR surface);
+    vk::Format        colorFormat;
+    vk::ColorSpaceKHR colorSpace;
+    vk::Format        swapChainImageFormat;
+    vk::Extent2D      swapChainExtent{};
+    uint32_t          imageCount{};
+    uint32_t          queueNodeIndex = UINT32_MAX;
 
-        void beginGBufferPass(VkCommandBuffer commandBuffer, u32 frameIndex);
-        void beginLightningPass(VkCommandBuffer commandBuffer, u32 frameIndex);
+public:
+    VuSwapChain();
 
-        void endRenderPass(VkCommandBuffer commandBuffer);
+    VuSwapChain(VuDevice* vuDevice, vk::SurfaceKHR surface);
 
-        static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+    void uninit();
 
-        static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+    void resetSwapChain(vk::SurfaceKHR surface);
 
-        static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+    void beginGBufferPass(vk::CommandBuffer commandBuffer, u32 frameIndex);
+    void beginLightningPass(vk::CommandBuffer commandBuffer, u32 frameIndex);
 
-        static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
+    void endRenderPass(vk::CommandBuffer commandBuffer);
 
-    private:
-        void createSwapChain(VkSurfaceKHR surfaceKHR);
+    static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
 
-        void createImageViews(VkDevice device);
+    static vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes);
 
-        void createFramebuffers();
-    };
+    static vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
+
+    static QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device, vk::SurfaceKHR surface);
+
+private:
+    void createSwapChain(vk::SurfaceKHR surfaceKHR);
+
+    void createImageViews(vk::Device device);
+
+    void createFramebuffers();
+};
+
+
 }
