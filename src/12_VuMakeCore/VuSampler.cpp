@@ -9,24 +9,26 @@ void Vu::VuSampler::init(const vk::Device device,const VuSamplerCreateInfo& crea
     lastCreateInfo = createInfo;
 
     vk::SamplerCreateInfo samplerInfo{};
-    samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter               = VK_FILTER_LINEAR;
-    samplerInfo.minFilter               = VK_FILTER_LINEAR;
-    samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.sType                   = vk::StructureType::eSamplerCreateInfo;
+    samplerInfo.magFilter               = vk::Filter::eLinear;
+    samplerInfo.minFilter               = vk::Filter::eLinear;
+    samplerInfo.addressModeU            = vk::SamplerAddressMode::eRepeat;
+    samplerInfo.addressModeV            = vk::SamplerAddressMode::eRepeat;
+    samplerInfo.addressModeW            = vk::SamplerAddressMode::eRepeat;
     samplerInfo.anisotropyEnable        = VK_TRUE;
     samplerInfo.maxAnisotropy           = createInfo.maxAnisotropy;
-    samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.borderColor             = vk::BorderColor::eIntOpaqueBlack;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
     samplerInfo.compareEnable           = VK_FALSE;
-    samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
-    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.compareOp               = vk::CompareOp::eAlways;
+    samplerInfo.mipmapMode              = vk::SamplerMipmapMode::eLinear;
     samplerInfo.mipLodBias              = 0.0f;
     samplerInfo.minLod                  = 0.0f;
     samplerInfo.maxLod                  = 0.0f;
 
-    vk::Check(vkCreateSampler(device, &samplerInfo, nullptr, &vkSampler));
+
+    //todo
+    auto res = vkCreateSampler(device, &samplerInfo, nullptr, &vkSampler);
 }
 
 void Vu::VuSampler::uninit() const

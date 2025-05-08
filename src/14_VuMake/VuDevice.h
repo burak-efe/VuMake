@@ -132,8 +132,6 @@ public:
 private:
     void initDevice(const VuDeviceCreateInfo& info);
 
-    void initVMA();
-
     void initCommandPool(const VuDeviceCreateInfo& info);
 
     void initBindlessDescriptorSetLayout(const VuDeviceCreateInfo& info);
