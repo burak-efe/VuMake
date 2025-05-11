@@ -1,9 +1,8 @@
 #include <gtest/gtest.h>
 
-
-#include "10_Core/Common.h"
-#include "10_Core/Color32.h"
-#include "10_Core/collections/VuAllocator.h"
+#include "02_OuterCore/Color32.h"
+#include "02_OuterCore/Common.h"
+#include "02_OuterCore/collections/VuAllocator.h"
 
 // Clamp float to [0,1] while setting
 TEST(Color32Test, SaturateFloatSetter)

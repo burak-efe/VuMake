@@ -1,5 +1,5 @@
+#include "02_OuterCore/collections/VuList.h"
 #include <gtest/gtest.h>
-#include "10_Core/collections/VuList.h"
 
 struct TestElement
 {
