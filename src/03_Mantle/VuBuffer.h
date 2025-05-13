@@ -1,14 +1,12 @@
 ﻿#pragma once
 
+#include <expected>
 #include <span> // for span
 
 #include "01_InnerCore/TypeDefs.h" // for byte, u32orNull
 #include "VuCommon.h"
+#include "VuDevice.h"
 #include "VuTypes.h" // for VuName
-
-namespace Vu {
-struct VuMemoryAllocator;
-}
 
 namespace Vu {
 struct VuBufferCreateInfo {
@@ -16,22 +14,25 @@ struct VuBufferCreateInfo {
   vk::DeviceSize          sizeInBytes           = {1};
   vk::BufferUsageFlags    vkUsageFlags          = {vk::BufferUsageFlagBits::eStorageBuffer |
                                                    vk::BufferUsageFlagBits::eShaderDeviceAddress};
-  vk::MemoryAllocateFlags vkMemoryAllocateFlags = {vk::MemoryAllocateFlagBits::eDeviceAddress};
   vk::MemoryPropertyFlags vkMemoryPropertyFlags = {vk::MemoryPropertyFlagBits::eDeviceLocal |
                                                    vk::MemoryPropertyFlagBits::eHostVisible |
                                                    vk::MemoryPropertyFlagBits::eHostCoherent};
+  vk::MemoryAllocateFlags vkMemoryAllocateFlags = {vk::MemoryAllocateFlagBits::eDeviceAddress};
 };
 
 struct VuBuffer {
-  vk::raii::DeviceMemory deviceMemory  = {nullptr};
-  vk::raii::Buffer       buffer        = {nullptr};
-  void*                  mapPtr        = {};
-  vk::DeviceSize         sizeInBytes   = {};
-  u32orNull              bindlessIndex = {};
-  VuName                 name          = {"VuBuffer"};
+  std::shared_ptr<VuDevice> vuDevice      = {};
+  vk::raii::DeviceMemory     deviceMemory  = {nullptr};
+  vk::raii::Buffer           buffer        = {nullptr};
+  void*                      mapPtr        = {};
+  vk::DeviceSize             sizeInBytes   = {};
+  u32orNull                  bindlessIndex = {};
+  VuName                     name          = {"VuBuffer"};
+
+  VuBuffer() = default;
 
   static std::expected<Vu::VuBuffer, vk::Result>
-  make(const vk::raii::Device& device, const VuBufferCreateInfo& createInfo, VuMemoryAllocator& allocator);
+  make(const std::shared_ptr<VuDevice>& vuDevice, const VuBufferCreateInfo& createInfo);
 
   void
   map();
@@ -53,6 +54,9 @@ struct VuBuffer {
 
   static vk::DeviceSize
   alignedSize(vk::DeviceSize sizeInBytes, vk::DeviceSize alignment);
+
+private:
+  VuBuffer(const std::shared_ptr<VuDevice>& vuDevice, const VuBufferCreateInfo& createInfo);
 };
 
 static_assert(std::is_move_constructible_v<VuBuffer>);

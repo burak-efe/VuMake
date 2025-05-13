@@ -1,326 +1,326 @@
-#include "VuSwapChain.h"
-
-#include <algorithm> // for clamp
-#include <array>     // for array
-#include <cstddef>   // for size_t
-#include <format>    // for format
-#include <iostream>  // for char_traits, basic_ostream, basic...
-#include <limits>    // for numeric_limits
-#include <optional>  // for optional, operator!=
-#include <string>    // for basic_string
-
-#include "02_OuterCore/Common.h" // for vk::Check
-#include "02_OuterCore/VuCtx.h"
-#include "03_Mantle/VuImage.h" // for VuImage, VuImageCreateInfo
-#include "03_Mantle/VuUtils.h" // for giveDebugName
-#include "SDL3/SDL_video.h"    // for SDL_GetWindowSize
-#include "VuDevice.h"          // for VuDevice
-
-namespace Vu {
-
-VuSwapChain::VuSwapChain()
-    : vuDevice(nullptr), surface(nullptr), gBufferPass(), lightningPass(), colorFormat(), colorSpace(),
-      swapChainImageFormat() {}
-
-VuSwapChain::VuSwapChain(VuDevice* vuDevice, vk::SurfaceKHR surface) : vuDevice {vuDevice}, surface {surface} {
-  createSwapChain(surface);
-  createImageViews(vuDevice->device);
-
-  colorHnd = vuDevice->createImage({
-      .width      = swapChainExtent.width,
-      .height     = swapChainExtent.height,
-      .format     = VK_FORMAT_R8G8B8A8_UNORM,
-      .usage      = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-      .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-  });
-
-  normalHnd = vuDevice->createImage({
-      .width      = swapChainExtent.width,
-      .height     = swapChainExtent.height,
-      .format     = VK_FORMAT_R32G32B32A32_SFLOAT,
-      .usage      = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-      .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-  });
-
-  armHnd = vuDevice->createImage({
-      .width      = swapChainExtent.width,
-      .height     = swapChainExtent.height,
-      .format     = VK_FORMAT_R32G32B32A32_SFLOAT,
-      .usage      = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-      .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-  });
-
-  depthStencilHnd = vuDevice->createImage({
-      .width      = swapChainExtent.width,
-      .height     = swapChainExtent.height,
-      .format     = VK_FORMAT_D32_SFLOAT,
-      .usage      = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-      .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
-  });
-
-  VuImage* dsImage = depthStencilHnd.get();
-
-  gBufferPass.initAsGBufferPass(vuDevice->device, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R32G32B32A32_SFLOAT,
-                                VK_FORMAT_R32G32B32A32_SFLOAT, dsImage->lastCreateInfo.format);
-
-  lightningPass.initAsLightningPass(vuDevice->device, swapChainImageFormat);
-
-  createFramebuffers();
-}
-
-void
-VuSwapChain::uninit() {
-  for (auto imageView : swapChainImageViews) {
-    vkDestroyImageView(vuDevice->device, imageView, nullptr);
-  }
-  for (auto framebuffer : lightningFrameBuffers) {
-    vkDestroyFramebuffer(vuDevice->device, framebuffer, nullptr);
-  }
-
-  gBufferPass.uninit();
-  vkDestroySwapchainKHR(vuDevice->device, swapChain, nullptr);
-}
-
-vk::SurfaceFormatKHR
-VuSwapChain::chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats) {
-  for (const auto& availableFormat : availableFormats) {
-    if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
-        availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-      return availableFormat;
-    }
-  }
-  return availableFormats[0];
-}
-
-vk::PresentModeKHR
-VuSwapChain::chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes) {
-  // TODO present mode
-  //  for (const auto& availablePresentMode: availablePresentModes) {
-  //      if (availablePresentMode == VK_PRESENT_MODE_FIFO_KHR) {
-  //          return availablePresentMode;
-  //      }
-  //  }
-  return VK_PRESENT_MODE_IMMEDIATE_KHR;
-  return VK_PRESENT_MODE_MAILBOX_KHR;
-  return VK_PRESENT_MODE_FIFO_KHR;
-}
-
-vk::Extent2D
-VuSwapChain::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities) {
-  if (capabilities.currentExtent.width != std::numeric_limits<u32>::max()) {
-    return capabilities.currentExtent;
-  }
-  int width, height;
-  SDL_GetWindowSize(ctx::window, &width, &height);
-  std::cout << "width: " << width << std::endl;
-  vk::Extent2D actualExtent = {static_cast<u32>(width), static_cast<u32>(height)};
-  actualExtent.width =
-      std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-  actualExtent.height =
-      std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-  return actualExtent;
-}
-
-VuQueueFamilyIndices
-VuSwapChain::findQueueFamilies(vk::PhysicalDevice device, vk::SurfaceKHR surface) {
-  VuQueueFamilyIndices indices;
-  u32                  queueFamilyCount = 0;
-  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-  std::vector<vk::QueueFamilyProperties> queueFamilies(queueFamilyCount);
-  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-  int i = 0;
-
-  for (const auto& queuefamily : queueFamilies) {
-    if (queuefamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-      indices.graphicsFamily = i;
-    }
-    vk::Bool32 presentSupport = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-    if (presentSupport) {
-      indices.presentFamily = i;
-    }
-    if (indices.isComplete()) {
-      break;
-    }
-    i++;
-  }
-  return indices;
-}
-
-void
-VuSwapChain::resetSwapChain(vk::SurfaceKHR surface) {
-  for (auto imageView : swapChainImageViews) {
-    vkDestroyImageView(vuDevice->device, imageView, nullptr);
-  }
-  for (auto framebuffer : lightningFrameBuffers) {
-    vkDestroyFramebuffer(vuDevice->device, framebuffer, nullptr);
-  }
-
-  vkDestroySwapchainKHR(vuDevice->device, swapChain, nullptr);
-  createSwapChain(surface);
-  createImageViews(vuDevice->device);
-  createFramebuffers();
-}
-
-void
-VuSwapChain::beginGBufferPass(vk::CommandBuffer commandBuffer, u32 frameIndex) {
-  std::array<vk::ClearValue, 4> clearValues {};
-  clearValues[0].color        = {{0, 0, 0, 1.0f}};
-  clearValues[1].color        = {{0, 0, 0, 1.0f}};
-  clearValues[3].color        = {{0, 0, 0, 1.0f}};
-  clearValues[3].depthStencil = {1.0f, 0};
-
-  vk::RenderPassBeginInfo renderPassInfo {};
-  renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-  renderPassInfo.renderPass        = gBufferPass.renderPass;
-  renderPassInfo.framebuffer       = gPassFrameBuffers[frameIndex];
-  renderPassInfo.renderArea.offset = {0, 0};
-  renderPassInfo.renderArea.extent = swapChainExtent;
-  renderPassInfo.clearValueCount   = static_cast<uint32_t>(clearValues.size());
-  renderPassInfo.pClearValues      = clearValues.data();
-
-  vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-}
-
-void
-VuSwapChain::beginLightningPass(vk::CommandBuffer commandBuffer, u32 frameIndex) {
-  std::array<vk::ClearValue, 1> clearValues = {{{.color = {{0.0f, 0.0f, 0.f, 1.0f}}}}};
-
-  vk::RenderPassBeginInfo renderPassInfo {};
-  renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-  renderPassInfo.renderPass        = lightningPass.renderPass;
-  renderPassInfo.framebuffer       = lightningFrameBuffers[frameIndex];
-  renderPassInfo.renderArea.offset = {0, 0};
-  renderPassInfo.renderArea.extent = swapChainExtent;
-  renderPassInfo.clearValueCount   = static_cast<uint32_t>(clearValues.size());
-  renderPassInfo.pClearValues      = clearValues.data();
-
-  vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-}
-
-void
-VuSwapChain::endRenderPass(vk::CommandBuffer commandBuffer) {
-  vkCmdEndRenderPass(commandBuffer);
-}
-
-void
-VuSwapChain::createSwapChain(vk::SurfaceKHR surfaceKHR) {
-  VuSwapChainSupportDetails swapChainSupport =
-      VuSwapChainSupportDetails::querySwapChainSupport(vuDevice->physicalDevice, surfaceKHR);
-  vk::Extent2D         extend        = chooseSwapExtent(swapChainSupport.capabilities);
-  vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-  vk::PresentModeKHR   presentMode   = chooseSwapPresentMode(swapChainSupport.presentModes);
-  u32                  imageCount    = swapChainSupport.capabilities.minImageCount;
-
-  vk::SwapchainCreateInfoKHR createInfo {};
-  createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-  createInfo.surface          = surfaceKHR;
-  createInfo.minImageCount    = imageCount;
-  createInfo.imageFormat      = surfaceFormat.format;
-  createInfo.imageColorSpace  = surfaceFormat.colorSpace;
-  createInfo.imageExtent      = extend;
-  createInfo.imageArrayLayers = 1;
-  createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-  //VuQueueFamilyIndices indices              = findQueueFamilies(vuDevice->physicalDevice, surfaceKHR);
-  u32                  queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
-
-  if (indices.graphicsFamily != indices.presentFamily) {
-    createInfo.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
-    createInfo.queueFamilyIndexCount = 2;
-    createInfo.pQueueFamilyIndices   = queueFamilyIndices;
-  } else {
-    createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  }
-
-  createInfo.preTransform   = swapChainSupport.capabilities.currentTransform;
-  createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-  createInfo.presentMode    = presentMode;
-  createInfo.clipped        = VK_TRUE;
-  createInfo.oldSwapchain   = VK_NULL_HANDLE;
-  //
-  {
-    vk::Check(vkCreateSwapchainKHR(vuDevice->device, &createInfo, nullptr, &swapChain));
-    Utils::giveDebugName(vuDevice->device, VK_OBJECT_TYPE_SWAPCHAIN_KHR, swapChain, "Swapcahin");
-  }
-
-  {
-    vkGetSwapchainImagesKHR(vuDevice->device, swapChain, &imageCount, nullptr);
-    swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(vuDevice->device, swapChain, &imageCount, swapChainImages.data());
-  }
-
-  swapChainImageFormat = surfaceFormat.format;
-  swapChainExtent      = extend;
-}
-
-void
-VuSwapChain::createImageViews(vk::Device device) {
-  swapChainImageViews.resize(swapChainImages.size());
-
-  for (size_t i = 0; i < swapChainImages.size(); i++) {
-    vk::ImageViewCreateInfo createInfo {};
-    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    createInfo.image = swapChainImages[i];
-
-    createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    createInfo.format   = swapChainImageFormat;
-
-    createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-    createInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-    createInfo.subresourceRange.baseMipLevel   = 0;
-    createInfo.subresourceRange.levelCount     = 1;
-    createInfo.subresourceRange.baseArrayLayer = 0;
-    createInfo.subresourceRange.layerCount     = 1;
-
-    vk::Check(vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]));
-  }
-}
-
-void
-VuSwapChain::createFramebuffers() {
-  gPassFrameBuffers.resize(swapChainImageViews.size());
-  for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-    std::array<vk::ImageView, 4> attachments = {
-        colorHnd.get()->imageView,
-        normalHnd.get()->imageView,
-        armHnd.get()->imageView,
-        depthStencilHnd.get()->imageView,
-    };
-    vk::FramebufferCreateInfo framebufferInfo {};
-    framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass      = gBufferPass.renderPass;
-    framebufferInfo.attachmentCount = attachments.size();
-    framebufferInfo.pAttachments    = attachments.data();
-    framebufferInfo.width           = swapChainExtent.width;
-    framebufferInfo.height          = swapChainExtent.height;
-    framebufferInfo.layers          = 1;
-    vk::Check(vkCreateFramebuffer(vuDevice->device, &framebufferInfo, nullptr, &gPassFrameBuffers[i]));
-    auto name = std::format("gpass framebuffer [{}]", i);
-    Utils::giveDebugName(vuDevice->device, VK_OBJECT_TYPE_FRAMEBUFFER, gPassFrameBuffers[i], name.c_str());
-  }
-
-  lightningFrameBuffers.resize(swapChainImageViews.size());
-  for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-    std::array<vk::ImageView, 1> attachments = {
-        swapChainImageViews[i],
-    };
-    vk::FramebufferCreateInfo framebufferInfo {};
-    framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass      = lightningPass.renderPass;
-    framebufferInfo.attachmentCount = attachments.size();
-    framebufferInfo.pAttachments    = attachments.data();
-    framebufferInfo.width           = swapChainExtent.width;
-    framebufferInfo.height          = swapChainExtent.height;
-    framebufferInfo.layers          = 1;
-    vk::Check(vkCreateFramebuffer(vuDevice->device, &framebufferInfo, nullptr, &lightningFrameBuffers[i]));
-    auto name = std::format("framebuffer [{}]", i);
-    Utils::giveDebugName(vuDevice->device, VK_OBJECT_TYPE_FRAMEBUFFER, lightningFrameBuffers[i], name.c_str());
-  }
-}
-
-} // namespace Vu
+// #include "VuSwapChain.h"
+//
+// #include <algorithm> // for clamp
+// #include <array>     // for array
+// #include <cstddef>   // for size_t
+// #include <format>    // for format
+// #include <iostream>  // for char_traits, basic_ostream, basic...
+// #include <limits>    // for numeric_limits
+// #include <optional>  // for optional, operator!=
+// #include <string>    // for basic_string
+//
+// #include "02_OuterCore/Common.h" // for vk::Check
+// #include "02_OuterCore/VuCtx.h"
+// #include "03_Mantle/VuImage.h" // for VuImage, VuImageCreateInfo
+// #include "03_Mantle/VuUtils.h" // for giveDebugName
+// #include "SDL3/SDL_video.h"    // for SDL_GetWindowSize
+// #include "VuDevice.h"          // for VuDevice
+//
+// namespace Vu {
+//
+// VuSwapChain::VuSwapChain()
+//     : vuDevice(nullptr), surface(nullptr), gBufferPass(), lightningPass(), colorFormat(), colorSpace(),
+//       swapChainImageFormat() {}
+//
+// VuSwapChain::VuSwapChain(VuDevice* vuDevice, vk::SurfaceKHR surface) : vuDevice {vuDevice}, surface {surface} {
+//   createSwapChain(surface);
+//   createImageViews(vuDevice->device);
+//
+//   colorHnd = vuDevice->createImage({
+//       .width      = swapChainExtent.width,
+//       .height     = swapChainExtent.height,
+//       .format     = VK_FORMAT_R8G8B8A8_UNORM,
+//       .usage      = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+//       .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+//   });
+//
+//   normalHnd = vuDevice->createImage({
+//       .width      = swapChainExtent.width,
+//       .height     = swapChainExtent.height,
+//       .format     = VK_FORMAT_R32G32B32A32_SFLOAT,
+//       .usage      = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+//       .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+//   });
+//
+//   armHnd = vuDevice->createImage({
+//       .width      = swapChainExtent.width,
+//       .height     = swapChainExtent.height,
+//       .format     = VK_FORMAT_R32G32B32A32_SFLOAT,
+//       .usage      = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+//       .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+//   });
+//
+//   depthStencilHnd = vuDevice->createImage({
+//       .width      = swapChainExtent.width,
+//       .height     = swapChainExtent.height,
+//       .format     = VK_FORMAT_D32_SFLOAT,
+//       .usage      = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+//       .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+//   });
+//
+//   VuImage* dsImage = depthStencilHnd.get();
+//
+//   gBufferPass.initAsGBufferPass(vuDevice->device, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R32G32B32A32_SFLOAT,
+//                                 VK_FORMAT_R32G32B32A32_SFLOAT, dsImage->lastCreateInfo.format);
+//
+//   lightningPass.initAsLightningPass(vuDevice->device, swapChainImageFormat);
+//
+//   createFramebuffers();
+// }
+//
+// void
+// VuSwapChain::uninit() {
+//   for (auto imageView : swapChainImageViews) {
+//     vkDestroyImageView(vuDevice->device, imageView, nullptr);
+//   }
+//   for (auto framebuffer : lightningFrameBuffers) {
+//     vkDestroyFramebuffer(vuDevice->device, framebuffer, nullptr);
+//   }
+//
+//   gBufferPass.uninit();
+//   vkDestroySwapchainKHR(vuDevice->device, swapChain, nullptr);
+// }
+//
+// vk::SurfaceFormatKHR
+// VuSwapChain::chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats) {
+//   for (const auto& availableFormat : availableFormats) {
+//     if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
+//         availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+//       return availableFormat;
+//     }
+//   }
+//   return availableFormats[0];
+// }
+//
+// vk::PresentModeKHR
+// VuSwapChain::chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes) {
+//   // TODO present mode
+//   //  for (const auto& availablePresentMode: availablePresentModes) {
+//   //      if (availablePresentMode == VK_PRESENT_MODE_FIFO_KHR) {
+//   //          return availablePresentMode;
+//   //      }
+//   //  }
+//   return VK_PRESENT_MODE_IMMEDIATE_KHR;
+//   return VK_PRESENT_MODE_MAILBOX_KHR;
+//   return VK_PRESENT_MODE_FIFO_KHR;
+// }
+//
+// vk::Extent2D
+// VuSwapChain::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities) {
+//   if (capabilities.currentExtent.width != std::numeric_limits<u32>::max()) {
+//     return capabilities.currentExtent;
+//   }
+//   int width, height;
+//   SDL_GetWindowSize(ctx::window, &width, &height);
+//   std::cout << "width: " << width << std::endl;
+//   vk::Extent2D actualExtent = {static_cast<u32>(width), static_cast<u32>(height)};
+//   actualExtent.width =
+//       std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+//   actualExtent.height =
+//       std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+//   return actualExtent;
+// }
+//
+// VuQueueFamilyIndices
+// VuSwapChain::findQueueFamilies(vk::PhysicalDevice device, vk::SurfaceKHR surface) {
+//   VuQueueFamilyIndices indices;
+//   u32                  queueFamilyCount = 0;
+//   vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+//   std::vector<vk::QueueFamilyProperties> queueFamilies(queueFamilyCount);
+//   vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+//   int i = 0;
+//
+//   for (const auto& queuefamily : queueFamilies) {
+//     if (queuefamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+//       indices.graphicsFamily = i;
+//     }
+//     vk::Bool32 presentSupport = false;
+//     vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+//     if (presentSupport) {
+//       indices.presentFamily = i;
+//     }
+//     if (indices.isComplete()) {
+//       break;
+//     }
+//     i++;
+//   }
+//   return indices;
+// }
+//
+// void
+// VuSwapChain::resetSwapChain(vk::SurfaceKHR surface) {
+//   for (auto imageView : swapChainImageViews) {
+//     vkDestroyImageView(vuDevice->device, imageView, nullptr);
+//   }
+//   for (auto framebuffer : lightningFrameBuffers) {
+//     vkDestroyFramebuffer(vuDevice->device, framebuffer, nullptr);
+//   }
+//
+//   vkDestroySwapchainKHR(vuDevice->device, swapChain, nullptr);
+//   createSwapChain(surface);
+//   createImageViews(vuDevice->device);
+//   createFramebuffers();
+// }
+//
+// void
+// VuSwapChain::beginGBufferPass(vk::CommandBuffer commandBuffer, u32 frameIndex) {
+//   std::array<vk::ClearValue, 4> clearValues {};
+//   clearValues[0].color        = {{0, 0, 0, 1.0f}};
+//   clearValues[1].color        = {{0, 0, 0, 1.0f}};
+//   clearValues[3].color        = {{0, 0, 0, 1.0f}};
+//   clearValues[3].depthStencil = {1.0f, 0};
+//
+//   vk::RenderPassBeginInfo renderPassInfo {};
+//   renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+//   renderPassInfo.renderPass        = gBufferPass.renderPass;
+//   renderPassInfo.framebuffer       = gPassFrameBuffers[frameIndex];
+//   renderPassInfo.renderArea.offset = {0, 0};
+//   renderPassInfo.renderArea.extent = swapChainExtent;
+//   renderPassInfo.clearValueCount   = static_cast<uint32_t>(clearValues.size());
+//   renderPassInfo.pClearValues      = clearValues.data();
+//
+//   vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+// }
+//
+// void
+// VuSwapChain::beginLightningPass(vk::CommandBuffer commandBuffer, u32 frameIndex) {
+//   std::array<vk::ClearValue, 1> clearValues = {{{.color = {{0.0f, 0.0f, 0.f, 1.0f}}}}};
+//
+//   vk::RenderPassBeginInfo renderPassInfo {};
+//   renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+//   renderPassInfo.renderPass        = lightningPass.renderPass;
+//   renderPassInfo.framebuffer       = lightningFrameBuffers[frameIndex];
+//   renderPassInfo.renderArea.offset = {0, 0};
+//   renderPassInfo.renderArea.extent = swapChainExtent;
+//   renderPassInfo.clearValueCount   = static_cast<uint32_t>(clearValues.size());
+//   renderPassInfo.pClearValues      = clearValues.data();
+//
+//   vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+// }
+//
+// void
+// VuSwapChain::endRenderPass(vk::CommandBuffer commandBuffer) {
+//   vkCmdEndRenderPass(commandBuffer);
+// }
+//
+// void
+// VuSwapChain::createSwapChain(vk::SurfaceKHR surfaceKHR) {
+//   VuSwapChainSupportDetails swapChainSupport =
+//       VuSwapChainSupportDetails::querySwapChainSupport(vuDevice->physicalDevice, surfaceKHR);
+//   vk::Extent2D         extend        = chooseSwapExtent(swapChainSupport.capabilities);
+//   vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+//   vk::PresentModeKHR   presentMode   = chooseSwapPresentMode(swapChainSupport.presentModes);
+//   u32                  imageCount    = swapChainSupport.capabilities.minImageCount;
+//
+//   vk::SwapchainCreateInfoKHR createInfo {};
+//   createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+//   createInfo.surface          = surfaceKHR;
+//   createInfo.minImageCount    = imageCount;
+//   createInfo.imageFormat      = surfaceFormat.format;
+//   createInfo.imageColorSpace  = surfaceFormat.colorSpace;
+//   createInfo.imageExtent      = extend;
+//   createInfo.imageArrayLayers = 1;
+//   createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+//
+//   //VuQueueFamilyIndices indices              = findQueueFamilies(vuDevice->physicalDevice, surfaceKHR);
+//   u32                  queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+//
+//   if (indices.graphicsFamily != indices.presentFamily) {
+//     createInfo.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
+//     createInfo.queueFamilyIndexCount = 2;
+//     createInfo.pQueueFamilyIndices   = queueFamilyIndices;
+//   } else {
+//     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+//   }
+//
+//   createInfo.preTransform   = swapChainSupport.capabilities.currentTransform;
+//   createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+//   createInfo.presentMode    = presentMode;
+//   createInfo.clipped        = VK_TRUE;
+//   createInfo.oldSwapchain   = VK_NULL_HANDLE;
+//   //
+//   {
+//     vk::Check(vkCreateSwapchainKHR(vuDevice->device, &createInfo, nullptr, &swapChain));
+//     Utils::giveDebugName(vuDevice->device, VK_OBJECT_TYPE_SWAPCHAIN_KHR, swapChain, "Swapcahin");
+//   }
+//
+//   {
+//     vkGetSwapchainImagesKHR(vuDevice->device, swapChain, &imageCount, nullptr);
+//     swapChainImages.resize(imageCount);
+//     vkGetSwapchainImagesKHR(vuDevice->device, swapChain, &imageCount, swapChainImages.data());
+//   }
+//
+//   swapChainImageFormat = surfaceFormat.format;
+//   swapChainExtent      = extend;
+// }
+//
+// void
+// VuSwapChain::createImageViews(vk::Device device) {
+//   swapChainImageViews.resize(swapChainImages.size());
+//
+//   for (size_t i = 0; i < swapChainImages.size(); i++) {
+//     vk::ImageViewCreateInfo createInfo {};
+//     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+//     createInfo.image = swapChainImages[i];
+//
+//     createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+//     createInfo.format   = swapChainImageFormat;
+//
+//     createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+//     createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+//     createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+//     createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+//
+//     createInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+//     createInfo.subresourceRange.baseMipLevel   = 0;
+//     createInfo.subresourceRange.levelCount     = 1;
+//     createInfo.subresourceRange.baseArrayLayer = 0;
+//     createInfo.subresourceRange.layerCount     = 1;
+//
+//     vk::Check(vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]));
+//   }
+// }
+//
+// void
+// VuSwapChain::createFramebuffers() {
+//   gPassFrameBuffers.resize(swapChainImageViews.size());
+//   for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+//     std::array<vk::ImageView, 4> attachments = {
+//         colorHnd.get()->imageView,
+//         normalHnd.get()->imageView,
+//         armHnd.get()->imageView,
+//         depthStencilHnd.get()->imageView,
+//     };
+//     vk::FramebufferCreateInfo framebufferInfo {};
+//     framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+//     framebufferInfo.renderPass      = gBufferPass.renderPass;
+//     framebufferInfo.attachmentCount = attachments.size();
+//     framebufferInfo.pAttachments    = attachments.data();
+//     framebufferInfo.width           = swapChainExtent.width;
+//     framebufferInfo.height          = swapChainExtent.height;
+//     framebufferInfo.layers          = 1;
+//     vk::Check(vkCreateFramebuffer(vuDevice->device, &framebufferInfo, nullptr, &gPassFrameBuffers[i]));
+//     auto name = std::format("gpass framebuffer [{}]", i);
+//     Utils::giveDebugName(vuDevice->device, VK_OBJECT_TYPE_FRAMEBUFFER, gPassFrameBuffers[i], name.c_str());
+//   }
+//
+//   lightningFrameBuffers.resize(swapChainImageViews.size());
+//   for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+//     std::array<vk::ImageView, 1> attachments = {
+//         swapChainImageViews[i],
+//     };
+//     vk::FramebufferCreateInfo framebufferInfo {};
+//     framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+//     framebufferInfo.renderPass      = lightningPass.renderPass;
+//     framebufferInfo.attachmentCount = attachments.size();
+//     framebufferInfo.pAttachments    = attachments.data();
+//     framebufferInfo.width           = swapChainExtent.width;
+//     framebufferInfo.height          = swapChainExtent.height;
+//     framebufferInfo.layers          = 1;
+//     vk::Check(vkCreateFramebuffer(vuDevice->device, &framebufferInfo, nullptr, &lightningFrameBuffers[i]));
+//     auto name = std::format("framebuffer [{}]", i);
+//     Utils::giveDebugName(vuDevice->device, VK_OBJECT_TYPE_FRAMEBUFFER, lightningFrameBuffers[i], name.c_str());
+//   }
+// }
+//
+// } // namespace Vu

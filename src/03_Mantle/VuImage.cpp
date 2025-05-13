@@ -1,80 +1,74 @@
 #include "VuImage.h"
 
 #include <filesystem> // for path
-#include <stdexcept>  // for runtime_error
 #include <string>     // for basic_string
 
+#include "stb_image.h"
 #include "VuCommon.h"
 #include "VuMemoryAllocator.h"
-#include "stb_image.h"
+#include "VuUtils.h" // for findMemoryTypeIndex
 
-#include "02_OuterCore/Common.h" // for vk::Check
-#include "VuUtils.h"             // for findMemoryTypeIndex
-
-void
-Vu::VuImage::init(const vk::raii::Device&                   device,
-                  const vk::PhysicalDeviceMemoryProperties& memProps,
-                  const VuImageCreateInfo&                  createInfo,
-                  const VuMemoryAllocator&                  allocator) {
-
-  lastCreateInfo                                 = createInfo;
-  const uint32_t                width            = createInfo.width;
-  const uint32_t                height           = createInfo.height;
-  const vk::Format              format           = createInfo.format;
-  const vk::ImageTiling         tiling           = createInfo.tiling;
-  const vk::ImageUsageFlags     usage            = createInfo.usage;
-  const vk::MemoryPropertyFlags memPropertyFlags = createInfo.memProperties;
+std::expected<Vu::VuImage, vk::Result>
+Vu::VuImage::make(const std::shared_ptr<VuDevice>& vuDevice, const VuImageCreateInfo& createInfo) noexcept {
+  try {
+    VuImage outImage {vuDevice, createInfo};
+    return std::move(outImage);
+  } catch (vk::Result res) {
+    return std::unexpected {res}; //
+  } catch (...) {
+    return std::unexpected {vk::Result::eErrorUnknown}; //
+  }
+}
+Vu::VuImage::VuImage(const std::shared_ptr<VuDevice>& vuDevice, const VuImageCreateInfo& createInfo)
+    : vuDevice {vuDevice}, lastCreateInfo {createInfo} {
 
   vk::ImageCreateInfo imageCreateInfo {};
   imageCreateInfo.imageType     = vk::ImageType::e2D;
-  imageCreateInfo.extent.width  = width;
-  imageCreateInfo.extent.height = height;
+  imageCreateInfo.extent.width  = createInfo.width;
+  imageCreateInfo.extent.height = createInfo.height;
   imageCreateInfo.extent.depth  = 1;
   imageCreateInfo.mipLevels     = 1;
   imageCreateInfo.arrayLayers   = 1;
-  imageCreateInfo.format        = format;
-  imageCreateInfo.tiling        = tiling;
+  imageCreateInfo.format        = createInfo.format;
+  imageCreateInfo.tiling        = createInfo.tiling;
   imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
-  imageCreateInfo.usage         = usage;
+  imageCreateInfo.usage         = createInfo.usage;
   imageCreateInfo.samples       = vk::SampleCountFlagBits::e1;
   imageCreateInfo.sharingMode   = vk::SharingMode::eExclusive;
-  image                         = device.createImage(imageCreateInfo).value();
+  image                         = vuDevice->device.createImage(imageCreateInfo).value();
 
-  vk::DeviceImageMemoryRequirements devMemoryRequirements {};
-  devMemoryRequirements.pCreateInfo = &imageCreateInfo;
+  auto memRequirements = image.getMemoryRequirements();
 
-  vk::MemoryRequirements2 memRequirements = device.getImageMemoryRequirements(devMemoryRequirements);
   // todo
-  auto memoryOrErr                        = allocator.allocateMemory(memPropertyFlags, memRequirements);
-  imageMemory                             = std::move(memoryOrErr.value());
+  auto memoryOrErr = vuDevice->allocateMemory(createInfo.memProperties, memRequirements);
+  throw_if_unexpected(memoryOrErr);
+  imageMemory = std::move(memoryOrErr.value());
 
   vk::BindImageMemoryInfo bindInfo {};
   bindInfo.image  = image;
   bindInfo.memory = imageMemory;
 
-  device.bindImageMemory2(bindInfo);
-
-  vk::Format           inlined_format = createInfo.format;
-  vk::ImageAspectFlags imageAspect    = createInfo.aspectMask;
+  vuDevice->device.bindImageMemory2(bindInfo);
 
   vk::ImageViewCreateInfo viewInfo {};
   viewInfo.image                           = image;
   viewInfo.viewType                        = vk::ImageViewType::e2D;
-  viewInfo.format                          = inlined_format;
-  viewInfo.subresourceRange.aspectMask     = imageAspect;
+  viewInfo.format                          = createInfo.format;
+  viewInfo.subresourceRange.aspectMask     = createInfo.aspectMask;
   viewInfo.subresourceRange.baseMipLevel   = 0;
   viewInfo.subresourceRange.levelCount     = 1;
   viewInfo.subresourceRange.baseArrayLayer = 0;
   viewInfo.subresourceRange.layerCount     = 1;
 
   // todo
-  imageView = device.createImageView(viewInfo).value();
+  auto res  = vuDevice->device.createImageView(viewInfo).value();
+  imageView = std::move(res);
 }
 
 void
 Vu::VuImage::loadImageFile(
-    const std::filesystem::path& path, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& pixels) {
-  pixels = stbi_load(path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    const std::filesystem::path& path, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& out_pixels) {
+  out_pixels = stbi_load(path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 }
 
 // void

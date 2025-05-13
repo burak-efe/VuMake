@@ -5,19 +5,26 @@
 #include "01_InnerCore/TypeDefs.h" // for u32orNull
 
 namespace Vu {
+
+struct VuDevice;
+
 struct VuSamplerCreateInfo {
   float                  maxAnisotropy = {16.0f};
   vk::SamplerAddressMode addressMode   = {vk::SamplerAddressMode::eRepeat};
 };
 
 struct VuSampler {
-  vk::raii::Sampler   sampler        = {nullptr};
-  VuSamplerCreateInfo lastCreateInfo = {};
-  u32orNull           bindlessIndex  = {};
+  const std::shared_ptr<VuDevice>& vuDevice       = {};
+  vk::raii::Sampler                sampler        = {nullptr};
+  VuSamplerCreateInfo              lastCreateInfo = {};
+  u32orNull                        bindlessIndex  = {};
 
-  void
-  init(const vk::raii::Device& device, const VuSamplerCreateInfo& createInfo);
+  static std::expected<VuSampler, vk::Result>
+  make(const std::shared_ptr<VuDevice>& vuDevice, const VuSamplerCreateInfo& createInfo);
 
-  // void uninit() const;
+  VuSampler() = default;
+
+private:
+  VuSampler(const std::shared_ptr<VuDevice>& vuDevice, const VuSamplerCreateInfo& createInfo);
 };
 } // namespace Vu

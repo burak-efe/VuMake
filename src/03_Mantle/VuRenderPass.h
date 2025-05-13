@@ -1,15 +1,16 @@
 #pragma once
 
+#include "vulkan/vulkan_raii.hpp"
 #include "VuUtils.h"
 
 namespace Vu {
 struct VuRenderPass {
-  vk::raii::RenderPass renderPass;
-  vk::Format           colorFormat;
-  vk::Format           depthStencilFormat;
-  vk::Format           normalFormat;
+  vk::raii::RenderPass renderPass         = {nullptr};
+  vk::Format           colorFormat        = {};
+  vk::Format           depthStencilFormat = {};
+  vk::Format           normalFormat       = {};
 
-  std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachmentStates;
+  std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachmentStates = {};
 
   void
   initAsGBufferPass(const vk::raii::Device& device,
@@ -70,7 +71,7 @@ struct VuRenderPass {
     vk::AttachmentReference depthRef {.attachment = static_cast<uint32_t>(colorRefs.size()),
                                       .layout     = vk::ImageLayout::eDepthStencilAttachmentOptimal};
 
-    vk::SubpassDescription subpass {.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS,
+    vk::SubpassDescription subpass {.pipelineBindPoint       = vk::PipelineBindPoint::eGraphics,
                                     .colorAttachmentCount    = colorRefs.size(),
                                     .pColorAttachments       = colorRefs.data(),
                                     .pDepthStencilAttachment = &depthRef};
@@ -95,7 +96,8 @@ struct VuRenderPass {
 
     auto renderPassOrErr = device.createRenderPass(renderPassInfo);
     // todo
-    this->renderPass     = std::move {renderPassOrErr.value()};
+    throw_if_unexpected(renderPassOrErr);
+    this->renderPass = std::move(renderPassOrErr.value());
 
     colorBlendAttachmentStates.resize(3);
     for (auto& blendAttachment : colorBlendAttachmentStates) {
@@ -150,7 +152,8 @@ struct VuRenderPass {
 
     auto renderPassOrErr = device.createRenderPass(renderPassInfo);
     // todo
-    this->renderPass     = std::move {renderPassOrErr.value()};
+    throw_if_unexpected(renderPassOrErr);
+    this->renderPass     = std::move(renderPassOrErr.value());
 
     // vk::Check(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
     // Utils::giveDebugName(device, VK_OBJECT_TYPE_RENDER_PASS, renderPass, "Lightning Render Pass");

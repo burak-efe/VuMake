@@ -1,14 +1,15 @@
 #pragma once
 
-#include "vulkan/vulkan.hpp"
 #include <cstdint>    // for uint32_t
 #include <filesystem> // for path
 
 #include "01_InnerCore/TypeDefs.h" // for u32orNull
 #include "stb_image.h"
+#include "VuDevice.h"
+#include "vulkan/vulkan.hpp"
 
 namespace Vu {
-struct VuMemoryAllocator;
+
 struct VuImageCreateInfo {
   uint32_t                width         = 512;
   uint32_t                height        = 512;
@@ -20,42 +21,22 @@ struct VuImageCreateInfo {
 };
 
 struct VuImage {
-  vk::raii::DeviceMemory imageMemory {nullptr};
-  vk::raii::Image        image {nullptr};
-  vk::raii::ImageView    imageView {nullptr};
-  VuImageCreateInfo      lastCreateInfo {};
-  u32orNull              bindlessIndex {};
+  std::shared_ptr<VuDevice> vuDevice       = {};
+  vk::raii::DeviceMemory    imageMemory    = {nullptr};
+  vk::raii::Image           image          = {nullptr};
+  vk::raii::ImageView       imageView      = {nullptr};
+  VuImageCreateInfo         lastCreateInfo = {};
+  u32orNull                 bindlessIndex  = {};
 
-  void
-  init(const vk::raii::Device&                   device,
-       const vk::PhysicalDeviceMemoryProperties& memProps,
-       const VuImageCreateInfo&                  createInfo,
-       const VuMemoryAllocator&                  allocator);
+  static std::expected<VuImage, vk::Result>
+  make(const std::shared_ptr<VuDevice>& vuDevice, const VuImageCreateInfo& createInfo) noexcept;
 
-  // void
-  // uninit();
+  VuImage() = default;
 
   static void
-  loadImageFile(const std::filesystem::path& path, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& pixels);
-
-  // static void
-  // createImage(const vk::raii::Device&                   device,
-  //             const vk::PhysicalDeviceMemoryProperties& memProps,
-  //             uint32_t                                  width,
-  //             uint32_t                                  height,
-  //             vk::Format                                format,
-  //             vk::ImageTiling                           tiling,
-  //             vk::ImageUsageFlags                       usage,
-  //             vk::MemoryPropertyFlags                   properties,
-  //             vk::raii::Image&                          image,
-  //             vk::raii::DeviceMemory&                   imageMemory,
-  //             const VuMemoryAllocator&                  allocator);
-  //
-  // static void
-  // createImageView(const vk::raii::Device& device,
-  //                 vk::Format              format,
-  //                 vk::raii::Image&        image,
-  //                 vk::ImageAspectFlags    imageAspect,
-  //                 vk::raii::ImageView&    outImageView);
+  loadImageFile(
+      const std::filesystem::path& path, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& out_pixels);
+  private:
+  VuImage(const std::shared_ptr<VuDevice>& vuDevice, const VuImageCreateInfo& createInfo);
 };
 } // namespace Vu

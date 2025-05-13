@@ -30,6 +30,7 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
 add_sources_recursively(VuLibs src/01_InnerCore)
 add_sources_recursively(VuLibs src/02_OuterCore)
 add_sources_recursively(VuLibs src/03_Mantle)
+add_sources_recursively(VuLibs src/04_Crust)
 add_sources_recursively(VuLibs external)
 target_include_directories(VuLibs INTERFACE src)
 target_include_directories(VuLibs INTERFACE external/imgui)

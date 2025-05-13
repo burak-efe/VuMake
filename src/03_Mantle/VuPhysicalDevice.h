@@ -4,6 +4,7 @@
 #include <set>
 
 #include "VuCommon.h"
+#include "VuInstance.h"
 #include "VuTypes.h"
 
 namespace Vu {
@@ -63,31 +64,51 @@ struct VuSwapChainSupportDetails {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct VuPhysicalDevice {
-  vk::raii::PhysicalDevice  physicalDevice   = {nullptr};
-  VuQueueFamilyIndices      indices          = {};
-  VuSwapChainSupportDetails swapChainSupport = {};
+  std::shared_ptr<VuInstance>        vuInstance       = {};
+  vk::raii::PhysicalDevice           physicalDevice   = {nullptr};
+  VuQueueFamilyIndices               indices          = {};
+  VuSwapChainSupportDetails          swapChainSupport = {};
+
+  vk::PhysicalDeviceProperties       properties       = {};
+  vk::PhysicalDeviceMemoryProperties memoryProperties = {};
+  vk::PhysicalDeviceFeatures         features         = {};
 
   static std::expected<VuPhysicalDevice, vk::Result>
-  make(const vk::raii::Instance&   instance,
-       const vk::raii::SurfaceKHR& surface,
-       std::span<const char*>      enabledExtensions) {
+  make(const std::shared_ptr<VuInstance>& vuInstance,
+       const vk::raii::SurfaceKHR&        surface,
+       std::span<const char*>             enabledExtensions) noexcept {
+    try {
+      VuPhysicalDevice outVuPhyDevice {vuInstance, surface, enabledExtensions};
+      return std::move(outVuPhyDevice);
+    } catch (vk::Result res) { return std::unexpected {res}; } catch (...) {
+      return std::unexpected {vk::Result::eErrorUnknown};
+    }
+  }
 
-    VuPhysicalDevice vuPhysicalDevice {};
-    auto             phyDevicesOrErr = instance.enumeratePhysicalDevices();
+private:
+  VuPhysicalDevice(const std::shared_ptr<VuInstance>& vuInstance,
+                   const vk::raii::SurfaceKHR&        surface,
+                   std::span<const char*>             enabledExtensions)
+      : vuInstance {vuInstance} {
+
+    auto phyDevicesOrErr = vuInstance->instance.enumeratePhysicalDevices();
     // todo
-    if (phyDevicesOrErr->size() == 0) { return std::unexpected {vk::Result::eErrorInitializationFailed}; }
+    if (phyDevicesOrErr->empty()) { throw vk::Result::eErrorInitializationFailed; }
 
-    for (const vk::raii::PhysicalDevice& device : phyDevicesOrErr.value()) {
-      if (isSupported(device, surface, enabledExtensions)) {
-        vuPhysicalDevice.physicalDevice   = device;
-        vuPhysicalDevice.indices          = VuQueueFamilyIndices::make(vuPhysicalDevice.physicalDevice, surface);
-        //todo
-        vuPhysicalDevice.swapChainSupport = *VuSwapChainSupportDetails::make(vuPhysicalDevice.physicalDevice, surface);
-        return vuPhysicalDevice;
+    for (const vk::raii::PhysicalDevice& phyDevice : phyDevicesOrErr.value()) {
+      if (isSupported(phyDevice, surface, enabledExtensions)) {
+        this->physicalDevice   = phyDevice;
+        this->indices          = VuQueueFamilyIndices::make(phyDevice, surface);
+        // todo
+        this->swapChainSupport = *VuSwapChainSupportDetails::make(phyDevice, surface);
+        this->properties     = phyDevice.getProperties();
+        this->memoryProperties = phyDevice.getMemoryProperties();
+        this->features        = phyDevice.getFeatures();
+        return;
       }
     }
 
-    return std::unexpected {vk::Result::eErrorInitializationFailed};
+    throw vk::Result::eErrorInitializationFailed;
   }
 
   static bool

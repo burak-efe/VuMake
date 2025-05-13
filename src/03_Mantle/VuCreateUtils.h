@@ -1,17 +1,17 @@
 #pragma once
 
-#include <span>                     // for span
-
-#include "01_InnerCore/TypeDefs.h" // for u32
-#include "VuCommon.h"
-
-namespace Vu
-{
-struct VuQueueFamilyIndices;
-}
-
-namespace Vu::CreateUtils
-{
+// #include <span>                     // for span
+//
+// #include "01_InnerCore/TypeDefs.h" // for u32
+// #include "VuCommon.h"
+//
+// namespace Vu
+// {
+// struct VuQueueFamilyIndices;
+// }
+//
+// namespace Vu::CreateUtils
+// {
 // std::expected<vk::raii::Instance, vk::Result>
 // createInstance(vk::raii::Context&     raiiContext,
 //                bool                   enableValidationLayers,
@@ -37,4 +37,4 @@ namespace Vu::CreateUtils
 //                      vk::raii::PipelineLayout&          outPipelineLayout);
 
 //void createDebugMessenger(const vk::Instance& instance, vk::DebugUtilsMessengerEXT& outDebugMessenger);
-}
+//}

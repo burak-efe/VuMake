@@ -5,38 +5,16 @@
 
 namespace Vu {
 std::expected<Vu::VuBuffer, vk::Result>
-VuBuffer::make(const vk::raii::Device& device, const VuBufferCreateInfo& createInfo, VuMemoryAllocator& allocator) {
-  Vu::VuBuffer vuBuffer;
-  vuBuffer.sizeInBytes = createInfo.sizeInBytes;
-  vuBuffer.name        = createInfo.name;
+VuBuffer::make(const std::shared_ptr<VuDevice>& vuDevice, const VuBufferCreateInfo& createInfo) {
+  try {
+    VuBuffer outBuffer {vuDevice, createInfo};
+    return std::move(outBuffer);
 
-  vk::BufferCreateInfo bufferCreateInfo;
-  bufferCreateInfo.size  = createInfo.sizeInBytes;
-  bufferCreateInfo.usage = vk::BufferUsageFlagBits::eShaderDeviceAddress;
-
-  auto bufferOrNull = device.createBuffer(bufferCreateInfo);
-  if (!bufferOrNull) {
-    return std::unexpected {bufferOrNull.error()};
+  } catch (vk::Result res) {
+    return std::unexpected { res };
+  } catch (...) {
+    return std::unexpected { vk::Result::eErrorUnknown };
   }
-
-  vk::DeviceBufferMemoryRequirements bufferMemReq {};
-  bufferMemReq.pCreateInfo = &bufferCreateInfo;
-
-  vk::MemoryRequirements2 memory_requirements = device.getBufferMemoryRequirements(bufferMemReq);
-
-  auto memOrNull = allocator.allocateMemory(createInfo.vkMemoryPropertyFlags, memory_requirements);
-  if (!memOrNull) {
-    return std::unexpected {memOrNull.error()};
-  }
-
-  vk::BindBufferMemoryInfo bindInfo {};
-  bindInfo.buffer       = bufferOrNull.value();
-  bindInfo.memory       = memOrNull.value();
-  bindInfo.memoryOffset = 0ull;
-
-  device.bindBufferMemory2(bindInfo);
-
-  return std::move(vuBuffer);
 }
 
 // VuBuffer::~VuBuffer() {
@@ -93,5 +71,30 @@ VuBuffer::getMappedSpan(VkDeviceSize start, VkDeviceSize sizeInBytes) const {
 vk::DeviceSize
 VuBuffer::alignedSize(vk::DeviceSize sizeInBytes, vk::DeviceSize alignment) {
   return (sizeInBytes + alignment - 1) & ~(alignment - 1);
+}
+VuBuffer::VuBuffer(const std::shared_ptr<VuDevice>& vuDevice, const VuBufferCreateInfo& createInfo)
+    : vuDevice {vuDevice} {
+
+  this->sizeInBytes = createInfo.sizeInBytes;
+  this->name        = createInfo.name;
+
+  vk::BufferCreateInfo bufferCreateInfo;
+  bufferCreateInfo.size  = createInfo.sizeInBytes;
+  bufferCreateInfo.usage = vk::BufferUsageFlagBits::eShaderDeviceAddress;
+
+  auto bufferOrErr = vuDevice->device.createBuffer(bufferCreateInfo);
+  throw_if_unexpected(bufferOrErr);
+  this->buffer = std::move(bufferOrErr.value());
+
+  auto memOrNull = vuDevice->allocateMemory(createInfo.vkMemoryPropertyFlags, buffer.getMemoryRequirements());
+  throw_if_unexpected(memOrNull);
+  this->deviceMemory = std::move(memOrNull.value());
+
+  vk::BindBufferMemoryInfo bindInfo {};
+  bindInfo.buffer       = buffer;
+  bindInfo.memory       = deviceMemory;
+  bindInfo.memoryOffset = 0ull;
+
+  vuDevice->device.bindBufferMemory2(bindInfo);
 }
 } // namespace Vu

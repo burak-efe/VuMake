@@ -4,8 +4,6 @@
 #include <optional>
 #include <stack>
 
-#include "VuCommon.h"
-
 #include "01_InnerCore/TypeDefs.h"
 #include "02_OuterCore/Common.h"
 #include "02_OuterCore/FixedString.h"

@@ -7,6 +7,8 @@ PointerAlignment: Left
 QualifierAlignment: Left
 BreakAfterReturnType: All
 BinPackParameters: OnePerLine
+BinPackArguments: true
+AllowAllArgumentsOnNextLine: true
 AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: true
 AllowShortBlocksOnASingleLine: Always
