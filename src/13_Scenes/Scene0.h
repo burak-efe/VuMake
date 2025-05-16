@@ -99,15 +99,15 @@ public:
         vuRenderer->beginFrame();
 
         // user render commands begin
-        drawMesh(*vuRenderer, obj0Trs, obj1MeshRenderer);
+        //drawMesh(*vuRenderer, obj0Trs, obj1MeshRenderer);
         // user render commands end
 
         vuRenderer->beginLightningPass();
-        vuRenderer->bindMaterial(deferMatHnd);
-        auto dataIndex = *deferMatHnd.get()->materialDataHnd.get();
-        vuRenderer->pushConstants({mat4x4(), dataIndex});
-        vuRenderer->commandBuffers[vuRenderer->currentFrame].draw(3, 1, 0, 0);
-        // vkCmdDraw(vuRenderer.commandBuffers[vuRenderer.currentFrame], 3, 1, 0, 0);
+        //vuRenderer->bindMaterial(deferMatHnd);
+        //auto dataIndex = *deferMatHnd.get()->materialDataHnd;
+        //vuRenderer->pushConstants({mat4x4(), dataIndex});
+        //vuRenderer->commandBuffers[vuRenderer->currentFrame].draw(3, 1, 0, 0);
+
 
         // UI
         //  {
