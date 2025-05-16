@@ -81,6 +81,54 @@ VuRenderer::VuRenderer(const VuRendererCreateInfo& createInfo) : lastCreateInfo 
   initBindlessDescriptorSet();
   initBindlessResourceManager(createInfo);
   initDefaultResources();
+
+  // init uniform buffers
+
+  uniformBuffers.resize(config::MAX_FRAMES_IN_FLIGHT);
+  for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
+    vk::DeviceSize bufferSize = sizeof(GPU_FrameConst);
+
+    uniformBuffers[i] = VuBuffer {};
+    VuBufferCreateInfo bufferCreateInfo {
+        .name         = "UniformBuffer",
+        .sizeInBytes  = bufferSize,
+        .vkUsageFlags = vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+    };
+    uniformBuffers[i] = move_or_throw(VuBuffer::make(*vuDevice, bufferCreateInfo));
+    uniformBuffers[i].map();
+  }
+  for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
+    writeUBO_ToGlobalPool(uniformBuffers[i], 0, i);
+  }
+
+  // init command buffers
+
+  vk::CommandBufferAllocateInfo allocInfo {};
+  allocInfo.commandPool        = commandPool;
+  allocInfo.level              = vk::CommandBufferLevel::ePrimary;
+  allocInfo.commandBufferCount = static_cast<u32>(config::MAX_FRAMES_IN_FLIGHT);
+
+  auto commandBuffersOrErr = vuDevice->device.allocateCommandBuffers(allocInfo);
+
+  throw_if_unexpected(commandBuffersOrErr);
+  commandBuffers.clear();
+  for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
+    commandBuffers.emplace_back(std::move(commandBuffersOrErr.value()[i]));
+  }
+
+  // init sync objects
+
+  vk::SemaphoreCreateInfo semaphoreInfo {};
+  vk::FenceCreateInfo     fenceInfo {};
+
+  fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+
+  uint32_t swapChainImageCount = deferredRenderSpace.vuSwapChain.images.size();
+  for (size_t i = 0; i < swapChainImageCount; i++) {
+    imageAvailableSemaphores.emplace_back(move_or_throw(vuDevice->device.createSemaphore(semaphoreInfo)));
+    renderFinishedSemaphores.emplace_back(move_or_throw(vuDevice->device.createSemaphore(semaphoreInfo)));
+    inFlightFences.emplace_back(move_or_throw(vuDevice->device.createFence(fenceInfo)));
+  }
 }
 
 //
@@ -225,11 +273,9 @@ VuRenderer::VuRenderer(const VuRendererCreateInfo& createInfo) : lastCreateInfo 
 //   init_info.Instance                  = vuDevice.instance;
 //   init_info.PhysicalDevice            = vuDevice.physicalDevice;
 //   init_info.Device                    = vuDevice.device;
-//   init_info.QueueFamily    = VuSwapChain::findQueueFamilies(vuDevice.physicalDevice, surface).graphicsFamily.value();
-//   init_info.Queue          = vuDevice.graphicsQueue;
-//   init_info.DescriptorPool = vuDevice.uiDescriptorPool;
-//   init_info.MinImageCount  = 2;
-//   init_info.ImageCount     = 2;
+//   init_info.QueueFamily    = VuSwapChain::findQueueFamilies(vuDevice.physicalDevice,
+//   surface).graphicsFamily.value(); init_info.Queue          = vuDevice.graphicsQueue; init_info.DescriptorPool =
+//   vuDevice.uiDescriptorPool; init_info.MinImageCount  = 2; init_info.ImageCount     = 2;
 //   init_info.UseDynamicRendering = false;
 //   init_info.RenderPass          = swapChain.gBufferPass.renderPass;
 //

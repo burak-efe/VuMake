@@ -11,7 +11,6 @@
 #include "03_Mantle/VuTypes.h"
 #include "SDL3/SDL.h"
 #include "vulkan/vulkan_raii.hpp"
-#include "VuMaterial.h"
 #include "VuShader.h"
 
 struct ImGui_ImplVulkanH_Window;
@@ -51,29 +50,37 @@ struct VuRenderer {
   std::shared_ptr<VuDevice>             vuDevice            = {};
   VuDeferredRenderSpace                 deferredRenderSpace = {};
   ImGui_ImplVulkanH_Window*             imguiMainWindowData = {};
-
-  vk::raii::CommandPool         commandPool               = {nullptr};
-  vk::raii::DescriptorPool      descriptorPool            = {nullptr};
-  vk::raii::DescriptorPool      uiDescriptorPool          = {nullptr};
-  vk::raii::DescriptorSetLayout globalDescriptorSetLayout = {nullptr};
-  vk::raii::PipelineLayout      globalPipelineLayout      = {nullptr};
-  vk::raii::DescriptorSets      globalDescriptorSets      = {nullptr};
-
-  vector<vk::raii::CommandBuffer> commandBuffers           = {};
-  vector<vk::raii::Semaphore>     imageAvailableSemaphores = {};
-  vector<vk::raii::Semaphore>     renderFinishedSemaphores = {};
-  vector<vk::raii::Fence>         inFlightFences           = {};
-
-  vector<VuBuffer> uniformBuffers         = {};
-  u32              currentFrame           = {};
-  u32              currentFrameImageIndex = {};
-
-  VuDisposeStack disposeStack = {};
-
-  IndexAllocator imgBindlessIndexAllocator          = {};
-  IndexAllocator samplerBindlessIndexAllocator      = {};
-  IndexAllocator bufferBindlessIndexAllocator       = {};
-  IndexAllocator materialDataBindlessIndexAllocator = {};
+  //
+  vk::raii::CommandPool         commandPool                 = {nullptr};
+  vk::raii::DescriptorPool      descriptorPool              = {nullptr};
+  vk::raii::DescriptorPool      uiDescriptorPool            = {nullptr};
+  vk::raii::DescriptorSetLayout globalDescriptorSetLayout   = {nullptr};
+  vk::raii::PipelineLayout      globalPipelineLayout        = {nullptr};
+  vector<vk::DescriptorSet>     globalDescriptorSets        = {};
+  //
+  vector<vk::raii::CommandBuffer> commandBuffers            = {};
+  vector<vk::raii::Semaphore>     imageAvailableSemaphores  = {};
+  vector<vk::raii::Semaphore>     renderFinishedSemaphores  = {};
+  vector<vk::raii::Fence>         inFlightFences            = {};
+  //
+  vector<VuBuffer> uniformBuffers                           = {};
+  u32              currentFrame                             = {};
+  u32              currentFrameImageIndex                   = {};
+  //
+  VuDisposeStack disposeStack                               = {};
+  //
+  IndexAllocator imgBindlessIndexAllocator                  = {};
+  IndexAllocator samplerBindlessIndexAllocator              = {};
+  IndexAllocator bufferBindlessIndexAllocator               = {};
+  IndexAllocator materialDataBindlessIndexAllocator         = {};
+  //
+  GPU_FrameConst frameConst                                 = {};
+  float          deltaAsSecond                              = {};
+  u64            prevTimeAsNanoSecond                       = {};
+  float          mouseX                                     = {};
+  float          mouseY                                     = {};
+  float          mouseDeltaX                                = {};
+  float          mouseDeltaY                                = {};
 
 private:
   // holds the address of all other buffers
@@ -89,7 +96,7 @@ private:
 public:
   explicit VuRenderer(const VuRendererCreateInfo& createInfo);
 
-  bool
+  [[nodiscard]] bool
   shouldWindowClose() const;
 
   void
@@ -122,7 +129,15 @@ public:
   void
   updateFrameConstantBuffer(GPU_FrameConst ubo) const;
 
-private:
+  void
+  PreUpdate();
+
+  void
+  UpdateInput();
+
+  static float
+  time();
+
   void
   waitForFences() const;
 
@@ -251,14 +266,8 @@ private:
   //   return handle;
   // }
 
-  // std::shared_ptr<unsigned>
-  // createMaterialDataIndex() {
-  //   std::shared_ptr<u32> handle        = std::make_shared<u32>();
-  //   u32*                 resource      = handle.get();
-  //   u32                  bindlessIndex = materialDataBindlessIndexAllocator.allocate();
-  //   *resource                          = bindlessIndex;
-  //   return handle;
-  // }
+  std::shared_ptr<VuMaterialDataHandle>
+  createMaterialDataIndex();
 
   // std::shared_ptr<Vu::VuMaterial>
   // createMaterial(MaterialSettings          matSettings,
@@ -272,7 +281,7 @@ private:
   // }
 
   std::span<std::byte, Vu::config::MATERIAL_DATA_SIZE>
-  getMaterialData(std::shared_ptr<u32> handle);
+  getMaterialData(const std::shared_ptr<VuMaterialDataHandle>& handle) const;
 
   static void
   bindMaterial(const vk::CommandBuffer& cb, const std::shared_ptr<VuMaterial>& material);

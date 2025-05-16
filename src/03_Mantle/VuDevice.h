@@ -9,7 +9,15 @@ namespace Vu {
 
 struct VuDeviceCreateFeatureChain {
 
+  vk::PhysicalDeviceRobustness2FeaturesEXT robustness2FeaturesEXT {
+      .pNext               = nullptr,
+      .robustBufferAccess2 = vk::True,
+      .robustImageAccess2  = vk::True,
+      .nullDescriptor      = vk::True,
+  };
+
   vk::PhysicalDeviceSynchronization2FeaturesKHR sync2Features {
+      .pNext            = &robustness2FeaturesEXT,
       .synchronization2 = VK_TRUE,
   };
 
@@ -132,12 +140,16 @@ struct VuDevice {
 
   [[nodiscard]] std::expected<vk::raii::DeviceMemory, vk::Result>
   allocateMemory(const vk::MemoryPropertyFlags& memPropFlags, const vk::MemoryRequirements& requirements) const {
-    auto memTypeIndex = findMemoryTypeIndex(vuPhysicalDevice->memoryProperties,
-                                            requirements.memoryTypeBits, memPropFlags);
+    auto memTypeIndex =
+        findMemoryTypeIndex(vuPhysicalDevice->memoryProperties, requirements.memoryTypeBits, memPropFlags);
 
     if (!memTypeIndex) { return std::unexpected {memTypeIndex.error()}; }
 
+    vk::MemoryAllocateFlagsInfo allocFlagsInfo {};
+    allocFlagsInfo.flags = vk::MemoryAllocateFlagBits::eDeviceAddress;
+
     vk::MemoryAllocateInfo allocInfo {};
+    allocInfo.pNext           = &allocFlagsInfo;
     allocInfo.allocationSize  = requirements.size;
     allocInfo.memoryTypeIndex = memTypeIndex.value();
 
@@ -146,8 +158,8 @@ struct VuDevice {
 
 private:
   VuDevice(const std::shared_ptr<VuPhysicalDevice>& vuPhyDevice,
-            const vk::PhysicalDeviceFeatures2&       featuresChain,
-            std::span<const char*>                   enabledExtensions)
+           const vk::PhysicalDeviceFeatures2&       featuresChain,
+           std::span<const char*>                   enabledExtensions)
       : vuPhysicalDevice {vuPhyDevice} {
 
     std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos {};

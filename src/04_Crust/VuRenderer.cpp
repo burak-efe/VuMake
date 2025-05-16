@@ -1,19 +1,38 @@
 #include "VuRenderer.h"
 
-#include <cstdint>   // for UINT64_MAX
-#include <iostream>  // for char_traits, basic_ostream, oper...
-#include <stdexcept> // for runtime_error
+#include <algorithm>                 // for fill
+#include <array>                     // for array
+#include <expected>                  // for expected
+#include <iostream>                  // for char_traits, basic_ostream
+#include <optional>                  // for optional
+#include <stdexcept>                 // for runtime_error, invalid_arg...
+#include <utility>                   // for move, pair
+#include <vector>                    // for vector
+#include <vulkan/vulkan_core.h>      // for VK_NULL_HANDLE, VK_QUEUE_F...
+#include <vulkan/vulkan_enums.hpp>   // for DescriptorType, operator|
+#include <vulkan/vulkan_funcs.hpp>   // for CommandBuffer::bindDescrip...
+#include <vulkan/vulkan_structs.hpp> // for DescriptorSetLayoutBinding
 
-#include "02_OuterCore/Color32.h"
-#include "02_OuterCore/VuConfig.h"
-#include "02_OuterCore/VuCtx.h"
-#include "imgui.h"           // for GetDrawData, NewFrame, Render
-#include "imgui_impl_sdl3.h" // for ImGui_ImplSDL3_NewFrame, ImGui_I...
-#include "imgui_impl_vulkan.h"
-#include "old.h"             // for VuDevice
-#include "SDL3/SDL_events.h" // for SDL_WaitEvent, SDL_Event, SDL_Ev...
-#include "SDL3/SDL_video.h"  // for SDL_GetWindowFlags, SDL_GetWindo...
-#include "VuMesh.h"
+#include "02_OuterCore/Color32.h"         // for Color32
+#include "02_OuterCore/FixedString.h"     // for FixedString
+#include "02_OuterCore/VuConfig.h"        // for MAX_FRAMES_IN_FLIGHT, MATE...
+#include "03_Mantle/VuCommon.h"           // for CommandBuffer, throw_if_un...
+#include "03_Mantle/VuDevice.h"           // for VuDevice
+#include "03_Mantle/VuGraphicsPipeline.h" // for VuGraphicsPipeline
+#include "03_Mantle/VuPhysicalDevice.h"   // for VuPhysicalDevice, VuQueueF...
+#include "03_Mantle/VuSampler.h"          // for VuSampler
+#include "03_Mantle/VuSwapChain2.h"       // for VuSwapChain2
+#include "04_Crust/VuShader.h"            // for VuShader
+#include "imgui.h"                        // for GetDrawData, NewFrame, Render
+#include "imgui_impl_sdl3.h"              // for ImGui_ImplSDL3_NewFrame
+#include "imgui_impl_vulkan.h"            // for ImGui_ImplVulkan_NewFrame
+#include "SDL3/SDL_events.h"              // for SDL_PollEvent, SDL_WaitEvent
+#include "SDL3/SDL_mouse.h"               // for SDL_GetMouseState
+#include "SDL3/SDL_timer.h"               // for SDL_GetTicksNS, SDL_GetTicks
+#include "SDL3/SDL_video.h"               // for SDL_GetWindowFlags, SDL_Ge...
+#include "stb_image.h"                    // for stbi_image_free, stbi_uc
+#include "VuMaterial.h"                   // for VuMaterial, MaterialSettings
+#include "VuMesh.h"                       // for VuMesh
 
 namespace Vu {
 struct VuMaterial;
@@ -71,7 +90,7 @@ VuRenderer::beginFrame() {
   // vkCmdSetViewport(commandBuffers[currentFrame], 0, 1, &viewport);
 
   vk::Rect2D scissor {};
-  scissor.offset = {0, 0};
+  scissor.offset = vk::Offset2D {0, 0};
   scissor.extent = deferredRenderSpace.vuSwapChain.extend2D;
   commandBuffers[currentFrame].setScissor(0, scissor);
   // vkCmdSetScissor(commandBuffers[currentFrame], 0, 1, &scissor);
@@ -217,7 +236,27 @@ void
 VuRenderer::bindGlobalBindlessSet(const vk::CommandBuffer& commandBuffer) const {
 
   commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, globalPipelineLayout, 0, 1,
-                                   &*globalDescriptorSets[currentFrame], 0, nullptr);
+                                   &globalDescriptorSets[currentFrame], 0, nullptr);
+}
+void
+VuRenderer::PreUpdate() {
+  // nano => micro => mili => second
+  SDL_PollEvent(&sdlEvent);
+  deltaAsSecond        = (SDL_GetTicksNS() - prevTimeAsNanoSecond) / 1000.0f / 1000.0f / 1000.0f;
+  prevTimeAsNanoSecond = SDL_GetTicksNS();
+}
+void
+VuRenderer::UpdateInput() {
+  // SDL_GetRelativeMouseState(&mouseDeltaX, &mouseDeltaY);
+  float prevx = mouseX;
+  float prevy = mouseY;
+  SDL_GetMouseState(&mouseX, &mouseY);
+  mouseDeltaX = prevx - mouseX;
+  mouseDeltaY = prevy - mouseY;
+}
+float
+VuRenderer::time() {
+  return SDL_GetTicks() / 1000.0f;
 }
 void
 VuRenderer::writeUBO_ToGlobalPool(const VuBuffer& buffer, u32 writeIndex, u32 setIndex) const {
@@ -360,9 +399,9 @@ VuRenderer::initDefaultResources() {
   VuBufferCreateInfo stagingBufferCreateInfo {};
   stagingBufferCreateInfo.name         = "stagingBuffer";
   stagingBufferCreateInfo.sizeInBytes  = 1024 * 1024 * 64;
-  stagingBufferCreateInfo.vkUsageFlags = vk::BufferUsageFlagBits::eTransferDst;
+  stagingBufferCreateInfo.vkUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 
-  auto stagingOrErr = VuBuffer::make(vuDevice, stagingBufferCreateInfo);
+  auto stagingOrErr = VuBuffer::make(*vuDevice, stagingBufferCreateInfo);
   throw_if_unexpected(stagingOrErr);
   this->stagingBuffer = std::move(stagingOrErr.value());
   stagingBuffer.map();
@@ -381,7 +420,7 @@ VuRenderer::initDefaultResources() {
   debugBufferCreateInfo.vkUsageFlags =
       vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress;
 
-  auto debugBufferOrErr = VuBuffer::make(vuDevice, debugBufferCreateInfo);
+  auto debugBufferOrErr = VuBuffer::make(*vuDevice, debugBufferCreateInfo);
   throw_if_unexpected(debugBufferOrErr);
   this->debugBufferHnd = std::make_shared<VuBuffer>(std::move(debugBufferOrErr.value()));
 
@@ -435,7 +474,7 @@ VuRenderer::initDefaultResources() {
   matDataBufferCreateInfo.vkUsageFlags =
       vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress;
 
-  auto matDatBufferOrrErr = VuBuffer::make(vuDevice, matDataBufferCreateInfo);
+  auto matDatBufferOrrErr = VuBuffer::make(*vuDevice, matDataBufferCreateInfo);
   throw_if_unexpected(matDatBufferOrrErr);
   this->materialDataBufferHandle = std::make_shared<VuBuffer>(std::move(matDatBufferOrrErr.value()));
   materialDataBufferHandle->map();
@@ -493,8 +532,14 @@ VuRenderer::initBindlessDescriptorSet() {
   globalSetsAllocInfo.descriptorSetCount = static_cast<uint32_t>(globalDescLayout.size());
   globalSetsAllocInfo.pSetLayouts        = globalDescLayout.data();
 
-  auto descSetsOrErr = vuDevice->device.allocateDescriptorSets(globalSetsAllocInfo);
-  throw_if_unexpected(descSetsOrErr);
+  std::array<VkDescriptorSet, config::MAX_FRAMES_IN_FLIGHT> tempDescSets;
+  vkAllocateDescriptorSets(*vuDevice->device, globalSetsAllocInfo, tempDescSets.data());
+  globalDescriptorSets.resize(config::MAX_FRAMES_IN_FLIGHT);
+  for (uint32_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
+    globalDescriptorSets[i] = vk::DescriptorSet {tempDescSets[i]};
+  }
+  // auto descSetsOrErr = vuDevice->device.allocateDescriptorSets(globalSetsAllocInfo);
+  // throw_if_unexpected(descSetsOrErr);
 
   // TODO
 
@@ -541,7 +586,7 @@ VuRenderer::initBindlessResourceManager(const VuRendererCreateInfo& info) {
       .name        = "BDA_Buffer",
       .sizeInBytes = info.storageBufferCount * sizeof(vk::DeviceAddress),
   };
-  auto bdaBufferOrErr = VuBuffer::make(vuDevice, bufferCreateInfo);
+  auto bdaBufferOrErr = VuBuffer::make(*vuDevice, bufferCreateInfo);
   throw_if_unexpected(bdaBufferOrErr);
   bdaBuffer = std::move(bdaBufferOrErr.value());
 
@@ -584,11 +629,18 @@ VuRenderer::createImageFromAsset(const path& path, vk::Format format) {
   stbi_image_free(pixels);
   return vuImage;
 }
+std::shared_ptr<VuMaterialDataHandle>
+VuRenderer::createMaterialDataIndex() {
+  std::shared_ptr<VuMaterialDataHandle> handle        = std::make_shared<VuMaterialDataHandle>();
+  VuMaterialDataHandle*                 resource      = handle.get();
+  u32                                   bindlessIndex = materialDataBindlessIndexAllocator.allocate();
+  resource->index                                     = bindlessIndex;
+  return handle;
+}
 std::span<std::byte, Vu::config::MATERIAL_DATA_SIZE>
-VuRenderer::getMaterialData(std::shared_ptr<u32> handle) {
-  VuBuffer* matDataBuffer = materialDataBufferHandle.get();
-  byte*     dataPtr       = static_cast<byte*>(matDataBuffer->mapPtr) + config::MATERIAL_DATA_SIZE * *handle;
-  return std::span<std::byte, Vu::config::MATERIAL_DATA_SIZE>(dataPtr, config::MATERIAL_DATA_SIZE);
+VuRenderer::getMaterialData(const std::shared_ptr<VuMaterialDataHandle>& handle) const {
+  byte* dataPtr = &static_cast<byte*>(materialDataBufferHandle->mapPtr)[config::MATERIAL_DATA_SIZE * handle->index];
+  return std::span<std::byte, config::MATERIAL_DATA_SIZE>(dataPtr, config::MATERIAL_DATA_SIZE);
 }
 void
 VuRenderer::bindMaterial(const vk::CommandBuffer& cb, const std::shared_ptr<VuMaterial>& material) {
@@ -672,8 +724,8 @@ VuRenderer::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width
   region.imageSubresource.mipLevel       = 0;
   region.imageSubresource.baseArrayLayer = 0;
   region.imageSubresource.layerCount     = 1;
-  region.imageOffset                     = {0, 0, 0};
-  region.imageExtent                     = {width, height, 1};
+  region.imageOffset                     = vk::Offset3D {0, 0, 0};
+  region.imageExtent                     = vk::Extent3D {width, height, 1};
 
   commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, region);
   // vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);

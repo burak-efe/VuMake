@@ -21,18 +21,18 @@ struct VuBufferCreateInfo {
 };
 
 struct VuBuffer {
-  std::shared_ptr<VuDevice> vuDevice      = {};
-  vk::raii::DeviceMemory     deviceMemory  = {nullptr};
-  vk::raii::Buffer           buffer        = {nullptr};
-  void*                      mapPtr        = {};
-  vk::DeviceSize             sizeInBytes   = {};
-  u32orNull                  bindlessIndex = {};
-  VuName                     name          = {"VuBuffer"};
+  // std::shared_ptr<VuDevice> vuDevice      = {};
+  vk::raii::DeviceMemory deviceMemory  = {nullptr};
+  vk::raii::Buffer       buffer        = {nullptr};
+  void*                  mapPtr        = {};
+  vk::DeviceSize         sizeInBytes   = {};
+  u32orNull              bindlessIndex = {};
+  VuName                 name          = {"VuBuffer"};
 
   VuBuffer() = default;
 
   static std::expected<Vu::VuBuffer, vk::Result>
-  make(const std::shared_ptr<VuDevice>& vuDevice, const VuBufferCreateInfo& createInfo);
+  make(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo);
 
   void
   map();
@@ -56,7 +56,7 @@ struct VuBuffer {
   alignedSize(vk::DeviceSize sizeInBytes, vk::DeviceSize alignment);
 
 private:
-  VuBuffer(const std::shared_ptr<VuDevice>& vuDevice, const VuBufferCreateInfo& createInfo);
+  VuBuffer(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo);
 };
 
 static_assert(std::is_move_constructible_v<VuBuffer>);

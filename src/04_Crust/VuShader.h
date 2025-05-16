@@ -6,7 +6,6 @@
 #include "03_Mantle/VuGraphicsPipeline.h" // for VuGraphicsPipeline
 #include "VuMaterial.h"                   // for hash, MaterialSettings
 
-
 namespace Vu {
 struct VuRenderer;
 struct VuRenderPass;
@@ -19,7 +18,7 @@ struct VuGraphicsShaderCreateInfo {
 };
 
 struct VuShader {
-  std::shared_ptr<VuRenderer>                                vuRenderer             = {};
+  std::shared_ptr<VuRenderer>                              vuRenderer           = {};
   std::shared_ptr<VuRenderPass>                            vuRenderPass         = {};
   path                                                     vertexShaderPath     = {"error"};
   path                                                     fragmentShaderPath   = {"error"};
@@ -31,7 +30,7 @@ struct VuShader {
   VuShader() = default;
 
   static std::expected<VuShader, vk::Result>
-  make(const std::shared_ptr<VuRenderer>& vuRenderer,
+  make(const std::shared_ptr<VuRenderer>&   vuRenderer,
        const std::shared_ptr<VuRenderPass>& vuRenderPass,
        const path&                          vertexShaderPath,
        const path&                          fragmentShaderPath);
@@ -50,7 +49,7 @@ struct VuShader {
   createShaderModule(const VuDevice& vuDevice, const void* code, size_t size);
 
 private:
-  VuShader(std::shared_ptr<VuRenderer>     vuRenderer,
+  VuShader(std::shared_ptr<VuRenderer>   vuRenderer,
            std::shared_ptr<VuRenderPass> vuRenderPass,
            path                          vertexShaderPath,
            path                          fragmentShaderPath);

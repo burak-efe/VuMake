@@ -14,8 +14,8 @@ struct VuDeferredRenderSpace {
   std::shared_ptr<VuImage>           depthStencilHnd       = {};
   std::vector<vk::raii::Framebuffer> lightningFrameBuffers = {};
   std::vector<vk::raii::Framebuffer> gPassFrameBuffers     = {};
-  VuRenderPass                       gBufferPass           = {};
-  VuRenderPass                       lightningPass         = {};
+  std::shared_ptr<VuRenderPass>      gBufferPass           = {};
+  std::shared_ptr<VuRenderPass>      lightningPass         = {};
 
   VuDeferredRenderSpace() = default;
   VuDeferredRenderSpace(const std::shared_ptr<VuDevice>& vuDevice, const std::shared_ptr<vk::raii::SurfaceKHR>& surface)
@@ -69,9 +69,12 @@ struct VuDeferredRenderSpace {
     throw_if_unexpected(depthStencilImgOrrErr);
     depthStencilHnd = std::make_shared<VuImage>(std::move(depthStencilImgOrrErr.value()));
 
-    gBufferPass.initAsGBufferPass(vuDevice->device, colorHnd->lastCreateInfo.format, normalHnd->lastCreateInfo.format,
+    gBufferPass = std::make_shared<VuRenderPass>();
+    lightningPass = std::make_shared<VuRenderPass>();
+
+    gBufferPass->initAsGBufferPass(vuDevice->device, colorHnd->lastCreateInfo.format, normalHnd->lastCreateInfo.format,
                                   armHnd->lastCreateInfo.format, depthStencilHnd->lastCreateInfo.format);
-    lightningPass.initAsLightningPass(vuDevice->device, vuSwapChain.imageFormat);
+    lightningPass->initAsLightningPass(vuDevice->device, vuSwapChain.imageFormat);
 
     createFramebuffers(*vuDevice);
   }
@@ -87,7 +90,7 @@ struct VuDeferredRenderSpace {
           depthStencilHnd->imageView,
       };
       vk::FramebufferCreateInfo framebufferInfo {};
-      framebufferInfo.renderPass      = gBufferPass.renderPass;
+      framebufferInfo.renderPass      = gBufferPass->renderPass;
       framebufferInfo.attachmentCount = attachments.size();
       framebufferInfo.pAttachments    = attachments.data();
       framebufferInfo.width           = vuSwapChain.extend2D.width;
@@ -106,7 +109,7 @@ struct VuDeferredRenderSpace {
           vuSwapChain.imageViews[i],
       };
       vk::FramebufferCreateInfo framebufferInfo {};
-      framebufferInfo.renderPass      = lightningPass.renderPass;
+      framebufferInfo.renderPass      = lightningPass->renderPass;
       framebufferInfo.attachmentCount = attachments.size();
       framebufferInfo.pAttachments    = attachments.data();
       framebufferInfo.width           = vuSwapChain.extend2D.width;
@@ -126,12 +129,12 @@ struct VuDeferredRenderSpace {
     clearValues[0].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
     clearValues[1].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
     clearValues[3].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
-    clearValues[3].depthStencil = {1.0f, 0};
+    clearValues[3].depthStencil.setDepth(1.0f);
 
     vk::RenderPassBeginInfo renderPassInfo {};
-    renderPassInfo.renderPass        = gBufferPass.renderPass;
+    renderPassInfo.renderPass        = gBufferPass->renderPass;
     renderPassInfo.framebuffer       = gPassFrameBuffers[frameIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.offset = vk::Offset2D{0, 0};
     renderPassInfo.renderArea.extent = vuSwapChain.extend2D;
     renderPassInfo.clearValueCount   = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues      = clearValues.data();
@@ -145,9 +148,9 @@ struct VuDeferredRenderSpace {
     clearValues[0].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
 
     vk::RenderPassBeginInfo renderPassInfo {};
-    renderPassInfo.renderPass        = lightningPass.renderPass;
+    renderPassInfo.renderPass        = lightningPass->renderPass;
     renderPassInfo.framebuffer       = lightningFrameBuffers[frameIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.offset = vk::Offset2D{0, 0};
     renderPassInfo.renderArea.extent = vuSwapChain.extend2D;
     renderPassInfo.clearValueCount   = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues      = clearValues.data();

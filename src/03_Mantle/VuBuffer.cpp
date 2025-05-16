@@ -5,7 +5,7 @@
 
 namespace Vu {
 std::expected<Vu::VuBuffer, vk::Result>
-VuBuffer::make(const std::shared_ptr<VuDevice>& vuDevice, const VuBufferCreateInfo& createInfo) {
+VuBuffer::make(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo) {
   try {
     VuBuffer outBuffer {vuDevice, createInfo};
     return std::move(outBuffer);
@@ -72,21 +72,21 @@ vk::DeviceSize
 VuBuffer::alignedSize(vk::DeviceSize sizeInBytes, vk::DeviceSize alignment) {
   return (sizeInBytes + alignment - 1) & ~(alignment - 1);
 }
-VuBuffer::VuBuffer(const std::shared_ptr<VuDevice>& vuDevice, const VuBufferCreateInfo& createInfo)
-    : vuDevice {vuDevice} {
+VuBuffer::VuBuffer(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo){
 
   this->sizeInBytes = createInfo.sizeInBytes;
   this->name        = createInfo.name;
 
   vk::BufferCreateInfo bufferCreateInfo;
   bufferCreateInfo.size  = createInfo.sizeInBytes;
-  bufferCreateInfo.usage = vk::BufferUsageFlagBits::eShaderDeviceAddress;
+  bufferCreateInfo.usage = createInfo.vkUsageFlags;
+  bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 
-  auto bufferOrErr = vuDevice->device.createBuffer(bufferCreateInfo);
+  auto bufferOrErr = vuDevice.device.createBuffer(bufferCreateInfo);
   throw_if_unexpected(bufferOrErr);
   this->buffer = std::move(bufferOrErr.value());
 
-  auto memOrNull = vuDevice->allocateMemory(createInfo.vkMemoryPropertyFlags, buffer.getMemoryRequirements());
+  auto memOrNull = vuDevice.allocateMemory(createInfo.vkMemoryPropertyFlags, buffer.getMemoryRequirements());
   throw_if_unexpected(memOrNull);
   this->deviceMemory = std::move(memOrNull.value());
 
@@ -95,6 +95,6 @@ VuBuffer::VuBuffer(const std::shared_ptr<VuDevice>& vuDevice, const VuBufferCrea
   bindInfo.memory       = deviceMemory;
   bindInfo.memoryOffset = 0ull;
 
-  vuDevice->device.bindBufferMemory2(bindInfo);
+  vuDevice.device.bindBufferMemory2(bindInfo);
 }
 } // namespace Vu

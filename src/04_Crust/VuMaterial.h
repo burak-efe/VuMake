@@ -7,9 +7,12 @@
 
 #include "01_InnerCore/TypeDefs.h" // for u32
 #include "03_Mantle/VuCommon.h"
+#include "03_Mantle/VuTypes.h"
 
 namespace Vu {
 struct VuShader;
+
+
 
 struct MaterialSettings {
   bool              isTransparent = false;
@@ -37,14 +40,14 @@ struct MaterialSettings {
 // Material owns the pipeline, uses shared material data
 // when parent shader recompiled, it should be recompiled too
 struct VuMaterial {
-  MaterialSettings          materialSettings = {};
-  std::shared_ptr<VuShader> shaderHnd        = {};
-  std::shared_ptr<u32>      materialDataHnd  = {};
+  MaterialSettings                     materialSettings = {};
+  std::shared_ptr<VuShader>            shaderHnd        = {};
+  std::shared_ptr<VuMaterialDataHandle> materialDataHnd  = {};
 
   VuMaterial();
-  VuMaterial(MaterialSettings                 matSettings,
-             const std::shared_ptr<VuShader>& shaderHnd,
-             const std::shared_ptr<u32>&      materialDataHnd);
+  VuMaterial(MaterialSettings                            matSettings,
+             const std::shared_ptr<VuShader>&            shaderHnd,
+             const std::shared_ptr<VuMaterialDataHandle>& materialDataHnd);
 };
 } // namespace Vu
 

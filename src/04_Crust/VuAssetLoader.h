@@ -6,6 +6,7 @@
 
 #include "02_OuterCore/CollectionUtils.h"
 #include "02_OuterCore/Common.h"
+#include "03_Mantle/VuBuffer.h"
 #include "fastgltf/core.hpp"
 #include "fastgltf/tools.hpp"
 #include "VuMesh.h"
@@ -15,7 +16,7 @@ struct GPU_PBR_MaterialData;
 
 struct VuAssetLoader {
   static void
-  LoadGltf(VuDevice& vuDevice, std::filesystem::path gltfPath, VuMesh& dstMesh) {
+  LoadGltf(VuDevice& vuDevice, const std::filesystem::path& gltfPath, VuMesh& dstMesh) {
     fastgltf::Parser parser;
 
     auto data = fastgltf::GltfDataBuffer::FromPath(gltfPath);
@@ -63,19 +64,21 @@ struct VuAssetLoader {
       std::cout << "Primitive index accessor has not been set!" << "\n";
       return;
     }
-    fastgltf::Accessor& indexAccesor = asset->accessors[primitive.indicesAccessor.value()];
-    u32                 indexCount   = (u32)indexAccesor.count;
+    fastgltf::Accessor& indexAccessor = asset->accessors[primitive.indicesAccessor.value()];
+    u32                 indexCount    = static_cast<u32>(indexAccessor.count);
 
-    dstMesh.indexBuffer = vuDevice.createBuffer({.name          = "IndexBuffer",
-                                                 .length        = indexCount,
-                                                 .strideInBytes = sizeof(u32),
-                                                 .vkUsageFlags  = VK_BUFFER_USAGE_INDEX_BUFFER_BIT});
-    auto* indexBuffer   = dstMesh.indexBuffer.get();
+    auto indexBufferOrErr = VuBuffer::make(vuDevice, {.name         = "IndexBuffer",
+                                                      .sizeInBytes  = indexCount * sizeof(uint32_t),
+                                                      .vkUsageFlags = vk::BufferUsageFlagBits::eIndexBuffer});
+    throw_if_unexpected(indexBufferOrErr);
+    dstMesh.indexBuffer = std::make_shared<VuBuffer>(std::move(indexBufferOrErr.value()));
+
+    auto* indexBuffer = dstMesh.indexBuffer.get();
 
     indexBuffer->map();
     std::span<byte> indexSpanByte = indexBuffer->getMappedSpan(0, indexCount * sizeof(u32));
     std::span<u32>  indexSpan     = std::span(reinterpret_cast<u32*>(indexSpanByte.data()), indexCount);
-    fastgltf::iterateAccessorWithIndex<u32>(asset.get(), indexAccesor,
+    fastgltf::iterateAccessorWithIndex<u32>(asset.get(), indexAccessor,
                                             [&](u32 index, std::size_t idx) { indexSpan[idx] = index; });
     indexBuffer->unmap();
 
@@ -83,12 +86,24 @@ struct VuAssetLoader {
     fastgltf::Attribute* positionIt       = primitive.findAttribute("POSITION");
     fastgltf::Accessor&  positionAccessor = asset->accessors[positionIt->accessorIndex];
 
-    dstMesh.vertexCount  = positionAccessor.count;
-    dstMesh.vertexBuffer = vuDevice.createBuffer(
-        {.name          = "VertexBuffer",
-         .length        = dstMesh.vertexCount * dstMesh.totalAttributesSizePerVertex(),
-         .strideInBytes = 1u,
-         .vkUsageFlags  = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT});
+    dstMesh.vertexCount = positionAccessor.count;
+    // vuDevice.createBuffer(
+    //     {.name          = "VertexBuffer",
+    //      .length        = dstMesh.vertexCount * dstMesh.totalAttributesSizePerVertex(),
+    //      .strideInBytes = 1u,
+    //      .vkUsageFlags  = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT});
+    // dstMesh.vertexBuffer = ;
+
+    auto vertexBufferOrErr =
+        VuBuffer::make(vuDevice, {
+                                     .name         = "VertexBuffer",
+                                     .sizeInBytes  = dstMesh.vertexCount * VuMesh::totalAttributesSizePerVertex(),
+                                     .vkUsageFlags = vk::BufferUsageFlagBits::eVertexBuffer |
+                                                     vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                                 });
+    throw_if_unexpected(vertexBufferOrErr);
+    dstMesh.vertexBuffer = std::make_shared<VuBuffer>(std::move(vertexBufferOrErr.value()));
+
     VuBuffer* vertexBuffer = dstMesh.vertexBuffer.get();
     vertexBuffer->map();
 
@@ -117,7 +132,8 @@ struct VuAssetLoader {
     // pos
     {
       fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec3>(
-          asset.get(), positionAccessor, [&](fastgltf::math::f32vec3 pos, std::size_t idx) { vertexSpan[idx] = pos; });
+          asset.get(), positionAccessor,
+          [&](const fastgltf::math::f32vec3& pos, const std::size_t idx) { vertexSpan[idx] = pos; });
     }
 
     // normal
@@ -127,7 +143,7 @@ struct VuAssetLoader {
 
       fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec3>(
           asset.get(), normalAccessor,
-          [&](fastgltf::math::f32vec3 normal, std::size_t idx) { normalSpan[idx] = normal; });
+          [&](const fastgltf::math::f32vec3& normal, const std::size_t idx) { normalSpan[idx] = normal; });
     }
     // uv
     {
@@ -135,15 +151,15 @@ struct VuAssetLoader {
       fastgltf::Accessor&  uvAccessor = asset->accessors[uvIter->accessorIndex];
 
       fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec2>(
-          asset.get(), uvAccessor, [&](fastgltf::math::f32vec2 uv, std::size_t idx) { uvSpan[idx] = uv; });
+          asset.get(), uvAccessor, [&](const fastgltf::math::f32vec2& uv, const std::size_t idx) { uvSpan[idx] = uv; });
     }
 
     // tangent
     {
-      auto*               tangentIt          = primitive.findAttribute("TANGENT");
-      fastgltf::Accessor& tangentAccessor    = asset->accessors[tangentIt->accessorIndex];
-      auto                tangentbufferIndex = tangentAccessor.bufferViewIndex.value();
-      if (tangentbufferIndex == 0 && tangentAccessor.byteOffset == 0) {
+      fastgltf::Attribute* tangentIt          = primitive.findAttribute("TANGENT");
+      fastgltf::Accessor&  tangentAccessor    = asset->accessors[tangentIt->accessorIndex];
+      std::size_t          tangentBufferIndex = tangentAccessor.bufferViewIndex.value();
+      if (tangentBufferIndex == 0 && tangentAccessor.byteOffset == 0) {
         std::cout << "Gltf file has no tangents" << std::endl;
 
         auto pos  = rpCastSpan<fastgltf::math::f32vec3, vec3>(vertexSpan);
@@ -151,11 +167,11 @@ struct VuAssetLoader {
         auto uv   = rpCastSpan<fastgltf::math::f32vec2, vec2>(uvSpan);
         auto tang = rpCastSpan<fastgltf::math::f32vec4, vec4>(tangentSpan);
 
-        dstMesh.calculateTangents(indexSpan, pos, norm, uv, tang);
+        VuMesh::calculateTangents(indexSpan, pos, norm, uv, tang);
       } else {
         fastgltf::iterateAccessorWithIndex<fastgltf::math::f32vec4>(
             asset.get(), tangentAccessor,
-            [&](fastgltf::math::f32vec4 tangent, std::size_t idx) { tangentSpan[idx] = tangent; });
+            [&](const fastgltf::math::f32vec4& tangent, const std::size_t idx) { tangentSpan[idx] = tangent; });
       }
     }
 

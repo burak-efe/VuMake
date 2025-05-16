@@ -28,12 +28,16 @@ struct GPU_PBR_MaterialData {
   byte padding[48];
 };
 
+struct VuMaterialDataHandle {
+  uint32_t index;
+};
+
 static_assert(sizeof(GPU_PBR_MaterialData) == 64);
 
 struct GPU_PushConstant {
-  mat4x4   trs               = {};
-  u32      materialDataIndex = {};
-  GPU_Mesh mesh              = {};
+  mat4x4               trs               = {};
+  VuMaterialDataHandle materialDataIndex = {};
+  GPU_Mesh             mesh              = {};
 };
 
 struct GPU_FrameConst {
@@ -64,6 +68,5 @@ struct VuDisposeStack {
     }
   }
 };
-
 
 } // namespace Vu
