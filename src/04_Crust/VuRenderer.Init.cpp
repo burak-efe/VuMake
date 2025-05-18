@@ -40,9 +40,13 @@ VuRenderer::VuRenderer(const VuRendererCreateInfo& createInfo) : lastCreateInfo 
   for (auto extension : Vu::config::INSTANCE_EXTENSIONS) {
     instanceExtensions.push_back(extension);
   }
+  bool enableValidationLayers = true;
+#if NDEBUG
+  enableValidationLayers = false;
+#endif
 
   // instance
-  auto instanceOrErr = Vu::VuInstance::make(true, Vu::config::VALIDATION_LAYERS, instanceExtensions);
+  auto instanceOrErr = Vu::VuInstance::make(enableValidationLayers, Vu::config::VALIDATION_LAYERS, instanceExtensions);
   // todo
   throw_if_unexpected(instanceOrErr);
   this->vuInstance = std::make_shared<VuInstance>(std::move(instanceOrErr.value()));
@@ -67,13 +71,11 @@ VuRenderer::VuRenderer(const VuRendererCreateInfo& createInfo) : lastCreateInfo 
   throw_if_unexpected(vuDeviceOrErr);
   this->vuDevice = std::make_shared<VuDevice>(std::move(vuDeviceOrErr.value()));
 
-  VuDeferredRenderSpace rp {vuDevice, surface};
-  this->deferredRenderSpace = std::move(rp);
-
   imgBindlessIndexAllocator          = IndexAllocator {createInfo.sampledImageCount, std::pmr::new_delete_resource()};
   samplerBindlessIndexAllocator      = IndexAllocator {createInfo.samplerCount, std::pmr::new_delete_resource()};
   bufferBindlessIndexAllocator       = IndexAllocator {createInfo.storageBufferCount, std::pmr::new_delete_resource()};
   materialDataBindlessIndexAllocator = IndexAllocator {1024, std::pmr::new_delete_resource()};
+
   initCommandPool(createInfo);
   initBindlessDescriptorSetLayout(createInfo);
   initDescriptorPool(createInfo);
@@ -81,6 +83,10 @@ VuRenderer::VuRenderer(const VuRendererCreateInfo& createInfo) : lastCreateInfo 
   initBindlessDescriptorSet();
   initBindlessResourceManager(createInfo);
   initDefaultResources();
+
+  VuDeferredRenderSpace rp {vuDevice, surface};
+  this->deferredRenderSpace = std::move(rp);
+  deferredRenderSpace.registerImagesToBindless(*this);
 
   // init uniform buffers
 

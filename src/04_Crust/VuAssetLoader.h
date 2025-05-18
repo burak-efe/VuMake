@@ -10,13 +10,14 @@
 #include "fastgltf/core.hpp"
 #include "fastgltf/tools.hpp"
 #include "VuMesh.h"
+#include "VuRenderer.h"
 
 namespace Vu {
 struct GPU_PBR_MaterialData;
 
 struct VuAssetLoader {
   static void
-  LoadGltf(VuDevice& vuDevice, const std::filesystem::path& gltfPath, VuMesh& dstMesh) {
+  LoadGltf(VuRenderer& vuRenderer, const std::filesystem::path& gltfPath, VuMesh& dstMesh) {
     fastgltf::Parser parser;
 
     auto data = fastgltf::GltfDataBuffer::FromPath(gltfPath);
@@ -67,13 +68,14 @@ struct VuAssetLoader {
     fastgltf::Accessor& indexAccessor = asset->accessors[primitive.indicesAccessor.value()];
     u32                 indexCount    = static_cast<u32>(indexAccessor.count);
 
-    auto indexBufferOrErr = VuBuffer::make(vuDevice, {.name         = "IndexBuffer",
+    auto indexBufferOrErr = VuBuffer::make(*vuRenderer.vuDevice, {.name         = "IndexBuffer",
                                                       .sizeInBytes  = indexCount * sizeof(uint32_t),
                                                       .vkUsageFlags = vk::BufferUsageFlagBits::eIndexBuffer});
     throw_if_unexpected(indexBufferOrErr);
     dstMesh.indexBuffer = std::make_shared<VuBuffer>(std::move(indexBufferOrErr.value()));
+    //vuRenderer.registerToBindless( *dstMesh.indexBuffer);
 
-    auto* indexBuffer = dstMesh.indexBuffer.get();
+    auto& indexBuffer = dstMesh.indexBuffer;
 
     indexBuffer->map();
     std::span<byte> indexSpanByte = indexBuffer->getMappedSpan(0, indexCount * sizeof(u32));
@@ -95,7 +97,7 @@ struct VuAssetLoader {
     // dstMesh.vertexBuffer = ;
 
     auto vertexBufferOrErr =
-        VuBuffer::make(vuDevice, {
+        VuBuffer::make(*vuRenderer.vuDevice, {
                                      .name         = "VertexBuffer",
                                      .sizeInBytes  = dstMesh.vertexCount * VuMesh::totalAttributesSizePerVertex(),
                                      .vkUsageFlags = vk::BufferUsageFlagBits::eVertexBuffer |
@@ -103,6 +105,7 @@ struct VuAssetLoader {
                                  });
     throw_if_unexpected(vertexBufferOrErr);
     dstMesh.vertexBuffer = std::make_shared<VuBuffer>(std::move(vertexBufferOrErr.value()));
+    vuRenderer.registerToBindless(*dstMesh.vertexBuffer);
 
     VuBuffer* vertexBuffer = dstMesh.vertexBuffer.get();
     vertexBuffer->map();

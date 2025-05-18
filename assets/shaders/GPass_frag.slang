@@ -11,15 +11,15 @@ struct GPassFragOutput
 [shader("fragment")]
 GPassFragOutput fragmentMain(VSOutput input)
 {
-    GPassFragOutput out = {};
-
     PBRMaterialData* data = getMaterialData(pc.materialDataIndex);
+
+    GPassFragOutput out = {};
 
     float2 uv = input.UV;
 
-    float4 colorSample = globalSampledImages[data.texture0].Sample(globalSamplers[0], uv);
+    float4 colorSample  = globalSampledImages[data.texture0].Sample(globalSamplers[0], uv);
     float3 normalSample = globalSampledImages[data.texture1].Sample(globalSamplers[0], uv).xyz * 2 - 1;
-    float3 armSample = globalSampledImages[data.texture2].Sample(globalSamplers[0], uv).xyz;
+    float3 armSample    = globalSampledImages[data.texture2].Sample(globalSamplers[0], uv).xyz;
 
     float3x3 TBN = float3x3(input.Tangent, input.Bitangent, input.Normal);
 

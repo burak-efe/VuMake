@@ -17,7 +17,7 @@ struct VuDeviceCreateFeatureChain {
   };
 
   vk::PhysicalDeviceSynchronization2FeaturesKHR sync2Features {
-      .pNext            = &robustness2FeaturesEXT,
+      //.pNext            = &robustness2FeaturesEXT,
       .synchronization2 = VK_TRUE,
   };
 

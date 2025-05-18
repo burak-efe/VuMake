@@ -46,19 +46,26 @@ private:
     instanceCreateInfo.enabledExtensionCount   = static_cast<uint32_t>(extensions.size());
     instanceCreateInfo.ppEnabledExtensionNames = extensions.data();
 
-    vk::DebugUtilsMessengerCreateInfoEXT dbgMessengerCreateInfo {};
-
-    dbgMessengerCreateInfo.messageSeverity = //vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
-                                             vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-                                             vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
-
-    dbgMessengerCreateInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-                                         vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-                                         vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
-
-    dbgMessengerCreateInfo.pfnUserCallback = debugCallback;
-
+    vk::DebugUtilsMessengerCreateInfoEXT      dbgMessengerCreateInfo {};
+    std::vector<VkValidationFeatureEnableEXT> validation_feature_enables = {
+        VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
     if (enableValidationLayers) {
+
+      VkValidationFeaturesEXT validation_features {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};
+      validation_features.enabledValidationFeatureCount = 1;
+      validation_features.pEnabledValidationFeatures    = validation_feature_enables.data();
+
+      dbgMessengerCreateInfo.pNext = &validation_features;
+
+      dbgMessengerCreateInfo.messageSeverity =  vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
+          vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
+
+      dbgMessengerCreateInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+                                           vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+                                           vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
+
+      dbgMessengerCreateInfo.pfnUserCallback = debugCallback;
+
       instanceCreateInfo.enabledLayerCount   = static_cast<uint32_t>(validationLayers.size());
       instanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
       instanceCreateInfo.pNext               = &dbgMessengerCreateInfo;
@@ -69,9 +76,11 @@ private:
 
     instance = std::move(res.value());
 
-    auto debugMessengerOrNull = instance.createDebugUtilsMessengerEXT(dbgMessengerCreateInfo);
-    if (!debugMessengerOrNull) { throw res.error(); }
-    debugMessenger = std::move(debugMessengerOrNull.value());
+    if (enableValidationLayers) {
+      auto debugMessengerOrNull = instance.createDebugUtilsMessengerEXT(dbgMessengerCreateInfo);
+      if (!debugMessengerOrNull) { throw res.error(); }
+      debugMessenger = std::move(debugMessengerOrNull.value());
+    }
 
     VULKAN_HPP_DEFAULT_DISPATCHER.init(*instance);
   }

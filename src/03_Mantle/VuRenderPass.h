@@ -155,7 +155,6 @@ struct VuRenderPass {
     throw_if_unexpected(renderPassOrErr);
     this->renderPass     = std::move(renderPassOrErr.value());
 
-    // vk::Check(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
     // Utils::giveDebugName(device, VK_OBJECT_TYPE_RENDER_PASS, renderPass, "Lightning Render Pass");
 
     colorBlendAttachmentStates.resize(1);
@@ -165,10 +164,5 @@ struct VuRenderPass {
                                        vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     }
   }
-
-  // void uninit()
-  // {
-  //     vkDestroyRenderPass(device, renderPass, nullptr);
-  // }
 };
 } // namespace Vu

@@ -44,7 +44,7 @@ struct VuBuffer {
   getDeviceAddress() const;
 
   vk::Result
-  setData(const void* data, vk::DeviceSize byteSize, vk::DeviceSize offset = 0) const;
+  setData(const void* data, vk::DeviceSize byteSize, vk::DeviceSize offsetInByte = 0) const;
 
   [[nodiscard]] vk::DeviceSize
   getSizeInBytes() const;

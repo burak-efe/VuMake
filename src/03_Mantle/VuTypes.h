@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <optional>
 #include <stack>
 
 #include "01_InnerCore/TypeDefs.h"
@@ -25,14 +24,14 @@ struct GPU_PBR_MaterialData {
   u32 texture2 = {};
   u32 texture3 = {};
 
-  byte padding[48];
+  byte padding[48] = {};
 };
+
+static_assert(sizeof(GPU_PBR_MaterialData) == 64);
 
 struct VuMaterialDataHandle {
   uint32_t index;
 };
-
-static_assert(sizeof(GPU_PBR_MaterialData) == 64);
 
 struct GPU_PushConstant {
   mat4x4               trs               = {};

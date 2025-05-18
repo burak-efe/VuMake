@@ -52,16 +52,18 @@ float4 fragmentMain(GBufferPassVSOutput i)
     : SV_Target
 {
     var fc = frameConst;
-    float3 lightPos = fc.cameraPos;
-
     PBRMaterialData *data = getMaterialData(pc.materialDataIndex);
 
+
+    float3 lightPos = fc.cameraPos;
     float2 uv = i.UV;
 
-    float4 colorSample = globalSampledImages[data.texture0].Sample(globalSamplers[0], uv);
-    float3 normalSample = globalSampledImages[data.texture1].Sample(globalSamplers[0], uv).xyz;
-    float3 armSample = globalSampledImages[data.texture2].Sample(globalSamplers[0], uv).xyz;
-    float depthSample = globalSampledImages[data.texture3].Sample(globalSamplers[0], uv).x;
+
+
+    float4 colorSample    = globalSampledImages[data.texture0].Sample(globalSamplers[0], uv);
+    float3 normalSample   = globalSampledImages[data.texture1].Sample(globalSamplers[0], uv).xyz;
+    float3 armSample      = globalSampledImages[data.texture2].Sample(globalSamplers[0], uv).xyz;
+    float depthSample     = globalSampledImages[data.texture3].Sample(globalSamplers[0], uv).x;
 
     float3 normalWS = normalSample;
     float ao = armSample.x;

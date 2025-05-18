@@ -55,7 +55,6 @@ VuRenderer::beginFrame() {
   waitForFences();
   std::pair<vk::Result, uint32_t> resultAndImageIndex = deferredRenderSpace.vuSwapChain.swapchain.acquireNextImage(
       UINT64_MAX, imageAvailableSemaphores[currentFrame], nullptr);
-  currentFrameImageIndex = resultAndImageIndex.second;
 
   if (resultAndImageIndex.first == vk::Result::eErrorOutOfDateKHR) {
     resetSwapChain();
@@ -64,20 +63,23 @@ VuRenderer::beginFrame() {
              resultAndImageIndex.first != vk::Result::eSuboptimalKHR) {
     throw std::runtime_error("failed to acquire swap chain image!");
   }
+
+  if (resultAndImageIndex.first != vk::Result::eSuccess) {
+    throw std::runtime_error("VuRenderer::beginFrame: swapchain acquire failed");
+  }
+  currentFrameImageIndex = resultAndImageIndex.second;
+
   // todo no return ?
   vuDevice->device.resetFences(*inFlightFences[currentFrame]);
 
-  // vkResetFences(vuDevice.device, 1, &inFlightFences[currentFrame]);
   commandBuffers[currentFrame].reset();
-  // vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 
   vk::CommandBufferBeginInfo beginInfo {};
 
   // todo no ret ?
   commandBuffers[currentFrame].begin(beginInfo);
-  // vkBeginCommandBuffer(commandBuffers[currentFrame], &beginInfo);
+
   deferredRenderSpace.beginGBufferPass(commandBuffers[currentFrame], currentFrameImageIndex);
-  // swapChain.beginGBufferPass(commandBuffers[currentFrame], currentFrameImageIndex);
 
   vk::Viewport viewport {};
   viewport.x        = 0.0f;
@@ -87,13 +89,11 @@ VuRenderer::beginFrame() {
   viewport.minDepth = 0.0f;
   viewport.maxDepth = 1.0f;
   commandBuffers[currentFrame].setViewport(0, viewport);
-  // vkCmdSetViewport(commandBuffers[currentFrame], 0, 1, &viewport);
 
   vk::Rect2D scissor {};
   scissor.offset = vk::Offset2D {0, 0};
   scissor.extent = deferredRenderSpace.vuSwapChain.extend2D;
   commandBuffers[currentFrame].setScissor(0, scissor);
-  // vkCmdSetScissor(commandBuffers[currentFrame], 0, 1, &scissor);
   bindGlobalBindlessSet(commandBuffers[currentFrame]);
 }
 
@@ -121,16 +121,15 @@ VuRenderer::beginLightningPass() const {
 
 void
 VuRenderer::endFrame() {
-  vk::raii::CommandBuffer& cb = commandBuffers[currentFrame];
+  const vk::raii::CommandBuffer& cb = commandBuffers[currentFrame];
   cb.endRenderPass();
   cb.end();
 
   vk::Semaphore          waitSemaphores[]   = {imageAvailableSemaphores[currentFrame]};
   vk::PipelineStageFlags waitStages[]       = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
-  vk::Semaphore          signalSemaphores[] = {renderFinishedSemaphores[currentFrameImageIndex]};
+  vk::Semaphore          signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
 
   vk::SubmitInfo submitInfo {};
-  submitInfo.pNext                = VK_NULL_HANDLE;
   submitInfo.waitSemaphoreCount   = 1u;
   submitInfo.pWaitSemaphores      = waitSemaphores;
   submitInfo.pWaitDstStageMask    = waitStages;
@@ -140,8 +139,6 @@ VuRenderer::endFrame() {
   submitInfo.pSignalSemaphores    = signalSemaphores;
 
   vuDevice->graphicsQueue.submit(submitInfo, inFlightFences[currentFrame]);
-
-  // vk::Check(vkQueueSubmit(vuDevice.graphicsQueue, 1u, &submitInfo, inFlightFences[currentFrame]));
 
   vk::SwapchainKHR swapChains[] = {deferredRenderSpace.vuSwapChain.swapchain};
 
@@ -231,6 +228,7 @@ VuRenderer::resetSwapChain() {
 
   VuDeferredRenderSpace rp {vuDevice, surface};
   this->deferredRenderSpace = std::move(rp);
+  deferredRenderSpace.registerImagesToBindless(*this);
 }
 void
 VuRenderer::bindGlobalBindlessSet(const vk::CommandBuffer& commandBuffer) const {
@@ -275,34 +273,41 @@ VuRenderer::writeUBO_ToGlobalPool(const VuBuffer& buffer, u32 writeIndex, u32 se
   vuDevice->device.updateDescriptorSets(descriptorWrite, {});
 }
 void
-VuRenderer::registerToBindless(const VuBuffer& buffer, u32 bindlessIndex) const {
-  vk::DeviceAddress address = buffer.getDeviceAddress();
+VuRenderer::registerToBindless(VuBuffer& vuBuffer) {
+  uint32_t          bindlessIndex = bufferBindlessIndexAllocator.allocate();
+  vk::DeviceAddress address       = vuBuffer.getDeviceAddress();
   // TODO handle error
+  //auto view                       = std::span((uint64_t*)bdaBuffer.mapPtr, bdaBuffer.sizeInBytes / 64);
   auto res = bdaBuffer.setData(&address, sizeof(vk::DeviceAddress), bindlessIndex * sizeof(vk::DeviceAddress));
   if (res != vk::Result::eSuccess) { throw std::runtime_error("failed to set buffer data"); }
+  vuBuffer.bindlessIndex = bindlessIndex;
 }
 void
-VuRenderer::registerToBindless(const vk::ImageView& imageView, u32 bindlessIndex) const {
+VuRenderer::registerToBindless(VuImage& vuImage) {
+  uint32_t bindlessIndex = imgBindlessIndexAllocator.allocate();
+
   vk::DescriptorImageInfo imageInfo {};
   imageInfo.sampler     = nullptr;
-  imageInfo.imageView   = imageView;
+  imageInfo.imageView   = vuImage.imageView;
   imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
   for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
     vk::WriteDescriptorSet descriptorWrite {};
     descriptorWrite.dstSet          = globalDescriptorSets[i];
-    descriptorWrite.dstBinding      = lastCreateInfo.samplerBinding;
+    descriptorWrite.dstBinding      = lastCreateInfo.sampledImageBinding;
     descriptorWrite.dstArrayElement = bindlessIndex;
     descriptorWrite.descriptorType  = vk::DescriptorType::eSampledImage;
     descriptorWrite.descriptorCount = 1;
     descriptorWrite.pImageInfo      = &imageInfo;
     vuDevice->device.updateDescriptorSets(descriptorWrite, {});
   }
+  vuImage.bindlessIndex = bindlessIndex;
 }
 void
-VuRenderer::registerToBindless(const vk::Sampler& sampler, u32 bindlessIndex) const {
+VuRenderer::registerToBindless(VuSampler& vuSampler) {
+  uint32_t                bindlessIndex = samplerBindlessIndexAllocator.allocate();
   vk::DescriptorImageInfo imageInfo {
-      .sampler = sampler,
+      .sampler = vuSampler.sampler,
   };
 
   for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
@@ -315,6 +320,7 @@ VuRenderer::registerToBindless(const vk::Sampler& sampler, u32 bindlessIndex) co
     descriptorWrite.pImageInfo      = &imageInfo;
     vuDevice->device.updateDescriptorSets(descriptorWrite, {});
   }
+  vuSampler.bindlessIndex = bindlessIndex;
 }
 void
 VuRenderer::uninit() {
@@ -422,11 +428,11 @@ VuRenderer::initDefaultResources() {
 
   auto debugBufferOrErr = VuBuffer::make(*vuDevice, debugBufferCreateInfo);
   throw_if_unexpected(debugBufferOrErr);
-  this->debugBufferHnd = std::make_shared<VuBuffer>(std::move(debugBufferOrErr.value()));
+  this->debugBuffer = std::make_shared<VuBuffer>(std::move(debugBufferOrErr.value()));
 
-  // todo register bindless
+  registerToBindless(*debugBuffer);
+  assert(debugBuffer->bindlessIndex == 0);
 
-  // assert(debugBufferHnd.index == 0);
   std::vector<Color32> colorData;
   Color32              defaultColor = Color32(0.0f, 0.0f, 0.0f);
   Color32              magentaColor = Color32(1.0f, 0.0f, 1.0f);
@@ -442,31 +448,30 @@ VuRenderer::initDefaultResources() {
 
   auto defaultImageOrErr = VuImage::make(vuDevice, {.width = 512, .height = 512, .format = vk::Format::eR8G8B8A8Srgb});
   throw_if_unexpected(defaultImageOrErr);
-  defaultImageHandle = std::make_shared<VuImage>(std::move(defaultImageOrErr.value()));
-  uploadToImage(*defaultImageHandle.get(), reinterpret_cast<const byte*>(colorData.data()),
-                colorData.size() * sizeof(Color32));
-  // assert(defaultImageHandle.index == 0);
-  // todo register
+  defaultImage = std::make_shared<VuImage>(std::move(defaultImageOrErr.value()));
+  uploadToImage(*defaultImage, reinterpret_cast<const byte*>(colorData.data()), colorData.size() * sizeof(Color32));
+  registerToBindless(*defaultImage);
+  assert(defaultImage->bindlessIndex == 0);
 
   Color32 normalColor = Color32(uint8_t(128), uint8_t(128), uint8_t(255), uint8_t(255));
   std::fill(colorData.begin(), colorData.end(), normalColor);
   auto defaultNormalImageOrErr =
       VuImage::make(vuDevice, {.width = 512, .height = 512, .format = vk::Format::eR8G8B8A8Unorm});
   throw_if_unexpected(defaultNormalImageOrErr);
-  defaultNormalImageHandle = std::make_shared<VuImage>(std::move(defaultNormalImageOrErr.value()));
+  defaultNormalImage = std::make_shared<VuImage>(std::move(defaultNormalImageOrErr.value()));
 
-  uploadToImage(*defaultNormalImageHandle.get(), reinterpret_cast<const byte*>(colorData.data()),
+  uploadToImage(*defaultNormalImage, reinterpret_cast<const byte*>(colorData.data()),
                 colorData.size() * sizeof(Color32));
-  // assert(defaultNormalImageHandle.index == 1);
-  // todo register
+  registerToBindless(*defaultNormalImage);
+  assert(defaultNormalImage->bindlessIndex == 1);
 
   // TODO pass physical props max
 
   auto defaultSamplerOrErr = VuSampler::make(vuDevice, {.maxAnisotropy = 16.0f});
   throw_if_unexpected(defaultSamplerOrErr);
-  defaultSamplerHandle = std::make_shared<VuSampler>(std::move(defaultSamplerOrErr.value()));
-  // assert(defaultSamplerHandle.get(). == 0);
-  // todo register
+  defaultSampler = std::make_shared<VuSampler>(std::move(defaultSamplerOrErr.value()));
+  registerToBindless(*defaultSampler);
+  assert(defaultSampler->bindlessIndex == 0);
 
   VuBufferCreateInfo matDataBufferCreateInfo {};
   matDataBufferCreateInfo.name        = "materialDataBuffer";
@@ -476,8 +481,10 @@ VuRenderer::initDefaultResources() {
 
   auto matDatBufferOrrErr = VuBuffer::make(*vuDevice, matDataBufferCreateInfo);
   throw_if_unexpected(matDatBufferOrrErr);
-  this->materialDataBufferHandle = std::make_shared<VuBuffer>(std::move(matDatBufferOrrErr.value()));
-  materialDataBufferHandle->map();
+  this->materialDataBuffer = std::make_shared<VuBuffer>(std::move(matDatBufferOrrErr.value()));
+  registerToBindless(*materialDataBuffer);
+  assert(materialDataBuffer->bindlessIndex == 1);
+  materialDataBuffer->map();
 
   // materialDataBufferHandle = createBuffer({
   //     .name           = "materialDataBuffer",
@@ -488,8 +495,6 @@ VuRenderer::initDefaultResources() {
   //     .vmaCreateFlags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
   // });
 
-  // todo register to bindless
-  // assert(materialDataBufferHandle.get()->bindlessIndex == 1);
   //  VuBuffer* matDataBuffer = materialDataBufferHandle.get();
   //  matDataBuffer->map();
 }
@@ -589,6 +594,7 @@ VuRenderer::initBindlessResourceManager(const VuRendererCreateInfo& info) {
   auto bdaBufferOrErr = VuBuffer::make(*vuDevice, bufferCreateInfo);
   throw_if_unexpected(bdaBufferOrErr);
   bdaBuffer = std::move(bdaBufferOrErr.value());
+  bdaBuffer.map();
 
   vk::DescriptorBufferInfo descBufferInfo {};
   descBufferInfo.buffer = bdaBuffer.buffer;
@@ -637,9 +643,9 @@ VuRenderer::createMaterialDataIndex() {
   resource->index                                     = bindlessIndex;
   return handle;
 }
-std::span<std::byte, Vu::config::MATERIAL_DATA_SIZE>
-VuRenderer::getMaterialData(const std::shared_ptr<VuMaterialDataHandle>& handle) const {
-  byte* dataPtr = &static_cast<byte*>(materialDataBufferHandle->mapPtr)[config::MATERIAL_DATA_SIZE * handle->index];
+std::span<std::byte, config::MATERIAL_DATA_SIZE>
+VuRenderer::getMaterialDataSpan(const std::shared_ptr<VuMaterialDataHandle>& handle) const {
+  byte* dataPtr = &static_cast<byte*>(materialDataBuffer->mapPtr)[config::MATERIAL_DATA_SIZE * handle->index];
   return std::span<std::byte, config::MATERIAL_DATA_SIZE>(dataPtr, config::MATERIAL_DATA_SIZE);
 }
 void

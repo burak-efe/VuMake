@@ -1,171 +1,41 @@
 #pragma once
+
 #include "VuImage.h"
 #include "VuRenderPass.h"
 #include "VuSwapChain2.h"
 
 namespace Vu {
+struct VuRenderer;
 
 struct VuDeferredRenderSpace {
-  std::shared_ptr<VuDevice>          vuDevice              = {};
-  VuSwapChain2                       vuSwapChain           = {};
-  std::shared_ptr<VuImage>           colorHnd              = {};
-  std::shared_ptr<VuImage>           normalHnd             = {};
-  std::shared_ptr<VuImage>           armHnd                = {};
-  std::shared_ptr<VuImage>           depthStencilHnd       = {};
-  std::vector<vk::raii::Framebuffer> lightningFrameBuffers = {};
-  std::vector<vk::raii::Framebuffer> gPassFrameBuffers     = {};
-  std::shared_ptr<VuRenderPass>      gBufferPass           = {};
-  std::shared_ptr<VuRenderPass>      lightningPass         = {};
+  std::shared_ptr<VuDevice>          vuDevice                  = {};
+  VuSwapChain2                       vuSwapChain               = {};
+  std::shared_ptr<VuImage>           colorImage                = {};
+  std::shared_ptr<VuImage>           normalImage               = {};
+  std::shared_ptr<VuImage>           aoRoughMetalImage         = {};
+  std::shared_ptr<VuImage>           depthStencilImage         = {};
+  std::vector<vk::raii::Framebuffer> gPassFrameBuffers         = {};
+  std::vector<vk::raii::Framebuffer> lightningPassFrameBuffers = {};
+  std::shared_ptr<VuRenderPass>      gBufferPass               = {};
+  std::shared_ptr<VuRenderPass>      lightningPass             = {};
+  GPU_PBR_MaterialData               lightningPassMaterialData = {};
 
   VuDeferredRenderSpace() = default;
-  VuDeferredRenderSpace(const std::shared_ptr<VuDevice>& vuDevice, const std::shared_ptr<vk::raii::SurfaceKHR>& surface)
-      : vuDevice {vuDevice}, vuSwapChain(vuDevice, surface) {
-
-    // Color image handle
-    auto colorImgOrrErr = VuImage::make(
-        vuDevice, VuImageCreateInfo {
-                      .width      = vuSwapChain.extend2D.width,
-                      .height     = vuSwapChain.extend2D.height,
-                      .format     = vk::Format::eR8G8B8A8Unorm,
-                      .usage      = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
-                      .aspectMask = vk::ImageAspectFlagBits::eColor,
-                  });
-    throw_if_unexpected(colorImgOrrErr);
-    colorHnd = std::make_shared<VuImage>(std::move(colorImgOrrErr.value()));
-
-    // Normal image handle
-    auto normalImgOrrErr = VuImage::make(
-        vuDevice, VuImageCreateInfo {
-                      .width      = vuSwapChain.extend2D.width,
-                      .height     = vuSwapChain.extend2D.height,
-                      .format     = vk::Format::eR32G32B32A32Sfloat,
-                      .usage      = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
-                      .aspectMask = vk::ImageAspectFlagBits::eColor,
-                  });
-    throw_if_unexpected(normalImgOrrErr);
-    normalHnd = std::make_shared<VuImage>(std::move(normalImgOrrErr.value()));
-
-    // Arm image handle
-    auto armImgOrrErr = VuImage::make(
-        vuDevice, VuImageCreateInfo {
-                      .width      = vuSwapChain.extend2D.width,
-                      .height     = vuSwapChain.extend2D.height,
-                      .format     = vk::Format::eR32G32B32A32Sfloat,
-                      .usage      = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
-                      .aspectMask = vk::ImageAspectFlagBits::eColor,
-                  });
-    throw_if_unexpected(armImgOrrErr);
-    armHnd = std::make_shared<VuImage>(std::move(armImgOrrErr.value()));
-
-    // Depth-stencil image handle
-    auto depthStencilImgOrrErr = VuImage::make(
-        vuDevice, VuImageCreateInfo {
-                      .width      = vuSwapChain.extend2D.width,
-                      .height     = vuSwapChain.extend2D.height,
-                      .format     = vk::Format::eD32Sfloat,
-                      .usage      = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eDepthStencilAttachment,
-                      .aspectMask = vk::ImageAspectFlagBits::eDepth,
-                  });
-    throw_if_unexpected(depthStencilImgOrrErr);
-    depthStencilHnd = std::make_shared<VuImage>(std::move(depthStencilImgOrrErr.value()));
-
-    gBufferPass = std::make_shared<VuRenderPass>();
-    lightningPass = std::make_shared<VuRenderPass>();
-
-    gBufferPass->initAsGBufferPass(vuDevice->device, colorHnd->lastCreateInfo.format, normalHnd->lastCreateInfo.format,
-                                  armHnd->lastCreateInfo.format, depthStencilHnd->lastCreateInfo.format);
-    lightningPass->initAsLightningPass(vuDevice->device, vuSwapChain.imageFormat);
-
-    createFramebuffers(*vuDevice);
-  }
+  VuDeferredRenderSpace(const std::shared_ptr<VuDevice>&             vuDevice,
+                        const std::shared_ptr<vk::raii::SurfaceKHR>& surface);
 
   void
-  createFramebuffers(const VuDevice& vuDevice) {
-    gPassFrameBuffers.clear();
-    for (size_t i = 0; i < vuSwapChain.imageViews.size(); i++) {
-      std::array<vk::ImageView, 4> attachments = {
-          colorHnd->imageView,
-          normalHnd->imageView,
-          armHnd->imageView,
-          depthStencilHnd->imageView,
-      };
-      vk::FramebufferCreateInfo framebufferInfo {};
-      framebufferInfo.renderPass      = gBufferPass->renderPass;
-      framebufferInfo.attachmentCount = attachments.size();
-      framebufferInfo.pAttachments    = attachments.data();
-      framebufferInfo.width           = vuSwapChain.extend2D.width;
-      framebufferInfo.height          = vuSwapChain.extend2D.height;
-      framebufferInfo.layers          = 1;
-
-      auto frameBufferOrErr = vuDevice.device.createFramebuffer(framebufferInfo);
-      // todo
-      throw_if_unexpected(frameBufferOrErr);
-      gPassFrameBuffers.emplace_back(std::move(frameBufferOrErr.value()));
-    }
-
-    lightningFrameBuffers.clear();
-    for (size_t i = 0; i < vuSwapChain.imageViews.size(); i++) {
-      std::array<vk::ImageView, 1> attachments = {
-          vuSwapChain.imageViews[i],
-      };
-      vk::FramebufferCreateInfo framebufferInfo {};
-      framebufferInfo.renderPass      = lightningPass->renderPass;
-      framebufferInfo.attachmentCount = attachments.size();
-      framebufferInfo.pAttachments    = attachments.data();
-      framebufferInfo.width           = vuSwapChain.extend2D.width;
-      framebufferInfo.height          = vuSwapChain.extend2D.height;
-      framebufferInfo.layers          = 1;
-
-      auto frameBufferOrErr = vuDevice.device.createFramebuffer(framebufferInfo);
-      // todo
-      throw_if_unexpected(frameBufferOrErr);
-      lightningFrameBuffers.emplace_back(std::move(frameBufferOrErr.value()));
-    }
-  }
+  registerImagesToBindless(VuRenderer& vuInstance);
 
   void
-  beginGBufferPass(const vk::CommandBuffer& commandBuffer, const u32 frameIndex) const {
-    std::array<vk::ClearValue, 4> clearValues {};
-    clearValues[0].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
-    clearValues[1].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
-    clearValues[3].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
-    clearValues[3].depthStencil.setDepth(1.0f);
-
-    vk::RenderPassBeginInfo renderPassInfo {};
-    renderPassInfo.renderPass        = gBufferPass->renderPass;
-    renderPassInfo.framebuffer       = gPassFrameBuffers[frameIndex];
-    renderPassInfo.renderArea.offset = vk::Offset2D{0, 0};
-    renderPassInfo.renderArea.extent = vuSwapChain.extend2D;
-    renderPassInfo.clearValueCount   = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues      = clearValues.data();
-
-    commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-  }
+  beginGBufferPass(const vk::CommandBuffer& commandBuffer, u32 frameIndex) const;
 
   void
-  beginLightningPass(const vk::CommandBuffer& commandBuffer, const u32 frameIndex) const {
-    std::array<vk::ClearValue, 1> clearValues {};
-    clearValues[0].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
+  beginLightningPass(const vk::CommandBuffer& commandBuffer, u32 frameIndex) const;
 
-    vk::RenderPassBeginInfo renderPassInfo {};
-    renderPassInfo.renderPass        = lightningPass->renderPass;
-    renderPassInfo.framebuffer       = lightningFrameBuffers[frameIndex];
-    renderPassInfo.renderArea.offset = vk::Offset2D{0, 0};
-    renderPassInfo.renderArea.extent = vuSwapChain.extend2D;
-    renderPassInfo.clearValueCount   = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues      = clearValues.data();
-
-    commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-  }
-
-  // static void
-  // endRenderPass(vk::CommandBuffer commandBuffer) {
-  //   commandBuffer.endRenderPass();
-  // }
-
-  // void reset() {
-  //
-  // }
+private:
+  void
+  createFramebuffers(const VuDevice& vuDevice);
 };
 
 } // namespace Vu

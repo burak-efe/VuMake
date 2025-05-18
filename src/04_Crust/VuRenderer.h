@@ -82,15 +82,15 @@ struct VuRenderer {
   float          mouseDeltaX                                = {};
   float          mouseDeltaY                                = {};
 
+  std::shared_ptr<VuBuffer>  debugBuffer           = {};
+  std::shared_ptr<VuBuffer>  materialDataBuffer = {};
+  std::shared_ptr<VuImage>   defaultImage       = {};
+  std::shared_ptr<VuImage>   defaultNormalImage = {};
+  std::shared_ptr<VuSampler> defaultSampler     = {};
 private:
   // holds the address of all other buffers
   VuBuffer                   bdaBuffer                = {};
   VuBuffer                   stagingBuffer            = {};
-  std::shared_ptr<VuBuffer>  debugBufferHnd           = {};
-  std::shared_ptr<VuBuffer>  materialDataBufferHandle = {};
-  std::shared_ptr<VuImage>   defaultImageHandle       = {};
-  std::shared_ptr<VuImage>   defaultNormalImageHandle = {};
-  std::shared_ptr<VuSampler> defaultSamplerHandle     = {};
   VuRendererCreateInfo       lastCreateInfo           = {};
 
 public:
@@ -177,13 +177,13 @@ public:
   writeUBO_ToGlobalPool(const VuBuffer& buffer, u32 writeIndex, u32 setIndex) const;
 
   void
-  registerToBindless(const VuBuffer& buffer, u32 bindlessIndex) const;
+  registerToBindless(VuBuffer& vuBuffer) ;
 
   void
-  registerToBindless(const vk::ImageView& imageView, u32 bindlessIndex) const;
+  registerToBindless(VuImage& vuImage) ;
 
   void
-  registerToBindless(const vk::Sampler& sampler, u32 bindlessIndex) const;
+  registerToBindless(VuSampler& vuSampler) ;
 
   void
   uninit();
@@ -281,7 +281,7 @@ public:
   // }
 
   std::span<std::byte, Vu::config::MATERIAL_DATA_SIZE>
-  getMaterialData(const std::shared_ptr<VuMaterialDataHandle>& handle) const;
+  getMaterialDataSpan(const std::shared_ptr<VuMaterialDataHandle>& handle) const;
 
   static void
   bindMaterial(const vk::CommandBuffer& cb, const std::shared_ptr<VuMaterial>& material);

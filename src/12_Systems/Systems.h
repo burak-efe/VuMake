@@ -31,7 +31,8 @@ drawMesh(VuRenderer& vuRenderer, Transform& transform, const MeshRenderer& meshR
       trs, matDataIndex, {meshRenderer.mesh->vertexBuffer->bindlessIndex, meshRenderer.mesh->vertexCount, 0}};
   vuRenderer.pushConstants(pc);
   vuRenderer.bindMesh(*meshRenderer.mesh);
-  vuRenderer.drawIndexed(meshRenderer.mesh->indexBuffer->sizeInBytes / 4);
+  uint32_t indexCount = meshRenderer.mesh->indexBuffer->sizeInBytes / 4;
+  vuRenderer.drawIndexed(indexCount);
 }
 
 inline void

@@ -52,8 +52,13 @@ VuBuffer::getDeviceAddress() const {
 }
 
 vk::Result
-VuBuffer::setData(const void* data, vk::DeviceSize byteSize, vk::DeviceSize offset) const {
-  std::memcpy(mapPtr, data, byteSize);
+VuBuffer::setData(const void* data, vk::DeviceSize byteSize, vk::DeviceSize offsetInByte) const {
+  if (!mapPtr || !data || byteSize == 0) {
+    return vk::Result::eErrorMemoryMapFailed;
+  }
+  auto* dst = static_cast<std::byte*>(mapPtr) + offsetInByte;
+  std::memcpy(dst, data, static_cast<size_t>(byteSize));
+
   return vk::Result::eSuccess;
 }
 

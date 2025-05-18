@@ -12,8 +12,6 @@
 namespace Vu {
 struct VuShader;
 
-
-
 struct MaterialSettings {
   bool              isTransparent = false;
   vk::CullModeFlags cullMode      = vk::CullModeFlagBits::eBack;
@@ -40,13 +38,13 @@ struct MaterialSettings {
 // Material owns the pipeline, uses shared material data
 // when parent shader recompiled, it should be recompiled too
 struct VuMaterial {
-  MaterialSettings                     materialSettings = {};
-  std::shared_ptr<VuShader>            shaderHnd        = {};
+  MaterialSettings                      materialSettings = {};
+  std::shared_ptr<VuShader>             shaderHnd        = {};
   std::shared_ptr<VuMaterialDataHandle> materialDataHnd  = {};
 
   VuMaterial();
-  VuMaterial(MaterialSettings                            matSettings,
-             const std::shared_ptr<VuShader>&            shaderHnd,
+  VuMaterial(MaterialSettings                             matSettings,
+             const std::shared_ptr<VuShader>&             shaderHnd,
              const std::shared_ptr<VuMaterialDataHandle>& materialDataHnd);
 };
 } // namespace Vu
