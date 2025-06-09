@@ -1,7 +1,6 @@
 #include "VuBuffer.h"
 
 #include "VuMemoryAllocator.h"
-#include "VuUtils.h"
 
 namespace Vu {
 std::expected<Vu::VuBuffer, vk::Result>
@@ -10,29 +9,16 @@ VuBuffer::make(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo) {
     VuBuffer outBuffer {vuDevice, createInfo};
     return std::move(outBuffer);
 
-  } catch (vk::Result res) {
-    return std::unexpected { res };
-  } catch (...) {
-    return std::unexpected { vk::Result::eErrorUnknown };
+  } catch (vk::Result res) { return std::unexpected {res}; } catch (...) {
+    return std::unexpected {vk::Result::eErrorUnknown};
   }
 }
-
-// VuBuffer::~VuBuffer() {
-//   if (mapPtr != nullptr) {
-//     unmap();
-//   }
-// }
-
-// void VuBuffer::uninit()
-// {
-//     if (mapPtr != nullptr) { unmap(); }
-//     vmaDestroyBuffer(vma, buffer, allocation);
-// }
 
 void
 VuBuffer::map() {
   // todo
   auto res = buffer.getDevice().mapMemory(deviceMemory, 0ull, vk::WholeSize, {}, &mapPtr);
+  if (res != vk::Result::eSuccess) { throw std::bad_exception(); }
   // vmaMapMemory(vma, allocation, &mapPtr);
 }
 
@@ -53,9 +39,7 @@ VuBuffer::getDeviceAddress() const {
 
 vk::Result
 VuBuffer::setData(const void* data, vk::DeviceSize byteSize, vk::DeviceSize offsetInByte) const {
-  if (!mapPtr || !data || byteSize == 0) {
-    return vk::Result::eErrorMemoryMapFailed;
-  }
+  if (!mapPtr || !data || byteSize == 0) { return vk::Result::eErrorMemoryMapFailed; }
   auto* dst = static_cast<std::byte*>(mapPtr) + offsetInByte;
   std::memcpy(dst, data, static_cast<size_t>(byteSize));
 
@@ -77,14 +61,14 @@ vk::DeviceSize
 VuBuffer::alignedSize(vk::DeviceSize sizeInBytes, vk::DeviceSize alignment) {
   return (sizeInBytes + alignment - 1) & ~(alignment - 1);
 }
-VuBuffer::VuBuffer(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo){
+VuBuffer::VuBuffer(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo) {
 
   this->sizeInBytes = createInfo.sizeInBytes;
   this->name        = createInfo.name;
 
   vk::BufferCreateInfo bufferCreateInfo;
-  bufferCreateInfo.size  = createInfo.sizeInBytes;
-  bufferCreateInfo.usage = createInfo.vkUsageFlags;
+  bufferCreateInfo.size        = createInfo.sizeInBytes;
+  bufferCreateInfo.usage       = createInfo.vkUsageFlags;
   bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 
   auto bufferOrErr = vuDevice.device.createBuffer(bufferCreateInfo);

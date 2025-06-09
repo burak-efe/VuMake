@@ -12,43 +12,43 @@
 namespace Vu {
 using VuName = FixedString64;
 
-struct GPU_Mesh {
-  u32 vertexBufferHandle = {};
-  u32 vertexCount        = {};
-  u32 meshFlags          = {};
-};
+// struct GPU_Mesh {
+//   u32 vertexBufferHandle = {};
+//   u32 vertexCount        = {};
+//   u32 meshFlags          = {};
+// };
+//
+// struct GPU_PBR_MaterialData {
+//   u32 texture0 = {};
+//   u32 texture1 = {};
+//   u32 texture2 = {};
+//   u32 texture3 = {};
+//
+//   byte padding[48] = {};
+// };
 
-struct GPU_PBR_MaterialData {
-  u32 texture0 = {};
-  u32 texture1 = {};
-  u32 texture2 = {};
-  u32 texture3 = {};
+//static_assert(sizeof(GPU_PBR_MaterialData) == 64);
 
-  byte padding[48] = {};
-};
+// struct VuMaterialDataHandle {
+//   uint32_t index;
+// };
 
-static_assert(sizeof(GPU_PBR_MaterialData) == 64);
-
-struct VuMaterialDataHandle {
-  uint32_t index;
-};
-
-struct GPU_PushConstant {
-  mat4x4               trs               = {};
-  VuMaterialDataHandle materialDataIndex = {};
-  GPU_Mesh             mesh              = {};
-};
-
-struct GPU_FrameConst {
-  mat4x4 view        = {};
-  mat4x4 proj        = {};
-  mat4x4 inverseView = {};
-  mat4x4 inverseProj = {};
-  vec4   cameraPos   = {};
-  vec4   cameraDir   = {};
-  float  time        = {};
-  float  debugIndex  = {};
-};
+// struct GPU_PushConstant {
+//   mat4x4               trs               = {};
+//   VuMaterialDataHandle materialDataIndex = {};
+//   GPU_Mesh             mesh              = {};
+// };
+//
+// struct GPU_FrameConst {
+//   mat4x4 view        = {};
+//   mat4x4 proj        = {};
+//   mat4x4 inverseView = {};
+//   mat4x4 inverseProj = {};
+//   vec4   cameraPos   = {};
+//   vec4   cameraDir   = {};
+//   float  time        = {};
+//   float  debugIndex  = {};
+// };
 
 struct VuDisposeStack {
   std::stack<std::function<void()>> disposeStack {};

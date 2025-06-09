@@ -15,11 +15,10 @@
 #include "03_Mantle/VuDevice.h"
 #include "VuRenderer.h"
 
-std::expected<Vu::VuShader, vk::Result>
-Vu::VuShader::make(const std::shared_ptr<VuRenderer>&   vuRenderer,
-                   const std::shared_ptr<VuRenderPass>& vuRenderPass,
-                   const path&                          vertexShaderPath,
-                   const path&                          fragmentShaderPath) {
+std::expected<Vu::VuShader, vk::Result> Vu::VuShader::make(const std::shared_ptr<VuRenderer>&   vuRenderer,
+                                                           const std::shared_ptr<VuRenderPass>& vuRenderPass,
+                                                           const path&                          vertexShaderPath,
+                                                           const path&                          fragmentShaderPath) {
 
   try {
     VuShader vuShader {vuRenderer, vuRenderPass, vertexShaderPath, fragmentShaderPath};
@@ -60,19 +59,7 @@ Vu::VuShader::VuShader(std::shared_ptr<VuRenderer>   vuRenderer,
   }
 }
 
-// void Vu::VuShader::uninit()
-// {
-//     vkDestroyShaderModule(vuDevice->device, vertexShaderModule, nullptr);
-//     vkDestroyShaderModule(vuDevice->device, fragmentShaderModule, nullptr);
-//
-//     for (auto& pipeline : compiledPipelines)
-//     {
-//         pipeline.second.uninit();
-//     }
-// }
-
-void
-Vu::VuShader::tryRecompile() {
+void Vu::VuShader::tryRecompile() {
   auto maxTime = std::max(getlastModifiedTime(vertexShaderPath), getlastModifiedTime(fragmentShaderPath));
   if (maxTime <= lastModifiedTime) { return; }
 
@@ -99,8 +86,7 @@ Vu::VuShader::tryRecompile() {
   }
 }
 
-Vu::VuGraphicsPipeline&
-Vu::VuShader::requestPipeline(MaterialSettings materialSettings) {
+Vu::VuGraphicsPipeline& Vu::VuShader::requestPipeline(MaterialSettings materialSettings) {
   bool contains = compiledPipelines.contains(materialSettings);
   if (!contains) {
     VuGraphicsPipeline pipeline {vuRenderer->vuDevice->device, vuRenderer->globalPipelineLayout,
@@ -112,8 +98,7 @@ Vu::VuShader::requestPipeline(MaterialSettings materialSettings) {
   return compiledPipelines[materialSettings];
 }
 
-vk::raii::ShaderModule
-Vu::VuShader::createShaderModule(const VuDevice& vuDevice, const void* code, size_t size) {
+vk::raii::ShaderModule Vu::VuShader::createShaderModule(const VuDevice& vuDevice, const void* code, size_t size) {
   vk::ShaderModuleCreateInfo createInfo {};
   createInfo.codeSize = size;
   createInfo.pCode    = static_cast<const u32*>(code);
@@ -125,8 +110,7 @@ Vu::VuShader::createShaderModule(const VuDevice& vuDevice, const void* code, siz
   return std::move(shaderModuleOrErr.value());
 }
 
-path
-Vu::VuShader::compileToSpirv(const path& shaderCodePath) {
+path Vu::VuShader::compileToSpirv(const path& shaderCodePath) {
   path shaderPath = shaderCodePath;
   shaderPath.make_preferred();
 
@@ -137,7 +121,7 @@ Vu::VuShader::compileToSpirv(const path& shaderCodePath) {
   path compilerPath = config::getShaderCompilerPath();
   compilerPath.make_preferred();
 
-  std::string cmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout  -o {2}", compilerPath.string(),
+  std::string cmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout -o {2}", compilerPath.string(),
                                 shaderPath.string(), spirvFilePath.string());
 
   int compileResult = system(cmd.c_str());

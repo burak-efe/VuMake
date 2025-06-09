@@ -12,8 +12,7 @@
 
 namespace Vu {
 
-inline void
-drawMesh(VuRenderer& vuRenderer, Transform& transform, const MeshRenderer& meshRenderer) {
+inline void drawMesh(VuRenderer& vuRenderer, Transform& transform, const MeshRenderer& meshRenderer) {
 
   // VuDevice* vuDevice = &ECS_VU_RENDERER->vuDevice;
 
@@ -26,8 +25,8 @@ drawMesh(VuRenderer& vuRenderer, Transform& transform, const MeshRenderer& meshR
   vuRenderer.bindMaterial(materialHnd);
 
   // push constant
-  mat4x4           trs = transform.ToTRS();
-  GPU_PushConstant pc {
+  float4x4           trs = transform.ToTRS();
+  PushConsts_RawData pc {
       trs, matDataIndex, {meshRenderer.mesh->vertexBuffer->bindlessIndex, meshRenderer.mesh->vertexCount, 0}};
   vuRenderer.pushConstants(pc);
   vuRenderer.bindMesh(*meshRenderer.mesh);
@@ -35,14 +34,12 @@ drawMesh(VuRenderer& vuRenderer, Transform& transform, const MeshRenderer& meshR
   vuRenderer.drawIndexed(indexCount);
 }
 
-inline void
-spinn(const VuRenderer& vuRenderer, Transform& trs, const Spinn& spin) {
+inline void spinn(const VuRenderer& vuRenderer, Transform& trs, const Spinn& spin) {
 
   trs.Rotate(spin.axis, spin.angle * vuRenderer.deltaAsSecond);
 }
 
-inline void
-drawSpinUI(uint32_t elemID, Spinn& spinn) {
+inline void drawSpinUI(uint32_t elemID, Spinn& spinn) {
 
   if (ImGui::CollapsingHeader("Spin Components")) {
     ImGui::SliderFloat(std::format("Radians/perSecond##{0}", elemID).c_str(), &spinn.angle, 0.0f, 32.0f);
@@ -85,8 +82,7 @@ drawSpinUI(uint32_t elemID, Spinn& spinn) {
 //                 });
 // }
 
-inline void
-cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
+inline void cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
 
   SDL_PumpEvents();
 
@@ -95,7 +91,7 @@ cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
   float velocity = cam.cameraSpeed;
   if (state[SDL_SCANCODE_LSHIFT]) { velocity *= 2.0f; }
 
-  vec3 input {};
+  float3 input {};
   if (state[SDL_SCANCODE_W]) { input.z -= 1; }
   if (state[SDL_SCANCODE_S]) { input.z += 1; }
   if (state[SDL_SCANCODE_A]) { input.x -= 1; }
@@ -103,7 +99,7 @@ cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
   if (state[SDL_SCANCODE_E]) { input.y += 1; }
   if (state[SDL_SCANCODE_Q]) { input.y -= 1; }
 
-  vec3 movement   = input * velocity * vuRenderer.deltaAsSecond;
+  float3 movement   = input * velocity * vuRenderer.deltaAsSecond;
   // Mouse
   auto mouseState = SDL_GetMouseState(nullptr, nullptr);
 
@@ -149,10 +145,10 @@ cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
     cam.firstClick = true;
   }
 
-  trs.SetEulerAngles(vec3(cam.yaw, cam.pitch, cam.roll));
+  trs.SetEulerAngles(float3(cam.yaw, cam.pitch, cam.roll));
 
-  quaternion asEuler            = fromEulerYXZ(vec3(cam.yaw, cam.pitch, cam.roll));
-  vec3       rotatedTranslation = rotate(asEuler, movement);
+  quaternion asEuler            = fromEulerYXZ(float3(cam.yaw, cam.pitch, cam.roll));
+  float3       rotatedTranslation = rotate(asEuler, movement);
 
   trs.position.x += rotatedTranslation.x;
   trs.position.y += rotatedTranslation.y;
@@ -167,9 +163,9 @@ cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
   vuRenderer.frameConst.inverseView = trs.ToTRS();
   vuRenderer.frameConst.inverseProj = Math::inverse(vuRenderer.frameConst.proj);
 
-  vuRenderer.frameConst.cameraPos = vec4(trs.position, 0);
-  vuRenderer.frameConst.cameraDir = vec4(vec3(cam.yaw, cam.pitch, cam.roll), 0);
-  vuRenderer.frameConst.time      = vec4(vuRenderer.time(), 0, 0, 0).x;
+  vuRenderer.frameConst.cameraPos = float4(trs.position, 0);
+  vuRenderer.frameConst.cameraDir = float4(float3(cam.yaw, cam.pitch, cam.roll), 0);
+  vuRenderer.frameConst.time      = float4(vuRenderer.time(), 0, 0, 0).x;
 
   // const auto* state = SDL_GetKeyboardState(nullptr);
 

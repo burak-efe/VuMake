@@ -5,17 +5,6 @@
 #include "02_OuterCore/VuPlatform.h"
 #include "vulkan/vulkan.hpp"
 
-// Matrix Layout : Column Major
-// Coordinate System : Left handed, +Y up, +Z forward, +X right
-// Unit Scale: 1 unit = 1 meter
-// Angle Unit: Radian, Degree in UI but immediately converted to Radian on fetch
-// Euler angles order: YXZ (Yaw,Pitch,Roll)
-
-// Material System:
-// Shader = spirv, and contains hashmap of compiled pipelines
-// material data = bindless indices + basic data
-// material = contain handle shader, and handle to material data
-
 namespace Vu::config {
 
 constexpr u32 START_WIDTH  = 1280u;

@@ -1,12 +1,14 @@
 #pragma once
 
 #include <03_Mantle/VuDevice.h>
+#include <expected>
 #include <filesystem>
 #include <iostream>
 
 #include "02_OuterCore/CollectionUtils.h"
 #include "02_OuterCore/Common.h"
 #include "03_Mantle/VuBuffer.h"
+#include "expected.hpp"
 #include "fastgltf/core.hpp"
 #include "fastgltf/tools.hpp"
 #include "VuMesh.h"
@@ -15,9 +17,78 @@
 namespace Vu {
 struct GPU_PBR_MaterialData;
 
+enum class MapType { baseColor, normal, ao_rough_metal };
+
 struct VuAssetLoader {
-  static void
-  LoadGltf(VuRenderer& vuRenderer, const std::filesystem::path& gltfPath, VuMesh& dstMesh) {
+
+  static std::expected<VuImage, vk::Result>
+  loadMapFromGLTF(VuRenderer& vuRenderer, const std::filesystem::path& gltfPath, MapType type) {
+
+    fastgltf::Parser parser;
+
+    auto data = fastgltf::GltfDataBuffer::FromPath(gltfPath);
+
+    if (data.error() != fastgltf::Error::None) { return std::unexpected {vk::Result::eErrorUnknown}; }
+
+    auto asset = parser.loadGltf(data.get(), gltfPath.parent_path(), fastgltf::Options::LoadExternalBuffers);
+
+    if (auto error = asset.error(); error != fastgltf::Error::None) {
+      std::cout << "Some error occurred while reading the buffer, parsing the JSON, or validating the data." << "\n";
+    }
+
+    auto& mesh      = asset.get().meshes.at(0);
+    auto& prims     = mesh.primitives;
+    auto& primitive = prims.at(0);
+
+    path parentPath     = gltfPath.parent_path();
+    auto matIndexOrNull = primitive.materialIndex;
+
+    if (matIndexOrNull.has_value() == false) { return std::unexpected {vk::Result::eErrorUnknown}; }
+
+    fastgltf::Material& material = asset->materials.at(matIndexOrNull.value());
+
+    if (type == MapType::baseColor) {
+
+      fastgltf::Optional<fastgltf::TextureInfo>& textureInfoOrNull = material.pbrData.baseColorTexture;
+      if (textureInfoOrNull.has_value()) {
+        fastgltf::Image&       colorImage   = asset->images[textureInfoOrNull.value().textureIndex];
+        fastgltf::sources::URI colorPath    = std::get<fastgltf::sources::URI>(colorImage.data);
+        auto                   colorTexPath = parentPath / colorPath.uri.string();
+
+        VuImage img = vuRenderer.createImageFromAsset(colorTexPath, vk::Format::eR8G8B8A8Srgb);
+        return img;
+      }
+      return std::unexpected {vk::Result::eErrorUnknown};
+    } else if (type == MapType::normal) {
+
+      auto& textureInfoOrNull = material.normalTexture;
+      if (textureInfoOrNull.has_value()) {
+        fastgltf::Image&       image    = asset->images[textureInfoOrNull.value().textureIndex];
+        fastgltf::sources::URI path     = std::get<fastgltf::sources::URI>(image.data);
+        auto                   realPath = parentPath / path.uri.string();
+
+        VuImage img = vuRenderer.createImageFromAsset(realPath, vk::Format::eR8G8B8A8Unorm);
+        return img;
+      }
+      return std::unexpected {vk::Result::eErrorUnknown};
+
+    } else if (type == MapType::ao_rough_metal) {
+      fastgltf::Optional<fastgltf::TextureInfo>& textureInfoOrNull = material.pbrData.metallicRoughnessTexture;
+      if (textureInfoOrNull.has_value()) {
+        fastgltf::Image&       image    = asset->images[textureInfoOrNull.value().textureIndex];
+        fastgltf::sources::URI path     = std::get<fastgltf::sources::URI>(image.data);
+        auto                   realPath = parentPath / path.uri.string();
+
+        VuImage img = vuRenderer.createImageFromAsset(realPath, vk::Format::eR8G8B8A8Unorm);
+        return img;
+      }
+      return std::unexpected {vk::Result::eErrorUnknown};
+    } else {
+      return std::unexpected {vk::Result::eErrorUnknown};
+    }
+  }
+
+  static void loadGLTF(VuRenderer& vuRenderer, const std::filesystem::path& gltfPath, VuMesh& dstMesh) {
     fastgltf::Parser parser;
 
     auto data = fastgltf::GltfDataBuffer::FromPath(gltfPath);
@@ -32,17 +103,21 @@ struct VuAssetLoader {
     auto prims     = mesh.primitives;
     auto primitive = prims.at(0);
 
-    auto parentPath = gltfPath.parent_path();
-
-    fastgltf::Optional<size_t> matIndex = primitive.materialIndex;
-
-    // if (matIndex.has_value())
-    // {
-    //     fastgltf::Material&    material     = asset->materials.at(matIndex.value());
-    //     fastgltf::TextureInfo& colorTexInfo = material.pbrData.baseColorTexture.value();
-    //     fastgltf::Image&       colorImage   = asset->images[colorTexInfo.textureIndex];
+    // auto parentPath = gltfPath.parent_path();
+    // fastgltf::Optional<size_t> matIndexOrNull = primitive.materialIndex;
+    //
+    // if (matIndexOrNull.has_value()) {
+    //   fastgltf::Material& material            = asset->materials.at(matIndexOrNull.value());
+    //   auto&               baseColorInfoOrNull = material.pbrData.baseColorTexture;
+    //
+    //   if (baseColorInfoOrNull.has_value()) {
+    //     fastgltf::Image&       colorImage   = asset->images[baseColorInfoOrNull.value().textureIndex];
     //     fastgltf::sources::URI colorPath    = std::get<fastgltf::sources::URI>(colorImage.data);
     //     auto                   colorTexPath = parentPath / colorPath.uri.string();
+    //
+    //     auto vuRenderer.createImageFromAsset(colorTexPath,vk::Format::eR8G8B8A8Srgb);
+    //
+    //   }
     // }
 
     // Handle<VuTexture> colorTexture;
@@ -56,11 +131,9 @@ struct VuAssetLoader {
     // Handle<VuTexture> normalTexture;
     // normalTexture.createHandle().init({normalAbsolutePath, VK_FORMAT_R8G8B8A8_UNORM});
     // dstMaterialData.texture1 = normalTexture.index;
-
     // dstMesh.vertexBuffer = vuDevice.createBuffer();
 
     // Indices
-
     if (!primitive.indicesAccessor.has_value()) {
       std::cout << "Primitive index accessor has not been set!" << "\n";
       return;
@@ -68,12 +141,13 @@ struct VuAssetLoader {
     fastgltf::Accessor& indexAccessor = asset->accessors[primitive.indicesAccessor.value()];
     u32                 indexCount    = static_cast<u32>(indexAccessor.count);
 
-    auto indexBufferOrErr = VuBuffer::make(*vuRenderer.vuDevice, {.name         = "IndexBuffer",
-                                                      .sizeInBytes  = indexCount * sizeof(uint32_t),
-                                                      .vkUsageFlags = vk::BufferUsageFlagBits::eIndexBuffer});
+    auto indexBufferOrErr =
+        VuBuffer::make(*vuRenderer.vuDevice, {.name         = "IndexBuffer",
+                                              .sizeInBytes  = indexCount * sizeof(uint32_t),
+                                              .vkUsageFlags = vk::BufferUsageFlagBits::eIndexBuffer});
     throw_if_unexpected(indexBufferOrErr);
     dstMesh.indexBuffer = std::make_shared<VuBuffer>(std::move(indexBufferOrErr.value()));
-    //vuRenderer.registerToBindless( *dstMesh.indexBuffer);
+    // vuRenderer.registerToBindless( *dstMesh.indexBuffer);
 
     auto& indexBuffer = dstMesh.indexBuffer;
 
@@ -82,7 +156,7 @@ struct VuAssetLoader {
     std::span<u32>  indexSpan     = std::span(reinterpret_cast<u32*>(indexSpanByte.data()), indexCount);
     fastgltf::iterateAccessorWithIndex<u32>(asset.get(), indexAccessor,
                                             [&](u32 index, std::size_t idx) { indexSpan[idx] = index; });
-    indexBuffer->unmap();
+    // indexBuffer->unmap();
 
     // Position
     fastgltf::Attribute* positionIt       = primitive.findAttribute("POSITION");
@@ -96,13 +170,13 @@ struct VuAssetLoader {
     //      .vkUsageFlags  = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT});
     // dstMesh.vertexBuffer = ;
 
-    auto vertexBufferOrErr =
-        VuBuffer::make(*vuRenderer.vuDevice, {
-                                     .name         = "VertexBuffer",
-                                     .sizeInBytes  = dstMesh.vertexCount * VuMesh::totalAttributesSizePerVertex(),
-                                     .vkUsageFlags = vk::BufferUsageFlagBits::eVertexBuffer |
-                                                     vk::BufferUsageFlagBits::eShaderDeviceAddress,
-                                 });
+    auto vertexBufferOrErr = VuBuffer::make(
+        *vuRenderer.vuDevice,
+        {
+            .name         = "VertexBuffer",
+            .sizeInBytes  = dstMesh.vertexCount * VuMesh::totalAttributesSizePerVertex(),
+            .vkUsageFlags = vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        });
     throw_if_unexpected(vertexBufferOrErr);
     dstMesh.vertexBuffer = std::make_shared<VuBuffer>(std::move(vertexBufferOrErr.value()));
     vuRenderer.registerToBindless(*dstMesh.vertexBuffer);
@@ -165,10 +239,10 @@ struct VuAssetLoader {
       if (tangentBufferIndex == 0 && tangentAccessor.byteOffset == 0) {
         std::cout << "Gltf file has no tangents" << std::endl;
 
-        auto pos  = rpCastSpan<fastgltf::math::f32vec3, vec3>(vertexSpan);
-        auto norm = rpCastSpan<fastgltf::math::f32vec3, vec3>(normalSpan);
-        auto uv   = rpCastSpan<fastgltf::math::f32vec2, vec2>(uvSpan);
-        auto tang = rpCastSpan<fastgltf::math::f32vec4, vec4>(tangentSpan);
+        auto pos  = rpCastSpan<fastgltf::math::f32vec3, float3>(vertexSpan);
+        auto norm = rpCastSpan<fastgltf::math::f32vec3, float3>(normalSpan);
+        auto uv   = rpCastSpan<fastgltf::math::f32vec2, float2>(uvSpan);
+        auto tang = rpCastSpan<fastgltf::math::f32vec4, float4>(tangentSpan);
 
         VuMesh::calculateTangents(indexSpan, pos, norm, uv, tang);
       } else {

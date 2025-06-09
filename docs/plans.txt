@@ -1,0 +1,12 @@
+how to handle recreation of objects
+
+shaders: end of the frame waitIdle recreate all pipelines.
+material: (when material setting changes): same as shader but only for one material.
+material data: scheduled buffer update (update buffer not in use and update the other on next frame).
+
+Image: scheduled desc write, create new image, keep both alive, delete old when not used
+Buffer that will be written every frame: ??
+
+render space: wait idle, create new render space re-create all shaders with new render pass
+
+

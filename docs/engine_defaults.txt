@@ -1,0 +1,13 @@
+Matrix Layout : Column Major,
+Coordinate System : Left handed, +Y up, +Z forward, +X right
+Unit Scale: 1 unit = 1 meter
+Angle Unit: Radian on api, Degree in UI but immediately converted to Radian on ui read
+Euler angles order: YXZ (Yaw,Pitch,Roll)
+
+Material System:
+Material Settings: Material Options that requires pipeline compilation on change, for example: cull mode
+Shader: contains hashmap where material settings are keys and compiled pipelines are values
+Material data: bindless indices + basic data
+Material: contains a ref to shader, material settings, and  material data index. To bind pipline,
+pipline will  be fetched from shader using material settings and can be bind, then material data index can be
+send via push constant.

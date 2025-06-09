@@ -27,6 +27,8 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
         #        <functional> <mutex> <ranges> <array> <span> <vector> <stack> <string>
 )
 ####################################################################################################
+target_sources(VuLibs INTERFACE assets/shaders/common/InteroptStructs.h)
+target_include_directories(VuLibs INTERFACE assets/shaders/common)
 add_sources_recursively(VuLibs src/01_InnerCore)
 add_sources_recursively(VuLibs src/02_OuterCore)
 add_sources_recursively(VuLibs src/03_Mantle)

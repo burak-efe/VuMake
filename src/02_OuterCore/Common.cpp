@@ -1,6 +1,3 @@
 #include "Common.h"
 
-
-namespace Vu {
-
-}
+namespace Vu {}

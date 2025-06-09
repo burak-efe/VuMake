@@ -8,6 +8,7 @@
 #include "01_InnerCore/TypeDefs.h" // for u32
 #include "03_Mantle/VuCommon.h"
 #include "03_Mantle/VuTypes.h"
+#include "InteroptStructs.h"
 
 namespace Vu {
 struct VuShader;
@@ -16,18 +17,13 @@ struct MaterialSettings {
   bool              isTransparent = false;
   vk::CullModeFlags cullMode      = vk::CullModeFlagBits::eBack;
 
-  friend bool
-  operator==(const MaterialSettings& lhs, const MaterialSettings& rhs) {
+  friend bool operator==(const MaterialSettings& lhs, const MaterialSettings& rhs) {
     return lhs.isTransparent == rhs.isTransparent && lhs.cullMode == rhs.cullMode;
   }
 
-  friend bool
-  operator!=(const MaterialSettings& lhs, const MaterialSettings& rhs) {
-    return !(lhs == rhs);
-  }
+  friend bool operator!=(const MaterialSettings& lhs, const MaterialSettings& rhs) { return !(lhs == rhs); }
 
-  friend std::size_t
-  hash_value(const MaterialSettings& obj) {
+  friend std::size_t hash_value(const MaterialSettings& obj) {
     std::size_t seed = 0x305407C8;
     seed ^= (seed << 6) + (seed >> 2) + 0x42B03DC4 + static_cast<std::size_t>(obj.isTransparent);
     seed ^= (seed << 6) + (seed >> 2) + 0x29CD679B + static_cast<uint32_t>(obj.cullMode);
@@ -51,8 +47,7 @@ struct VuMaterial {
 
 namespace std {
 template <> struct hash<Vu::MaterialSettings> {
-  std::size_t
-  operator()(const Vu::MaterialSettings& settings) const noexcept {
+  std::size_t operator()(const Vu::MaterialSettings& settings) const noexcept {
     std::size_t h1 = std::hash<bool>()(settings.isTransparent);
     std::size_t h2 = std::hash<uint32_t>()(static_cast<uint32_t>(settings.cullMode));
 

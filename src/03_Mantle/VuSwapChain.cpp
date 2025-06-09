@@ -1,3 +1,3 @@
-#include "VuSwapChain2.h"
+#include "VuSwapChain.h"
 
 namespace Vu {} // namespace Vu

@@ -6,39 +6,25 @@
 
 namespace Vu {
 
-    struct GameObject;
+struct GameObject;
 
+struct Component {
+  GameObject* gameObject = nullptr;
+  bool        enabled    = true;
 
-    struct Component
-    {
-        GameObject* gameObject = nullptr;
-        bool        enabled    = true;
+  virtual ~Component() = default;
 
-        virtual ~Component() = default;
+  virtual void Start() {}
 
-        virtual void Start()
-        {
-        }
+  virtual void Update() {}
+};
 
-        virtual void Update()
-        {
-        }
-    };
+struct Transform : Component {
+  float3 position;
 
+  void Start() override { std::cout << "Transform Start()\n"; }
 
-    struct Transform : Component
-    {
-        vec3 position;
+  void Update() override {}
+};
 
-        void Start() override
-        {
-            std::cout << "Transform Start()\n";
-        }
-
-        void Update() override
-        {
-        }
-    };
-
-} // Vu
-
+} // namespace Vu

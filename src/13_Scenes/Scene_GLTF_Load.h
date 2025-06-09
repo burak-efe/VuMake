@@ -13,75 +13,95 @@
 namespace Vu {
 struct VuShader;
 
-struct Scene0 {
+struct Scene_GLTF_Load {
 private:
-  // path meshPath = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
-  path meshPath = "assets/gltf/Cube.glb";
+  path gltfPath     = "assets/gltf/garden_gnome/garden_gnome_2k.gltf";
+  path gltfCubePath = "assets/gltf/Cube.glb";
 
-  path gpassVertPath = "assets/shaders/GPass_vert.slang";
-  path gpassFragPath = "assets/shaders/GPass_frag.slang";
+  path pbrVertPath = "assets/shaders/object/deferred/pbr_deferred_vert.slang";
+  path pbrFragPath = "assets/shaders/object/deferred/pbr_deferred_frag.slang";
 
-  path defVertPath = "assets/shaders/screenTri_vert.slang";
-  path defFragPath = "assets/shaders/deferred_frag.slang";
+  path defVertPath = "assets/shaders/engine/screen_space_triangle_vert.slang";
+  path defFragPath = "assets/shaders/engine/deferred_render_space/deferred_lightning_pass_frag.slang";
 
   bool uiNeedBuild = true;
 
 public:
-  void
-  Run() {
-    VuShader a {};
-
+  void run() const {
     constexpr Vu::VuRendererCreateInfo info {};
+    std::shared_ptr<VuRenderer>        vuRenderer = std::make_shared<VuRenderer>(info);
 
-    std::shared_ptr<VuRenderer> vuRenderer = std::make_shared<VuRenderer>(info);
-
-    VuDevice& device = *vuRenderer->vuDevice;
-    // ECS_VU_RENDERER  = &vuRenderer;
-
+    // create a mesh asset
     VuMesh mesh {};
-    // mesh.init(device);
-    VuAssetLoader::LoadGltf(*vuRenderer, meshPath, mesh);
+    VuAssetLoader::loadGLTF(*vuRenderer, gltfPath, mesh);
 
-    std::shared_ptr<VuShader> basicShader = std::make_shared<VuShader>(move_or_throw(
-        VuShader::make(vuRenderer, vuRenderer->deferredRenderSpace.gBufferPass, gpassVertPath, gpassFragPath)));
+    // basic shader
+    std::shared_ptr<VuShader> basicShader = std::make_shared<VuShader>(move_or_THROW(
+        VuShader::make(vuRenderer, vuRenderer->deferredRenderSpace.gBufferPass, pbrVertPath, pbrFragPath)));
 
-    std::shared_ptr<VuShader> lPassShader = std::make_shared<VuShader>(move_or_throw(
+    // deffered lpas shder
+    std::shared_ptr<VuShader> lPassShader = std::make_shared<VuShader>(move_or_THROW(
         VuShader::make(vuRenderer, vuRenderer->deferredRenderSpace.lightningPass, defVertPath, defFragPath)));
 
     MaterialSettings defaultMaterialSettings {};
 
-    std::shared_ptr<VuMaterialDataHandle> basicMatDataIndexHnd = vuRenderer->createMaterialDataIndex();
+    // creating basic material for object
+    std::shared_ptr<VuMaterialDataHandle> basicMatDataHnd = vuRenderer->createMaterialDataIndex();
     std::shared_ptr<VuMaterial>           basicMaterial =
-        std::make_shared<VuMaterial>(defaultMaterialSettings, basicShader, basicMatDataIndexHnd);
+        std::make_shared<VuMaterial>(defaultMaterialSettings, basicShader, basicMatDataHnd);
 
-    std::span<byte, 64> basicMatDataBlob = vuRenderer->getMaterialDataSpan(basicMatDataIndexHnd);
-    auto*               basicMatData     = reinterpret_cast<GPU_PBR_MaterialData*>(basicMatDataBlob.data());
-    basicMatData->texture0               = vuRenderer->defaultImage->bindlessIndex;
-    basicMatData->texture1               = vuRenderer->defaultNormalImage->bindlessIndex;
+    // write material data
+    auto*   basicMatData   = vuRenderer->getMaterialDataPointerAs<MatData_PbrDeferred>(*basicMatDataHnd);
+    VuImage colorMapOrErr  = move_or_THROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::baseColor));
+    VuImage normalMapOrErr = move_or_THROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::normal));
+    VuImage arm_MapOrErr =
+        move_or_THROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::ao_rough_metal));
+
+    vuRenderer->registerToBindless(colorMapOrErr);
+    vuRenderer->registerToBindless(normalMapOrErr);
+    vuRenderer->registerToBindless(arm_MapOrErr);
+
+    basicMatData->colorTexture        = colorMapOrErr.bindlessIndex;
+    basicMatData->normalTexture       = normalMapOrErr.bindlessIndex;
+    basicMatData->aoRoughMetalTexture = arm_MapOrErr.bindlessIndex;
 
     // lightning pass material
     std::shared_ptr<VuMaterialDataHandle> lPassMatDataHandle = vuRenderer->createMaterialDataIndex();
     std::shared_ptr<VuMaterial>           lPassMaterial =
         std::make_shared<VuMaterial>(defaultMaterialSettings, lPassShader, lPassMatDataHandle);
 
-    std::span<byte, 64> lPassMatDataSpan = vuRenderer->getMaterialDataSpan(lPassMatDataHandle);
-    auto*               lPassMatData     = reinterpret_cast<GPU_PBR_MaterialData*>(lPassMatDataSpan.data());
-
-    std::memcpy(lPassMatData, &vuRenderer->deferredRenderSpace.lightningPassMaterialData, 64);
+    auto* lPassMatData = vuRenderer->getMaterialDataPointerAs<MatData_PbrDeferred>(*lPassMatDataHandle);
+    *lPassMatData      = vuRenderer->deferredRenderSpace.lightningPassMaterialData;
 
     auto obj0Trs = Transform {
-        .position = vec3(0.0f, 0.0f, 0.0f), .rotation = quaternion::identity(), .scale = vec3(1.0F, 1.0F, 1.0F)};
+        .position = float3(0.0f, 0.0f, 0.0f), .rotation = quaternion::identity(), .scale = float3(10.0F, 10.0F, 10.0F)};
 
     auto obj1MeshRenderer = MeshRenderer {.mesh = &mesh, .materialHnd = basicMaterial};
     auto obj1Spinn        = Spinn {};
 
-    auto camTrs = Transform(vec3(0.0f, 0.0f, 3.5f), quaternion::identity(), vec3(1, 1, 1));
+    auto camTrs = Transform(float3(0.0f, 0.0f, 3.5f), quaternion::identity(), float3(1, 1, 1));
     auto cam    = Camera {};
 
     // Update Loop
     while (!vuRenderer->shouldWindowClose()) {
-      vuRenderer->PreUpdate();
-      vuRenderer->UpdateInput();
+      vuRenderer->preUpdate();
+      vuRenderer->pollUserInput();
+
+      auto &pl0 = vuRenderer->frameConst.pointLights[0];
+      auto &pl1 = vuRenderer->frameConst.pointLights[1];
+
+      pl0.range = 100;
+      pl1.range = 100;
+
+      pl0.color = float3(1.0f, 0.0f, 0.0f);
+      pl1.color = float3(1.0f, 1.0f, 1.0f);
+
+      pl0.intensity = 1000.0f;
+      pl1.intensity = 1000.0f;
+
+      pl0.position = float3(5.0f, 10.0f, 0.0f);
+      pl1.position = float3(-5.0f, 10.0f, 0.0f);
+
 
       // Pre-Render Begins
       cameraFlySystem(*vuRenderer, camTrs, cam);
@@ -100,10 +120,7 @@ public:
         vuRenderer->beginLightningPass();
         vuRenderer->bindMaterial(lPassMaterial);
         VuMaterialDataHandle dataIndex = *lPassMaterial->materialDataHnd;
-        vuRenderer->pushConstants({mat4x4(), dataIndex});
-        std::span<byte, 64> span   = vuRenderer->getMaterialDataSpan(lPassMatDataHandle);
-        auto                target = (GPU_PBR_MaterialData*)span.data();
-        std::memcpy(target, &vuRenderer->deferredRenderSpace.lightningPassMaterialData, 64);
+        vuRenderer->pushConstants({float4x4(), dataIndex});
         vuRenderer->commandBuffers[vuRenderer->currentFrame].draw(3, 1, 0, 0);
 
         // UI
@@ -145,9 +162,7 @@ public:
         vuRenderer->endFrame();
       }
     }
-
     vuRenderer->vuDevice->device.waitIdle();
-    // vuRenderer.uninit();
   }
 };
 } // namespace Vu

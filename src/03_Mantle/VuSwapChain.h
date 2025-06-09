@@ -6,7 +6,7 @@
 
 namespace Vu {
 
-struct VuSwapChain2 {
+struct VuSwapChain {
   std::shared_ptr<VuDevice>            vuDevice    = {};
   std::shared_ptr<vk::raii::SurfaceKHR> surface     = {};
   vk::raii::SwapchainKHR                swapchain   = {nullptr};
@@ -15,8 +15,8 @@ struct VuSwapChain2 {
   vk::Extent2D                          extend2D    = {};
   std::vector<vk::raii::ImageView>      imageViews  = {};
 
-  VuSwapChain2() = default;
-  VuSwapChain2(const std::shared_ptr<VuDevice>& vuDevice, const std::shared_ptr<vk::raii::SurfaceKHR>& surface)
+  VuSwapChain() = default;
+  VuSwapChain(const std::shared_ptr<VuDevice>& vuDevice, const std::shared_ptr<vk::raii::SurfaceKHR>& surface)
       : vuDevice {vuDevice}, surface {surface} {
     std::shared_ptr<VuPhysicalDevice>& physicalDevice = vuDevice->vuPhysicalDevice;
 

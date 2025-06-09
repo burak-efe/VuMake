@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <limits>
 
-//Size Sanity Checks
+// Size Sanity Checks
 static_assert(CHAR_BIT == 8, "[INSANE ENVIRONMENT]: a byte is not 8 bits!");
 static_assert(sizeof(float) == 4, "[INSANE ENVIRONMENT]: float not 4 bytes");
 static_assert(sizeof(double) == 8, "[INSANE ENVIRONMENT]: double not 8 bytes");
@@ -14,7 +14,7 @@ static_assert(sizeof(void*) == sizeof(size_t), "[INSANE ENVIRONMENT]: size_t siz
 static_assert(sizeof(size_t) == sizeof(uint64_t), "[INSANE ENVIRONMENT]: size_t size doesn't match uint64_t size");
 static_assert(sizeof(std::uintptr_t) == sizeof(void*), "[INSANE ENVIRONMENT]: uintptr_t doesn't match pointer size");
 
-//Other Sanity Checks
+// Other Sanity Checks
 static_assert(std::numeric_limits<float>::is_iec559, "[INSANE ENVIRONMENT]: float is not IEEE 754");
 static_assert(std::numeric_limits<double>::is_iec559, "[INSANE ENVIRONMENT]: double is not IEEE 754");
 static_assert(std::endian::native == std::endian::little, "[INSANE ENVIRONMENT]: not a little-endian platform");

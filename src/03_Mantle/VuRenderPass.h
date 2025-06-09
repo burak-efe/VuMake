@@ -1,26 +1,18 @@
 #pragma once
 
 #include "vulkan/vulkan_raii.hpp"
-#include "VuUtils.h"
 
 namespace Vu {
 struct VuRenderPass {
-  vk::raii::RenderPass renderPass         = {nullptr};
-  vk::Format           colorFormat        = {};
-  vk::Format           depthStencilFormat = {};
-  vk::Format           normalFormat       = {};
-
+  vk::raii::RenderPass                               renderPass                 = {nullptr};
   std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachmentStates = {};
 
-  void
-  initAsGBufferPass(const vk::raii::Device& device,
-                    const vk::Format        colorFormat,
-                    const vk::Format        normalFormat,
-                    const vk::Format        aoRoughMetalFormat,
-                    const vk::Format        depthStencilFormat) {
-    this->colorFormat        = colorFormat;
-    this->normalFormat       = normalFormat;
-    this->depthStencilFormat = depthStencilFormat;
+  void initAsGBufferPass(const vk::raii::Device& device,
+                         const vk::Format        colorFormat,
+                         const vk::Format        normalFormat,
+                         const vk::Format        aoRoughMetalFormat,
+                         const vk::Format        worldPosFormat,
+                         const vk::Format        depthStencilFormat) {
 
     vk::AttachmentDescription colorAttachment {};
     colorAttachment.format         = colorFormat;
@@ -52,6 +44,16 @@ struct VuRenderPass {
     armAttachment.initialLayout  = vk::ImageLayout::eUndefined;
     armAttachment.finalLayout    = vk::ImageLayout::eShaderReadOnlyOptimal;
 
+    vk::AttachmentDescription worldPosAttachment {};
+    worldPosAttachment.format         = worldPosFormat;
+    worldPosAttachment.samples        = vk::SampleCountFlagBits::e1;
+    worldPosAttachment.loadOp         = vk::AttachmentLoadOp::eClear;
+    worldPosAttachment.storeOp        = vk::AttachmentStoreOp::eStore;
+    worldPosAttachment.stencilLoadOp  = vk::AttachmentLoadOp::eDontCare;
+    worldPosAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+    worldPosAttachment.initialLayout  = vk::ImageLayout::eUndefined;
+    worldPosAttachment.finalLayout    = vk::ImageLayout::eShaderReadOnlyOptimal;
+
     vk::AttachmentDescription depthAttachment {};
     depthAttachment.format         = depthStencilFormat;
     depthAttachment.samples        = vk::SampleCountFlagBits::e1;
@@ -62,13 +64,16 @@ struct VuRenderPass {
     depthAttachment.initialLayout  = vk::ImageLayout::eUndefined;
     depthAttachment.finalLayout    = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
-    std::array attachments = {colorAttachment, normalAttachment, armAttachment, depthAttachment};
+    std::array attachments = {colorAttachment, normalAttachment, armAttachment, worldPosAttachment, depthAttachment};
 
-    std::array<vk::AttachmentReference, 3> colorRefs = {{{0, vk::ImageLayout::eColorAttachmentOptimal},
-                                                         {1, vk::ImageLayout::eColorAttachmentOptimal},
-                                                         {2, vk::ImageLayout::eColorAttachmentOptimal}}};
+    std::array<vk::AttachmentReference, 4> colorRefs = {{
+        {.attachment = 0, .layout = vk::ImageLayout::eColorAttachmentOptimal},
+        {.attachment = 1, .layout = vk::ImageLayout::eColorAttachmentOptimal},
+        {.attachment = 2, .layout = vk::ImageLayout::eColorAttachmentOptimal},
+        {.attachment = 3, .layout = vk::ImageLayout::eColorAttachmentOptimal},
+    }};
 
-    vk::AttachmentReference depthRef {.attachment = static_cast<uint32_t>(colorRefs.size()),
+    vk::AttachmentReference depthRef {.attachment = attachments.size() - 1,
                                       .layout     = vk::ImageLayout::eDepthStencilAttachmentOptimal};
 
     vk::SubpassDescription subpass {.pipelineBindPoint       = vk::PipelineBindPoint::eGraphics,
@@ -99,7 +104,7 @@ struct VuRenderPass {
     throw_if_unexpected(renderPassOrErr);
     this->renderPass = std::move(renderPassOrErr.value());
 
-    colorBlendAttachmentStates.resize(3);
+    colorBlendAttachmentStates.resize(attachments.size() - 1);
     for (auto& blendAttachment : colorBlendAttachmentStates) {
       blendAttachment.blendEnable    = VK_FALSE; // No blending in GBuffer
       blendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
@@ -107,9 +112,9 @@ struct VuRenderPass {
     }
   }
 
-  void
-  initAsLightningPass(const vk::raii::Device& device, vk::Format colorFormat) {
-    this->colorFormat = colorFormat;
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  void initAsLightningPass(const vk::raii::Device& device, vk::Format colorFormat) {
 
     vk::AttachmentDescription colorAttachment {};
     colorAttachment.format         = colorFormat;
@@ -153,9 +158,7 @@ struct VuRenderPass {
     auto renderPassOrErr = device.createRenderPass(renderPassInfo);
     // todo
     throw_if_unexpected(renderPassOrErr);
-    this->renderPass     = std::move(renderPassOrErr.value());
-
-    // Utils::giveDebugName(device, VK_OBJECT_TYPE_RENDER_PASS, renderPass, "Lightning Render Pass");
+    this->renderPass = std::move(renderPassOrErr.value());
 
     colorBlendAttachmentStates.resize(1);
     for (auto& blendAttachment : colorBlendAttachmentStates) {

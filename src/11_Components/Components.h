@@ -19,7 +19,7 @@ struct MeshRenderer
 
 struct Spinn
 {
-    vec3  axis  = vec3(0, 1, 0);
+    float3  axis  = float3(0, 1, 0);
     float angle = 0.1F;
 };
 

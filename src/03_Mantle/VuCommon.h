@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <source_location>
 
 #include "vulkan/vulkan_raii.hpp" // IWYU pragma: export
@@ -17,13 +18,12 @@ throw_if_unexpected(const std::expected<T, E>& exp, std::source_location loc = s
 
 template <typename T, typename E>
 T&&
-move_or_throw(std::expected<T, E>&& exp, const char* throwMessage = "unexpected error") {
+move_or_THROW(std::expected<T, E>&& exp, const char* throwMessage = "unexpected error", std::source_location loc = std::source_location::current()) {
   if (!exp) {
-    throw std::runtime_error(throwMessage); // or throw your own exception type
+    throw std::runtime_error(std::format("{},\n at {}, line {},\n function {}\n",throwMessage,loc.file_name(),loc.line(),loc.function_name())); // or throw your own exception type
   }
   return std::move(*exp); // move the contained value out
 }
 
 namespace Vu {
-// void VkCheck(VkResult res, std::source_location location = std::source_location::current());
 } // namespace Vu

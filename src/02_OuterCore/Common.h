@@ -4,26 +4,17 @@
 
 using path = std::filesystem::path;
 
-// template <typename T, typename E>
-// using expected = tl::expected<T, E>;
-
-
-namespace Vu {
-namespace Math {
+namespace Vu::Math {
 struct Float2;
 struct Float3;
 struct Float4;
 struct Float4x4;
 struct Quaternion;
-}
+} // namespace Vu::Math
 
 
-using vec2   = Math::Float2;
-using vec3   = Math::Float3;
-using vec4   = Math::Float4;
-using mat4x4 = Math::Float4x4;
-
-using quaternion = Math::Quaternion;
-
-
-}
+using float2     = Vu::Math::Float2;
+using float3     = Vu::Math::Float3;
+using float4     = Vu::Math::Float4;
+using float4x4   = Vu::Math::Float4x4;
+using quaternion = Vu::Math::Quaternion;
