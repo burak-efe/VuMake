@@ -21,13 +21,13 @@ struct VuBufferCreateInfo {
 };
 
 struct VuBuffer {
-  // std::shared_ptr<VuDevice> vuDevice      = {};
   vk::raii::DeviceMemory deviceMemory  = {nullptr};
   vk::raii::Buffer       buffer        = {nullptr};
   void*                  mapPtr        = {};
   vk::DeviceSize         sizeInBytes   = {};
   u32orNull              bindlessIndex = {};
   VuName                 name          = {"VuBuffer"};
+
 
   VuBuffer() = default;
 

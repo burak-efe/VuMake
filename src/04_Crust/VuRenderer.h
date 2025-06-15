@@ -42,6 +42,7 @@ struct VuRendererCreateInfo {
 };
 
 struct VuRenderer {
+
   std::shared_ptr<VuInstance>       vuInstance       = {};
   std::shared_ptr<VuPhysicalDevice> vuPhysicalDevice = {};
 
@@ -98,6 +99,14 @@ private:
 public:
   explicit VuRenderer(const VuRendererCreateInfo& createInfo);
 
+  VuRenderer(const VuRenderer& other)            = delete;
+  VuRenderer& operator=(const VuRenderer& other) = delete;
+
+  VuRenderer(VuRenderer&& other) noexcept            = default;
+  VuRenderer& operator=(VuRenderer&& other) noexcept = default;
+
+  ~VuRenderer() { disposeStack.disposeAll(); }
+
   [[nodiscard]] bool shouldWindowClose() const;
 
   void beginFrame();
@@ -132,8 +141,7 @@ public:
 
   void bindGlobalBindlessSet(const vk::CommandBuffer& commandBuffer) const;
 
-  //   void
-  //   initImGui();
+  void initImGui();
   // ###################################################################################################################
   // ###################################################################################################################
   // ###################################################################################################################

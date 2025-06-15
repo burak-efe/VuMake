@@ -36,11 +36,11 @@ public:
     VuAssetLoader::loadGLTF(*vuRenderer, gltfPath, mesh);
 
     // basic shader
-    std::shared_ptr<VuShader> basicShader = std::make_shared<VuShader>(move_or_THROW(
+    std::shared_ptr<VuShader> basicShader = std::make_shared<VuShader>(moveOrTHROW(
         VuShader::make(vuRenderer, vuRenderer->deferredRenderSpace.gBufferPass, pbrVertPath, pbrFragPath)));
 
     // deffered lpas shder
-    std::shared_ptr<VuShader> lPassShader = std::make_shared<VuShader>(move_or_THROW(
+    std::shared_ptr<VuShader> lPassShader = std::make_shared<VuShader>(moveOrTHROW(
         VuShader::make(vuRenderer, vuRenderer->deferredRenderSpace.lightningPass, defVertPath, defFragPath)));
 
     MaterialSettings defaultMaterialSettings {};
@@ -52,10 +52,10 @@ public:
 
     // write material data
     auto*   basicMatData   = vuRenderer->getMaterialDataPointerAs<MatData_PbrDeferred>(*basicMatDataHnd);
-    VuImage colorMapOrErr  = move_or_THROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::baseColor));
-    VuImage normalMapOrErr = move_or_THROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::normal));
+    VuImage colorMapOrErr  = moveOrTHROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::baseColor));
+    VuImage normalMapOrErr = moveOrTHROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::normal));
     VuImage arm_MapOrErr =
-        move_or_THROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::ao_rough_metal));
+        moveOrTHROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::ao_rough_metal));
 
     vuRenderer->registerToBindless(colorMapOrErr);
     vuRenderer->registerToBindless(normalMapOrErr);

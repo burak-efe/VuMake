@@ -164,8 +164,8 @@ private:
 
     std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos {};
 
-    std::set<uint32_t> uniqueQueueFamilies = {vuPhyDevice->indices.graphicsFamily.value(),
-                                              vuPhyDevice->indices.presentFamily.value()};
+    std::set<uint32_t> uniqueQueueFamilies = {vuPhyDevice->indices.graphicsFamily,
+                                              vuPhyDevice->indices.presentFamily};
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -188,8 +188,8 @@ private:
     // todo
     throw_if_unexpected(deviceOrErr);
 
-    auto graphicsQueueOrErr = deviceOrErr->getQueue(vuPhyDevice->indices.graphicsFamily.value(), 0);
-    auto presentQueueOrErr  = deviceOrErr->getQueue(vuPhyDevice->indices.presentFamily.value(), 0);
+    auto graphicsQueueOrErr = deviceOrErr->getQueue(vuPhyDevice->indices.graphicsFamily, 0);
+    auto presentQueueOrErr  = deviceOrErr->getQueue(vuPhyDevice->indices.presentFamily, 0);
 
     // todo
     throw_if_unexpected(graphicsQueueOrErr);

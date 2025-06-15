@@ -59,7 +59,7 @@ Vu::VuImage::VuImage(const std::shared_ptr<VuDevice>& vuDevice, const VuImageCre
   viewInfo.subresourceRange.baseArrayLayer = 0;
   viewInfo.subresourceRange.layerCount     = 1;
 
-  imageView = move_or_THROW(vuDevice->device.createImageView(viewInfo));
+  imageView = moveOrTHROW(vuDevice->device.createImageView(viewInfo));
 }
 
 void

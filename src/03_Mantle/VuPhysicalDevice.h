@@ -10,45 +10,53 @@
 namespace Vu {
 
 struct VuQueueFamilyIndices {
-  std::optional<u32> graphicsFamily {};
-  std::optional<u32> presentFamily {};
+  u32 graphicsFamily = {};
+  u32 presentFamily  = {};
 
-  bool
-  isComplete() const {
-    return graphicsFamily.has_value() && presentFamily.has_value();
-  }
+  VuQueueFamilyIndices(std::nullptr_t) {}
 
-  // todo make no except
-  static VuQueueFamilyIndices
-  make(const vk::raii::PhysicalDevice& physDevice, const vk::raii::SurfaceKHR& surface) {
-    VuQueueFamilyIndices indices;
+  static std::expected<VuQueueFamilyIndices, vk::Result> make(const vk::raii::PhysicalDevice& physDevice,
+                                                              const vk::raii::SurfaceKHR&     surface) noexcept {
+    VuQueueFamilyIndices                   indices;
+    std::vector<vk::QueueFamilyProperties> queueFamilies    = physDevice.getQueueFamilyProperties();
+    int                                    queueFamilyIndex = 0;
 
-    std::vector<vk::QueueFamilyProperties> queueFamilies = physDevice.getQueueFamilyProperties();
+    std::optional<uint32_t> graphicsOrNull = {std::nullopt};
+    std::optional<uint32_t> presentOrNull  = {std::nullopt};
 
-    int queueFamilyIndex = 0;
+    for (const auto& queueFamily : queueFamilies) {
 
-    for (const auto& queue_family : queueFamilies) {
-      if (queue_family.queueFlags & vk::QueueFlagBits::eGraphics) { indices.graphicsFamily = queueFamilyIndex; }
+      if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) { graphicsOrNull = queueFamilyIndex; }
 
-      if (physDevice.getSurfaceSupportKHR(queueFamilyIndex, surface)) { indices.presentFamily = queueFamilyIndex; }
+      if (physDevice.getSurfaceSupportKHR(queueFamilyIndex, surface)) { presentOrNull = queueFamilyIndex; }
 
-      if (indices.isComplete()) { break; }
+      if (graphicsOrNull.has_value() && presentOrNull.has_value()) { break; }
 
       queueFamilyIndex++;
     }
 
+    if (!graphicsOrNull.has_value() || !presentOrNull.has_value()) {
+      return std::unexpected {vk::Result::eErrorUnknown};
+    }
+
+    indices.graphicsFamily = graphicsOrNull.value();
+    indices.presentFamily  = presentOrNull.value();
+
     return indices;
   }
+
+private:
+  VuQueueFamilyIndices() = default;
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct VuSwapChainSupportDetails {
-  vk::SurfaceCapabilitiesKHR        capabilities {};
-  std::vector<vk::SurfaceFormatKHR> formats {};
-  std::vector<vk::PresentModeKHR>   presentModes {};
+  vk::SurfaceCapabilitiesKHR        capabilities = {};
+  std::vector<vk::SurfaceFormatKHR> formats      = {};
+  std::vector<vk::PresentModeKHR>   presentModes = {};
 
-  static std::expected<VuSwapChainSupportDetails, vk::Result>
-  make(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& surface) noexcept {
+  static std::expected<VuSwapChainSupportDetails, vk::Result> make(const vk::raii::PhysicalDevice& physicalDevice,
+                                                                   const vk::raii::SurfaceKHR&     surface) noexcept {
     VuSwapChainSupportDetails details;
     try {
       details.capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
@@ -66,17 +74,15 @@ struct VuSwapChainSupportDetails {
 struct VuPhysicalDevice {
   std::shared_ptr<VuInstance>        vuInstance       = {};
   vk::raii::PhysicalDevice           physicalDevice   = {nullptr};
-  VuQueueFamilyIndices               indices          = {};
+  VuQueueFamilyIndices               indices          = {nullptr};
   VuSwapChainSupportDetails          swapChainSupport = {};
-
   vk::PhysicalDeviceProperties       properties       = {};
   vk::PhysicalDeviceMemoryProperties memoryProperties = {};
   vk::PhysicalDeviceFeatures         features         = {};
 
-  static std::expected<VuPhysicalDevice, vk::Result>
-  make(const std::shared_ptr<VuInstance>& vuInstance,
-       const vk::raii::SurfaceKHR&        surface,
-       std::span<const char*>             enabledExtensions) noexcept {
+  static std::expected<VuPhysicalDevice, vk::Result> make(const std::shared_ptr<VuInstance>& vuInstance,
+                                                          const vk::raii::SurfaceKHR&        surface,
+                                                          std::span<const char*> enabledExtensions) noexcept {
     try {
       VuPhysicalDevice outVuPhyDevice {vuInstance, surface, enabledExtensions};
       return std::move(outVuPhyDevice);
@@ -98,12 +104,13 @@ private:
     for (const vk::raii::PhysicalDevice& phyDevice : phyDevicesOrErr.value()) {
       if (isSupported(phyDevice, surface, enabledExtensions)) {
         this->physicalDevice   = phyDevice;
-        this->indices          = VuQueueFamilyIndices::make(phyDevice, surface);
+        auto qIndicesOrErr     = VuQueueFamilyIndices::make(phyDevice, surface);
+        this->indices          = moveOrTHROW(qIndicesOrErr);
         // todo
         this->swapChainSupport = *VuSwapChainSupportDetails::make(phyDevice, surface);
-        this->properties     = phyDevice.getProperties();
+        this->properties       = phyDevice.getProperties();
         this->memoryProperties = phyDevice.getMemoryProperties();
-        this->features        = phyDevice.getFeatures();
+        this->features         = phyDevice.getFeatures();
         return;
       }
     }
@@ -111,14 +118,13 @@ private:
     throw vk::Result::eErrorInitializationFailed;
   }
 
-  static bool
-  isSupported(const vk::raii::PhysicalDevice& phyDevice,
-              const vk::raii::SurfaceKHR&     surface,
-              std::span<const char*>          enabledExtensions) {
+  static bool isSupported(const vk::raii::PhysicalDevice& phyDevice,
+                          const vk::raii::SurfaceKHR&     surface,
+                          std::span<const char*>          enabledExtensions) {
 
-    VuQueueFamilyIndices indices             = VuQueueFamilyIndices::make(phyDevice, surface);
-    bool                 extensionsSupported = isExtensionsSupported(phyDevice, enabledExtensions);
-    bool                 swapChainAdequate   = false;
+    auto indicesOrErr        = VuQueueFamilyIndices::make(phyDevice, surface);
+    bool extensionsSupported = isExtensionsSupported(phyDevice, enabledExtensions);
+    bool swapChainAdequate   = false;
     if (extensionsSupported) {
       auto swapChainSupportOrErr = VuSwapChainSupportDetails::make(phyDevice, surface);
       // todo
@@ -128,11 +134,11 @@ private:
 
     vk::PhysicalDeviceFeatures supportedFeatures = phyDevice.getFeatures();
 
-    return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+    return indicesOrErr.has_value() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
   }
 
-  static bool
-  isExtensionsSupported(const vk::raii::PhysicalDevice& device, std::span<const char*> requestedExtensions) {
+  static bool isExtensionsSupported(const vk::raii::PhysicalDevice& device,
+                                    std::span<const char*>          requestedExtensions) {
 
     std::vector<vk::ExtensionProperties> availableExtensions = device.enumerateDeviceExtensionProperties();
 

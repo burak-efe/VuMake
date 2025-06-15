@@ -36,8 +36,8 @@ struct VuSwapChain {
     scCreateInfo.imageArrayLayers = 1;
     scCreateInfo.imageUsage       = vk::ImageUsageFlagBits::eColorAttachment;
 
-    u32 queueFamilyIndices[] = {physicalDevice->indices.graphicsFamily.value(),
-                                physicalDevice->indices.presentFamily.value()};
+    u32 queueFamilyIndices[] = {physicalDevice->indices.graphicsFamily,
+                                physicalDevice->indices.presentFamily};
 
     if (physicalDevice->indices.graphicsFamily != physicalDevice->indices.presentFamily) {
       scCreateInfo.imageSharingMode      = vk::SharingMode::eConcurrent;

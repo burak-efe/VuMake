@@ -11,19 +11,36 @@
   } while (0)
 
 template <typename T, typename E>
-void
-throw_if_unexpected(const std::expected<T, E>& exp, std::source_location loc = std::source_location::current()) {
+void throw_if_unexpected(const std::expected<T, E>& exp, std::source_location loc = std::source_location::current()) {
   if (!exp) { throw std::runtime_error(std::format("Unexpected error at {}:{}", loc.file_name(), loc.line())); }
 }
 
 template <typename T, typename E>
-T&&
-move_or_THROW(std::expected<T, E>&& exp, const char* throwMessage = "unexpected error", std::source_location loc = std::source_location::current()) {
+T&& moveOrTHROW(std::expected<T, E>&& exp,
+                const char*           throwMessage = "unexpected error",
+                std::source_location  loc          = std::source_location::current()) {
   if (!exp) {
-    throw std::runtime_error(std::format("{},\n at {}, line {},\n function {}\n",throwMessage,loc.file_name(),loc.line(),loc.function_name())); // or throw your own exception type
+    throw std::runtime_error(std::format("{},\n at {}, line {},\n function {}\n",
+                                         throwMessage,
+                                         loc.file_name(),
+                                         loc.line(),
+                                         loc.function_name())); // or throw your own exception type
   }
   return std::move(*exp); // move the contained value out
 }
 
-namespace Vu {
-} // namespace Vu
+template <typename T, typename E>
+T&& moveOrTHROW(std::expected<T, E>& exp,
+               const char* throwMessage = "unexpected error",
+               std::source_location loc = std::source_location::current()) {
+  if (!exp) {
+    throw std::runtime_error(std::format("{},\n at {}, line {},\n function {}\n",
+                                         throwMessage,
+                                         loc.file_name(),
+                                         loc.line(),
+                                         loc.function_name()));
+  }
+  return std::move(*exp);
+}
+
+namespace Vu {} // namespace Vu

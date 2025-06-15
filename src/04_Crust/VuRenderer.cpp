@@ -118,7 +118,7 @@ VuRenderer::VuRenderer(const VuRendererCreateInfo& createInfo) : lastCreateInfo 
         .sizeInBytes  = bufferSize,
         .vkUsageFlags = vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
     };
-    uniformBuffers[i] = move_or_THROW(VuBuffer::make(*vuDevice, bufferCreateInfo));
+    uniformBuffers[i] = moveOrTHROW(VuBuffer::make(*vuDevice, bufferCreateInfo));
     uniformBuffers[i].map();
   }
   for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
@@ -152,10 +152,12 @@ VuRenderer::VuRenderer(const VuRendererCreateInfo& createInfo) : lastCreateInfo 
 
   uint32_t swapChainImageCount = deferredRenderSpace.vuSwapChain.images.size();
   for (size_t i = 0; i < swapChainImageCount; i++) {
-    imageAvailableSemaphores.emplace_back(move_or_THROW(vuDevice->device.createSemaphore(semaphoreInfo)));
-    renderFinishedSemaphores.emplace_back(move_or_THROW(vuDevice->device.createSemaphore(semaphoreInfo)));
-    inFlightFences.emplace_back(move_or_THROW(vuDevice->device.createFence(fenceInfo)));
+    imageAvailableSemaphores.emplace_back(moveOrTHROW(vuDevice->device.createSemaphore(semaphoreInfo)));
+    renderFinishedSemaphores.emplace_back(moveOrTHROW(vuDevice->device.createSemaphore(semaphoreInfo)));
+    inFlightFences.emplace_back(moveOrTHROW(vuDevice->device.createFence(fenceInfo)));
   }
+
+  initImGui();
 }
 
 bool VuRenderer::shouldWindowClose() const { return sdlEvent.type == SDL_EVENT_QUIT; }
@@ -421,7 +423,7 @@ void VuRenderer::uninit() { disposeStack.disposeAll(); }
 void VuRenderer::initCommandPool(const VuRendererCreateInfo& info) {
   vk::CommandPoolCreateInfo poolInfo {};
   poolInfo.flags            = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-  poolInfo.queueFamilyIndex = vuPhysicalDevice->indices.graphicsFamily.value();
+  poolInfo.queueFamilyIndex = vuPhysicalDevice->indices.graphicsFamily;
   auto commandPoolOrErr     = vuDevice->device.createCommandPool(poolInfo);
   // Todo
   throw_if_unexpected(commandPoolOrErr);
@@ -799,6 +801,56 @@ void VuRenderer::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t 
   commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, region);
   // vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
   EndSingleTimeCommands(commandBuffer);
+}
+
+void VuRenderer::initImGui() {
+
+  vk::DescriptorPoolSize pool_sizes[] = {{.type = vk::DescriptorType::eCombinedImageSampler, .descriptorCount = 1000}};
+
+  vk::DescriptorPoolCreateInfo poolInfo {};
+  poolInfo.poolSizeCount = 1;
+  poolInfo.pPoolSizes    = pool_sizes;
+  poolInfo.maxSets       = 1000;
+  poolInfo.flags         = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+
+  auto poolOrErr   = vuDevice->device.createDescriptorPool(poolInfo);
+  uiDescriptorPool = moveOrTHROW(poolOrErr);
+
+
+  // Setup Dear ImGui context
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  disposeStack.push([] { ImGui::DestroyContext(); });
+  ImGuiIO& io = ImGui::GetIO();
+  //(void) io;
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+  // io.ConfigFlags |= 1 << 7;
+  // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+  // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+  // Setup Dear ImGui style
+  ImGui::StyleColorsDark();
+
+  ImGui_ImplSDL3_InitForVulkan(window);
+  disposeStack.push([] { ImGui_ImplSDL3_Shutdown(); });
+
+  ImGui_ImplVulkan_InitInfo init_info = {};
+  init_info.Instance                  = *vuDevice->vuPhysicalDevice->vuInstance->instance;
+  init_info.PhysicalDevice            = *vuDevice->vuPhysicalDevice->physicalDevice;
+  init_info.Device                    = *vuDevice->device;
+  init_info.QueueFamily               = vuDevice->vuPhysicalDevice->indices.graphicsFamily;
+  init_info.Queue                     = *vuDevice->graphicsQueue;
+  init_info.DescriptorPool            = *uiDescriptorPool;
+  init_info.MinImageCount             = 2;
+  init_info.ImageCount                = 2;
+  init_info.UseDynamicRendering       = false;
+  init_info.RenderPass                = *deferredRenderSpace.gBufferPass->renderPass;
+
+  ImGui_ImplVulkan_Init(&init_info);
+  disposeStack.push([] { ImGui_ImplVulkan_Shutdown(); });
+
+  ImGui_ImplVulkan_CreateFontsTexture();
+  disposeStack.push([] { ImGui_ImplVulkan_DestroyFontsTexture(); });
 }
 
 } // namespace Vu

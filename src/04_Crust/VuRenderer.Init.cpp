@@ -157,55 +157,7 @@ namespace Vu {
 // initImGui();
 //}
 //
-// void
-// VuRenderer::initImGui() {
-//   vk::DescriptorPoolSize pool_sizes[] = {
-//       {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
-//   };
 //
-//   vk::DescriptorPoolCreateInfo poolInfo {};
-//   poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-//   poolInfo.poolSizeCount = 1;
-//   poolInfo.pPoolSizes    = pool_sizes;
-//   poolInfo.maxSets       = 1000;
-//   poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-//
-//   vk::Check(vkCreateDescriptorPool(vuDevice.device, &poolInfo, nullptr, &vuDevice.uiDescriptorPool));
-//   disposeStack.push([&] { vkDestroyDescriptorPool(vuDevice.device, vuDevice.uiDescriptorPool, nullptr); });
-//
-//   // Setup Dear ImGui context
-//   IMGUI_CHECKVERSION();
-//   ImGui::CreateContext();
-//   disposeStack.push([] { ImGui::DestroyContext(); });
-//   ImGuiIO& io = ImGui::GetIO();
-//   //(void) io;
-//   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-//   // io.ConfigFlags |= 1 << 7;
-//   // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-//   // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-//
-//   // Setup Dear ImGui style
-//   ImGui::StyleColorsDark();
-//
-//   ImGui_ImplSDL3_InitForVulkan(ctx::window);
-//   disposeStack.push([] { ImGui_ImplSDL3_Shutdown(); });
-//
-//   ImGui_ImplVulkan_InitInfo init_info = {};
-//   init_info.Instance                  = vuDevice.instance;
-//   init_info.PhysicalDevice            = vuDevice.physicalDevice;
-//   init_info.Device                    = vuDevice.device;
-//   init_info.QueueFamily    = VuSwapChain::findQueueFamilies(vuDevice.physicalDevice,
-//   surface).graphicsFamily.value(); init_info.Queue          = vuDevice.graphicsQueue; init_info.DescriptorPool =
-//   vuDevice.uiDescriptorPool; init_info.MinImageCount  = 2; init_info.ImageCount     = 2;
-//   init_info.UseDynamicRendering = false;
-//   init_info.RenderPass          = swapChain.gBufferPass.renderPass;
-//
-//   ImGui_ImplVulkan_Init(&init_info);
-//   disposeStack.push([] { ImGui_ImplVulkan_Shutdown(); });
-//
-//   ImGui_ImplVulkan_CreateFontsTexture();
-//   disposeStack.push([] { ImGui_ImplVulkan_DestroyFontsTexture(); });
-// }
 //
 // void
 // VuRenderer::bindGlobalBindlessSet(const vk::CommandBuffer& commandBuffer) {

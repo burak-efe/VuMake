@@ -5,6 +5,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(VuProfileBuild "Profile Clang Build using ClangBuildAnalyzer" ON)
+option(VuRunIWYU "Run Include-What-You-use on build" ON)
+
 
 ####################################################################################################
 project("VuMake")
@@ -18,13 +21,15 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 #target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
 #target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
 ####################################################################################################
+if (VuRunIWYU)
 find_program(iwyu_path NAMES include-what-you-use PATHS "${CMAKE_SOURCE_DIR}/build_utils" REQUIRED)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
+endif ()
 ####################################################################################################
 target_precompile_headers(${PROJECT_NAME} PRIVATE
         "src/pch.h"
-        #        <cstdint> <cassert> <cstdlib> <chrono> <iostream> <filesystem> <format> <algorithm>
-        #        <functional> <mutex> <ranges> <array> <span> <vector> <stack> <string>
+        <chrono> <iostream> <filesystem> <format> <algorithm>
+        <functional> <mutex> <ranges> <array> <span> <vector> <stack> <string>
 )
 ####################################################################################################
 target_sources(VuLibs INTERFACE assets/shaders/common/InteroptStructs.h)
@@ -124,6 +129,35 @@ target_link_libraries(VuLibs INTERFACE SDL3::SDL3-static)
 #target_link_libraries(VuLibs INTERFACE VulkanMemoryAllocator)
 #target_include_directories(VuLibs INTERFACE GPUOpen::VulkanMemoryAllocator)
 ####################################################################################################
+
+
+if (VuProfileBuild)
+    #Pre-Build:
+    set(CBA_DIR "${CMAKE_SOURCE_DIR}/build_utils/ClangBuildAnalyzer")
+
+    target_compile_options(${PROJECT_NAME} PRIVATE -ftime-trace)
+
+    add_custom_target(clang_build_analyzer_start
+            COMMAND ${CBA_DIR} --start ${CMAKE_BINARY_DIR}
+            COMMENT "Starting ClangBuildAnalyzer"
+    )
+
+    add_dependencies(${PROJECT_NAME} clang_build_analyzer_start)
+
+    #Post-Build:
+    add_custom_command(TARGET ${PROJECT_NAME}
+            POST_BUILD
+            COMMAND ${CBA_DIR} --stop ${CMAKE_BINARY_DIR} build_log
+            COMMENT "Stopping ClangBuildAnalyzer"
+    )
+
+    add_custom_command(TARGET ${PROJECT_NAME}
+            POST_BUILD
+            COMMAND ${CBA_DIR} --analyze build_log
+            COMMENT "Output of  ClangBuildAnalyzer:"
+    )
+endif ()
+
 #Create a symlink to the assets folder in the build directory
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E create_symlink
