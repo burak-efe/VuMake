@@ -1,14 +1,16 @@
 #include "IndexAllocator.h"
 
-IndexAllocator::IndexAllocator() = default;
-
-IndexAllocator::IndexAllocator(const uint32_t cap, std::pmr::memory_resource* memoryResource)
-    : freeIndices {memoryResource}, capacity {cap}, nextIndex {0} {
+IndexAllocator::IndexAllocator(const uint32_t cap, std::pmr::memory_resource* memoryResource) :
+    freeIndices {memoryResource},
+    capacity {cap},
+    nextIndex {0} {
   freeIndices.reserve(capacity);
 }
 
-IndexAllocator::IndexAllocator(IndexAllocator&& other) noexcept
-    : freeIndices {std::move(other.freeIndices)}, capacity {other.capacity}, nextIndex {other.nextIndex} {}
+IndexAllocator::IndexAllocator(IndexAllocator&& other) noexcept :
+    freeIndices {std::move(other.freeIndices)},
+    capacity {other.capacity},
+    nextIndex {other.nextIndex} {}
 
 IndexAllocator&
 IndexAllocator::operator=(IndexAllocator&& other) noexcept {

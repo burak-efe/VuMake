@@ -4,8 +4,8 @@
 #include "02_OuterCore/VuConfig.h"
 #include "03_Mantle/VuBuffer.h"
 #include "03_Mantle/VuTypes.h"
-#include "VuDeferredRenderSpace.h"
 #include "SDL3/SDL.h"
+#include "VuDeferredRenderSpace.h"
 
 struct ImGui_ImplVulkanH_Window;
 namespace vk {
@@ -53,47 +53,47 @@ struct VuRenderer {
   VuDeferredRenderSpace                 deferredRenderSpace = {};
   ImGui_ImplVulkanH_Window*             imguiMainWindowData = {};
   //
-  vk::raii::CommandPool         commandPool                 = {nullptr};
-  vk::raii::DescriptorPool      descriptorPool              = {nullptr};
-  vk::raii::DescriptorPool      uiDescriptorPool            = {nullptr};
-  vk::raii::DescriptorSetLayout globalDescriptorSetLayout   = {nullptr};
-  vk::raii::PipelineLayout      globalPipelineLayout        = {nullptr};
-  vector<vk::DescriptorSet>     globalDescriptorSets        = {};
+  vk::raii::CommandPool          commandPool {nullptr};
+  vk::raii::DescriptorPool       descriptorPool {nullptr};
+  vk::raii::DescriptorPool       uiDescriptorPool {nullptr};
+  vk::raii::DescriptorSetLayout  globalDescriptorSetLayout {nullptr};
+  vk::raii::PipelineLayout       globalPipelineLayout {nullptr};
+  std::vector<vk::DescriptorSet> globalDescriptorSets {};
   //
-  vector<vk::raii::CommandBuffer> commandBuffers            = {};
-  vector<vk::raii::Semaphore>     imageAvailableSemaphores  = {};
-  vector<vk::raii::Semaphore>     renderFinishedSemaphores  = {};
-  vector<vk::raii::Fence>         inFlightFences            = {};
+  std::vector<vk::raii::CommandBuffer> commandBuffers {};
+  std::vector<vk::raii::Semaphore>     imageAvailableSemaphores {};
+  std::vector<vk::raii::Semaphore>     renderFinishedSemaphores {};
+  std::vector<vk::raii::Fence>         inFlightFences {};
   //
-  vector<VuBuffer> uniformBuffers                           = {};
-  u32              currentFrame                             = {};
-  u32              currentFrameImageIndex                   = {};
+  std::vector<VuBuffer> uniformBuffers {};
+  u32                   currentFrame {};
+  u32                   currentFrameImageIndex {};
   //
-  VuDisposeStack disposeStack                               = {};
+  VuDisposeStack disposeStack {};
   //
-  IndexAllocator imgBindlessIndexAllocator                  = {};
-  IndexAllocator samplerBindlessIndexAllocator              = {};
-  IndexAllocator bufferBindlessIndexAllocator               = {};
-  IndexAllocator materialDataBindlessIndexAllocator         = {};
+  IndexAllocator imgBindlessIndexAllocator;
+  IndexAllocator samplerBindlessIndexAllocator;
+  IndexAllocator bufferBindlessIndexAllocator;
+  IndexAllocator materialDataBindlessIndexAllocator;
   //
-  FrameConst_RawData frameConst                             = {};
-  float              deltaAsSecond                          = {};
-  u64                prevTimeAsNanoSecond                   = {};
-  float              mouseX                                 = {};
-  float              mouseY                                 = {};
-  float              mouseDeltaX                            = {};
-  float              mouseDeltaY                            = {};
+  FrameConst_RawData frameConst {};
+  float              deltaAsSecond {};
+  u64                prevTimeAsNanoSecond {};
+  float              mouseX {};
+  float              mouseY {};
+  float              mouseDeltaX {};
+  float              mouseDeltaY {};
   //
-  std::shared_ptr<VuBuffer>  debugBuffer                    = {};
-  std::shared_ptr<VuBuffer>  materialDataBuffer             = {};
-  std::shared_ptr<VuImage>   defaultImage                   = {};
-  std::shared_ptr<VuImage>   defaultNormalImage             = {};
-  std::shared_ptr<VuSampler> defaultSampler                 = {};
+  std::shared_ptr<VuBuffer>  debugBuffer {};
+  std::shared_ptr<VuBuffer>  materialDataBuffer {};
+  std::shared_ptr<VuImage>   defaultImage {};
+  std::shared_ptr<VuImage>   defaultNormalImage {};
+  std::shared_ptr<VuSampler> defaultSampler {};
 
 private:
   // holds the address of all other buffers
-  VuBuffer             bdaBuffer      = {};
-  VuBuffer             stagingBuffer  = {};
+  VuBuffer             bdaBuffer      = {nullptr};
+  VuBuffer             stagingBuffer  = {nullptr};
   VuRendererCreateInfo lastCreateInfo = {};
 
 public:

@@ -1,5 +1,6 @@
 #define GTSPS_IMPLEMENTATION
 
+#include "VuCommon.h"
 
 #include "GetTimeSinceProcessStart.h"
 

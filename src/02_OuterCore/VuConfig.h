@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 
+#include "02_OuterCore/VuCommon.h"
 #include "01_InnerCore/TypeDefs.h"
 #include "02_OuterCore/VuPlatform.h"
 

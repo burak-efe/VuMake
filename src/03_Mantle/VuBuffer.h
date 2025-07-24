@@ -4,8 +4,9 @@
 #include <span>
 #include <type_traits>
 
-#include "../02_OuterCore/VuCommon.h"
 #include "01_InnerCore/TypeDefs.h"
+#include "01_InnerCore/zero_optional.h"
+#include "02_OuterCore/VuCommon.h"
 #include "VuDevice.h"
 #include "VuTypes.h"
 
@@ -28,10 +29,11 @@ struct VuBuffer {
   vk::raii::Buffer       buffer        = {nullptr};
   void*                  mapPtr        = {};
   vk::DeviceSize         sizeInBytes   = {};
-  u32orNull              bindlessIndex = {};
+  zero_optional<u32>     bindlessIndex = {};
   VuName                 name          = {"VuBuffer"};
 
-  VuBuffer() = default;
+  VuBuffer() = delete;
+  VuBuffer(std::nullptr_t) {}
 
   static std::expected<VuBuffer, vk::Result>
   make(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo);
@@ -55,7 +57,7 @@ struct VuBuffer {
   getMappedSpan(vk::DeviceSize start, vk::DeviceSize sizeInBytes) const;
 
   static vk::DeviceSize
-  alignedSize(vk::DeviceSize sizeInBytes, vk::DeviceSize alignment);
+  calculateAlignedSize(vk::DeviceSize sizeInBytes, vk::DeviceSize alignment);
 
 private:
   VuBuffer(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo);

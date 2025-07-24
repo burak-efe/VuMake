@@ -9,8 +9,8 @@ struct ScopeTimer {
   std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
   std::source_location                                        sourceLocation;
 
-  explicit ScopeTimer(const std::source_location &location = std::source_location::current())
-      : sourceLocation(location) {}
+  explicit ScopeTimer(const std::source_location& location = std::source_location::current()) :
+      sourceLocation(location) {}
 
   ~ScopeTimer() {
     auto end = std::chrono::high_resolution_clock::now();

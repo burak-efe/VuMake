@@ -10,9 +10,8 @@
 #include "11_Components/Transform.h"
 #include "imgui.h"
 #include "InteroptStructs.h"
-void Vu::drawMesh(VuRenderer& vuRenderer, Transform& transform, const MeshRenderer& meshRenderer) {
-
-  // VuDevice* vuDevice = &ECS_VU_RENDERER->vuDevice;
+void
+Vu::drawMesh(VuRenderer& vuRenderer, Transform& transform, const MeshRenderer& meshRenderer) {
 
   std::shared_ptr<VuMaterial> materialHnd = meshRenderer.materialHnd;
 
@@ -25,23 +24,28 @@ void Vu::drawMesh(VuRenderer& vuRenderer, Transform& transform, const MeshRender
   // push constant
   float4x4           trs = transform.ToTRS();
   PushConsts_RawData pc {
-      trs, matDataIndex, {meshRenderer.mesh->vertexBuffer->bindlessIndex, meshRenderer.mesh->vertexCount, 0}};
+      trs,
+      matDataIndex,
+      {meshRenderer.mesh->vertexBuffer->bindlessIndex.value_or_THROW(), meshRenderer.mesh->vertexCount, 0}};
   vuRenderer.pushConstants(pc);
   vuRenderer.bindMesh(*meshRenderer.mesh);
   uint32_t indexCount = meshRenderer.mesh->indexBuffer->sizeInBytes / 4;
   vuRenderer.drawIndexed(indexCount);
 }
-void Vu::spinn(const VuRenderer& vuRenderer, Transform& trs, const Spinn& spin) {
+void
+Vu::spinn(const VuRenderer& vuRenderer, Transform& trs, const Spinn& spin) {
 
   trs.Rotate(spin.axis, spin.angle * vuRenderer.deltaAsSecond);
 }
-void Vu::drawSpinUI(uint32_t elemID, Spinn& spinn) {
+void
+Vu::drawSpinUI(uint32_t elemID, Spinn& spinn) {
 
   if (ImGui::CollapsingHeader("Spin Components")) {
     ImGui::SliderFloat(std::format("Radians/perSecond##{0}", elemID).c_str(), &spinn.angle, 0.0f, 32.0f);
   }
 }
-void Vu::cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
+void
+Vu::cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
 
   SDL_PumpEvents();
 

@@ -13,6 +13,9 @@ AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: true
 AllowShortBlocksOnASingleLine: Always
 
+BreakConstructorInitializers: AfterColon
+PackConstructorInitializers: Never
+
 SortIncludes: CaseInsensitive
 IncludeBlocks: Regroup
 IncludeCategories:

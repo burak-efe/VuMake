@@ -21,9 +21,9 @@
 #include <vector>
 
 #include "02_OuterCore/FixedString.h"
-#include "02_OuterCore/VuCommon.h"
-#include "03_Mantle/VuDevice.h"
-#include "03_Mantle/VuInstance.h"
+//#include "02_OuterCore/VuCommon.h"
+//#include "03_Mantle/VuDevice.h"
+//#include "03_Mantle/VuInstance.h"
 //
 #include "fastgltf/core.hpp"
 #include "fastgltf/math.hpp"
@@ -46,12 +46,12 @@ template class std::basic_format_string<char, const char*, unsigned int>;
 template class std::vector<const char*>;
 
 // vk templates
-template class std::span<vk::DescriptorSetLayout>;
-template class std::vector<VkValidationFeatureEnableEXT>;
-template class std::span<const vk::SurfaceFormatKHR>;
-template class std::is_default_constructible<std::deque<std::function<void()>>>;
-template class std::is_nothrow_default_constructible<std::pmr::polymorphic_allocator<unsigned int>>;
-
-template class std::shared_ptr<Vu::VuDevice>;
-template class std::shared_ptr<Vu::VuInstance>;
-template class std::shared_ptr<Vu::VuPhysicalDevice>;
+// template class std::span<vk::DescriptorSetLayout>;
+// template class std::vector<VkValidationFeatureEnableEXT>;
+// template class std::span<const vk::SurfaceFormatKHR>;
+// template class std::is_default_constructible<std::deque<std::function<void()>>>;
+// template class std::is_nothrow_default_constructible<std::pmr::polymorphic_allocator<unsigned int>>;
+//
+// template class std::shared_ptr<Vu::VuDevice>;
+// template class std::shared_ptr<Vu::VuInstance>;
+// template class std::shared_ptr<Vu::VuPhysicalDevice>;

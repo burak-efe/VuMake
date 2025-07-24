@@ -1,5 +1,7 @@
 #pragma once
 
+#include "02_OuterCore/VuCommon.h"
+
 #include <expected>
 
 namespace Vu {

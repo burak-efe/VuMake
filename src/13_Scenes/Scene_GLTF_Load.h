@@ -3,11 +3,11 @@
 #include <filesystem>
 
 #include "02_OuterCore/Common.h"
-#include "04_Crust/VuRenderer.h"
 #include "03_Mantle/VuImage.h"
 #include "04_Crust/VuAssetLoader.h"
 #include "04_Crust/VuMaterial.h"
 #include "04_Crust/VuMesh.h"
+#include "04_Crust/VuRenderer.h"
 #include "04_Crust/VuShader.h"
 #include "11_Components/Camera.h"
 #include "11_Components/Components.h"
@@ -41,7 +41,6 @@ public:
     // create a mesh asset
     VuMesh mesh {};
     VuAssetLoader::loadGLTF(*vuRenderer, gltfPath, mesh);
-    
 
     // basic shader
     std::shared_ptr<VuShader> basicShader = std::make_shared<VuShader>(
@@ -68,9 +67,9 @@ public:
     vuRenderer->registerToBindless(normalMapOrErr);
     vuRenderer->registerToBindless(arm_MapOrErr);
 
-    basicMatData->colorTexture        = colorMapOrErr.bindlessIndex;
-    basicMatData->normalTexture       = normalMapOrErr.bindlessIndex;
-    basicMatData->aoRoughMetalTexture = arm_MapOrErr.bindlessIndex;
+    basicMatData->colorTexture        = colorMapOrErr.bindlessIndex.value_or_THROW();
+    basicMatData->normalTexture       = normalMapOrErr.bindlessIndex.value_or_THROW();
+    basicMatData->aoRoughMetalTexture = arm_MapOrErr.bindlessIndex.value_or_THROW();
 
     // lightning pass material
     std::shared_ptr<VuMaterialDataHandle> lPassMatDataHandle = vuRenderer->createMaterialDataIndex();

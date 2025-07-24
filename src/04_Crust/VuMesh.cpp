@@ -1,5 +1,7 @@
 #include "VuMesh.h"
 
+#include "02_OuterCore/VuCommon.h"
+
 #include "01_InnerCore/TypeDefs.h"
 #include "02_OuterCore/math/VuFloat2.h"
 #include "02_OuterCore/math/VuFloat3.h"

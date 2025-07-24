@@ -1,6 +1,7 @@
 #pragma once
 
 #include "02_OuterCore/Common.h"
+#include "02_OuterCore/VuCommon.h"
 
 namespace Vu {
 struct VuBuffer;

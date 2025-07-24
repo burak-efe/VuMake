@@ -5,11 +5,12 @@
 #include <exception>
 #include <utility>
 
-#include "../02_OuterCore/VuCommon.h"
+#include "02_OuterCore/VuCommon.h"
 #include "03_Mantle/VuDevice.h"
 
 namespace Vu {
-std::expected<Vu::VuBuffer, vk::Result> VuBuffer::make(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo) {
+std::expected<Vu::VuBuffer, vk::Result>
+VuBuffer::make(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo) {
   try {
     VuBuffer outBuffer {vuDevice, createInfo};
     return std::move(outBuffer);
@@ -19,18 +20,21 @@ std::expected<Vu::VuBuffer, vk::Result> VuBuffer::make(const VuDevice& vuDevice,
   }
 }
 
-void VuBuffer::map() {
+void
+VuBuffer::map() {
   // todo
   auto res = buffer.getDevice().mapMemory(deviceMemory, 0ull, vk::WholeSize, {}, &mapPtr);
   if (res != vk::Result::eSuccess) { throw std::bad_exception(); }
 }
 
-void VuBuffer::unmap() {
+void
+VuBuffer::unmap() {
   buffer.getDevice().unmapMemory(deviceMemory);
   mapPtr = nullptr;
 }
 
-vk::DeviceAddress VuBuffer::getDeviceAddress() const {
+vk::DeviceAddress
+VuBuffer::getDeviceAddress() const {
   vk::BufferDeviceAddressInfo deviceAddressInfo {};
   deviceAddressInfo.buffer = buffer;
 
@@ -38,7 +42,8 @@ vk::DeviceAddress VuBuffer::getDeviceAddress() const {
   return address;
 }
 
-vk::Result VuBuffer::setData(const void* data, vk::DeviceSize byteSize, vk::DeviceSize offsetInByte) const {
+vk::Result
+VuBuffer::setData(const void* data, vk::DeviceSize byteSize, vk::DeviceSize offsetInByte) const {
   if (!mapPtr || !data || byteSize == 0) { return vk::Result::eErrorMemoryMapFailed; }
   auto* dst = static_cast<std::byte*>(mapPtr) + offsetInByte;
   std::memcpy(dst, data, static_cast<size_t>(byteSize));
@@ -46,14 +51,19 @@ vk::Result VuBuffer::setData(const void* data, vk::DeviceSize byteSize, vk::Devi
   return vk::Result::eSuccess;
 }
 
-vk::DeviceSize VuBuffer::getSizeInBytes() const { return sizeInBytes; }
+vk::DeviceSize
+VuBuffer::getSizeInBytes() const {
+  return sizeInBytes;
+}
 
-std::span<byte> VuBuffer::getMappedSpan(VkDeviceSize start, VkDeviceSize sizeInBytes) const {
+std::span<byte>
+VuBuffer::getMappedSpan(VkDeviceSize start, VkDeviceSize sizeInBytes) const {
   auto* base = static_cast<std::byte*>(mapPtr);
   return {base + start, sizeInBytes};
 }
 
-vk::DeviceSize VuBuffer::alignedSize(vk::DeviceSize sizeInBytes, vk::DeviceSize alignment) {
+vk::DeviceSize
+VuBuffer::calculateAlignedSize(vk::DeviceSize sizeInBytes, vk::DeviceSize alignment) {
   return (sizeInBytes + alignment - 1) & ~(alignment - 1);
 }
 VuBuffer::VuBuffer(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo) {

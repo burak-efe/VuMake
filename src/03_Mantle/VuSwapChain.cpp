@@ -1,6 +1,6 @@
 #include "VuSwapChain.h"
 
-#include "../02_OuterCore/VuCommon.h"
+
 #include "VuDevice.h"
 #include "VuPhysicalDevice.h"
 

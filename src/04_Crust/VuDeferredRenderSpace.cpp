@@ -16,8 +16,9 @@
 namespace Vu {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 VuDeferredRenderSpace::VuDeferredRenderSpace(const std::shared_ptr<VuDevice>&             vuDevice,
-                                             const std::shared_ptr<vk::raii::SurfaceKHR>& surface)
-    : vuDevice {vuDevice}, vuSwapChain(vuDevice, surface) {
+                                             const std::shared_ptr<vk::raii::SurfaceKHR>& surface) :
+    vuDevice {vuDevice},
+    vuSwapChain(vuDevice, surface) {
 
   // Color image handle
   auto colorImgOrrErr =
@@ -105,11 +106,11 @@ VuDeferredRenderSpace::registerImagesToBindless(VuRenderer& vuRenderer) {
   vuRenderer.registerToBindless(*aoRoughMetalImage);
   vuRenderer.registerToBindless(*worldSpacePosImage);
   vuRenderer.registerToBindless(*depthStencilImage);
-  lightningPassMaterialData.colorTexture         = colorImage->bindlessIndex;
-  lightningPassMaterialData.normalTexture        = normalImage->bindlessIndex;
-  lightningPassMaterialData.aoRoughMetalTexture  = aoRoughMetalImage->bindlessIndex;
-  lightningPassMaterialData.worldSpacePosTexture = worldSpacePosImage->bindlessIndex;
-  lightningPassMaterialData.depthTexture         = depthStencilImage->bindlessIndex;
+  lightningPassMaterialData.colorTexture         = colorImage->bindlessIndex.value_or_THROW();
+  lightningPassMaterialData.normalTexture        = normalImage->bindlessIndex.value_or_THROW();
+  lightningPassMaterialData.aoRoughMetalTexture  = aoRoughMetalImage->bindlessIndex.value_or_THROW();
+  lightningPassMaterialData.worldSpacePosTexture = worldSpacePosImage->bindlessIndex.value_or_THROW();
+  lightningPassMaterialData.depthTexture         = depthStencilImage->bindlessIndex.value_or_THROW();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void

@@ -1,21 +1,21 @@
 #pragma once
 #include <memory_resource>
 #include <mutex>
+
 #include "TypeDefs.h"
 
 struct IndexAllocator {
 public:
 private:
-  vector<uint32_t> freeIndices = {};
-  uint32_t         capacity    = {};
-  uint32_t         nextIndex   = {};
-  std::mutex       mtx         = {};
+  std::pmr::vector<uint32_t> freeIndices = {};
+  uint32_t                   capacity    = {};
+  uint32_t                   nextIndex   = {};
+  std::mutex                 mtx         = {};
 
 public:
-  IndexAllocator();
+  IndexAllocator() = delete;
 
-  explicit IndexAllocator(const uint32_t             cap,
-                          std::pmr::memory_resource* memoryResource = std::pmr::new_delete_resource());
+  explicit IndexAllocator(uint32_t cap, std::pmr::memory_resource* memoryResource = std::pmr::new_delete_resource());
 
   IndexAllocator(IndexAllocator&& other) noexcept;
 

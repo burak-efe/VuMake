@@ -2,6 +2,7 @@
 
 #include "../02_OuterCore/VuCommon.h"
 #include "01_InnerCore/TypeDefs.h" // for u32orNull
+#include "01_InnerCore/zero_optional.h"
 
 namespace Vu {
 
@@ -16,7 +17,7 @@ struct VuSampler {
   const std::shared_ptr<VuDevice>& vuDevice       = {};
   vk::raii::Sampler                sampler        = {nullptr};
   VuSamplerCreateInfo              lastCreateInfo = {};
-  u32orNull                        bindlessIndex  = {};
+  zero_optional<u32>               bindlessIndex  = {};
 
   static std::expected<VuSampler, vk::Result>
   make(const std::shared_ptr<VuDevice>& vuDevice, const VuSamplerCreateInfo& createInfo);

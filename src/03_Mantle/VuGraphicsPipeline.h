@@ -1,5 +1,5 @@
 #pragma once
-
+#include "02_OuterCore/VuCommon.h"
 namespace vk {
 enum class CompareOp;
 } // namespace vk

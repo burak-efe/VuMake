@@ -1,6 +1,8 @@
 #pragma once
 
 #include "01_InnerCore/TypeDefs.h"
+#include "01_InnerCore/zero_optional.h"
+#include "02_OuterCore/VuCommon.h"
 #include "stb_image.h"
 
 namespace Vu {
@@ -22,10 +24,10 @@ struct VuImage {
   vk::raii::Image           image          = {nullptr};
   vk::raii::ImageView       imageView      = {nullptr};
   VuImageCreateInfo         lastCreateInfo = {};
-  u32orNull                 bindlessIndex  = {};
+  zero_optional<u32>        bindlessIndex  = {};
 
   VuImage() = delete;
-  explicit VuImage(std::nullptr_t) {}
+  VuImage(std::nullptr_t) {}
 
   static std::expected<VuImage, vk::Result>
   make(const std::shared_ptr<VuDevice>& vuDevice, const VuImageCreateInfo& createInfo) noexcept;
