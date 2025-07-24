@@ -3,6 +3,8 @@
 #if defined(__cplusplus)
 #include "02_OuterCore/Common.h"
 #include "02_OuterCore/math/VuFloat3.h"
+#include "02_OuterCore/math/VuFloat4.h"
+#include "02_OuterCore/math/VuFloat4x4.h"
 #endif
 
 enum ShaderDebugMode {

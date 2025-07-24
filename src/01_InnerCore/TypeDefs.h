@@ -1,11 +1,5 @@
 #pragma once
 
-#include <climits>
-#include <cstdint>
-#include <stdexcept>
-#include <string>
-#include <vector>
-
 using byte = std::byte;
 
 using u8  = uint8_t;
@@ -27,6 +21,7 @@ using i8orNull  = int8_t;
 using i16orNull = int16_t;
 using i32orNull = int32_t;
 using i64orNull = int64_t;
+
 
 template <typename T> using PtrOrNull = T *;
 

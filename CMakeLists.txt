@@ -5,8 +5,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(VuProfileBuild "Profile Clang Build using ClangBuildAnalyzer" ON)
-option(VuRunIWYU "Run Include-What-You-use on build" ON)
+option(VuProfileBuild "Profile Clang Build using ClangBuildAnalyzer" OFF)
+option(VuRunIWYU "Run Include-What-You-use on build" OFF)
+option(VuRunSanitizers "Run Address Sanitizer" OFF)
 
 
 ####################################################################################################
@@ -18,18 +19,21 @@ target_link_libraries(${PROJECT_NAME} PRIVATE VuLibs)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 ####################################################################################################
-#target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
-#target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+if (VuRunSanitizers)
+    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+    target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+endif ()
 ####################################################################################################
 if (VuRunIWYU)
-find_program(iwyu_path NAMES include-what-you-use PATHS "${CMAKE_SOURCE_DIR}/build_utils" REQUIRED)
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
+    message("Running IWYU")
+    find_program(iwyu_path NAMES include-what-you-use PATHS "${CMAKE_SOURCE_DIR}/build_utils" REQUIRED)
+    set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
 endif ()
 ####################################################################################################
 target_precompile_headers(${PROJECT_NAME} PRIVATE
         "src/pch.h"
-        <chrono> <iostream> <filesystem> <format> <algorithm>
-        <functional> <mutex> <ranges> <array> <span> <vector> <stack> <string>
+        #        <chrono> <iostream> <filesystem> <format> <algorithm>
+        #        <functional> <mutex> <ranges> <array> <span> <vector> <stack> <string>
 )
 ####################################################################################################
 target_sources(VuLibs INTERFACE assets/shaders/common/InteroptStructs.h)
@@ -48,6 +52,9 @@ target_include_directories(VuLibs INTERFACE external/imgui)
 target_include_directories(VuLibs INTERFACE external/header_onlys)
 ####################################################################################################
 find_package(Vulkan 1.4.309 REQUIRED)
+target_include_directories(VuLibs INTERFACE ${Vulkan_INCLUDE_DIRS})
+target_link_libraries(VuLibs INTERFACE ${Vulkan_LIBRARIES})
+
 target_compile_definitions(VuLibs INTERFACE
         #VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
         VULKAN_HPP_RAII_NO_EXCEPTIONS
@@ -58,26 +65,31 @@ target_compile_definitions(VuLibs INTERFACE
 target_compile_definitions(VuLibs INTERFACE
         VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
 )
-#target_compile_definitions(VuLibs INTERFACE VULKAN_HPP_EXPECTED=tl::expected)
-target_include_directories(VuLibs INTERFACE ${Vulkan_INCLUDE_DIRS})
-target_link_libraries(VuLibs INTERFACE ${Vulkan_LIBRARIES})
 
-#add_library(VulkanHppModule)
+#FetchContent_Declare(
+#        fetch_vk_headers
+#        GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers
+#        GIT_TAG v1.4.323
+#        GIT_SHALLOW TRUE
+#        GIT_PROGRESS TRUE
+#)
+#FetchContent_MakeAvailable(fetch_vk_headers)
+#target_link_libraries(VuLibs INTERFACE Vulkan::Headers)
+
+####################################################################################################
+#FetchContent_Declare(
+#        fetch_vkhpp
+#        GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Hpp
+#        GIT_TAG main
+#        GIT_SHALLOW TRUE
+#        GIT_PROGRESS TRUE
+#)
+#FetchContent_MakeAvailable(fetch_vkhpp)
+#target_include_directories(VuLibs INTERFACE ${fetch_vkhpp_SOURCE_DIR}/Vulkan-Headers/include)
 #
-#target_sources(VulkanHppModule PUBLIC
-#        FILE_SET CXX_MODULES
-#        BASE_DIRS ${Vulkan_INCLUDE_DIR}
-#        FILES ${Vulkan_INCLUDE_DIR}/vulkan/vulkan.cppm
-#)
-#target_compile_features(VulkanHppModule PUBLIC cxx_std_20)
-#target_compile_definitions(VulkanHppModule PUBLIC
-#        VULKAN_HPP_RAII_NO_EXCEPTIONS
-#        VULKAN_HPP_NO_EXCEPTIONS
-#        VULKAN_HPP_NO_SMART_HANDLE
-#        #VULKAN_HPP_NO_CONSTRUCTORS
-#)
-#target_link_libraries(VulkanHppModule PUBLIC Vulkan::Vulkan)
-#target_link_libraries(VuLibs INTERFACE VulkanHppModule)
+#
+
+#target_link_libraries(VuLibs INTERFACE VulkanHpp)
 ####################################################################################################
 set(FASTGLTF_COMPILE_AS_CPP20 ON)
 FetchContent_Declare(
@@ -129,8 +141,6 @@ target_link_libraries(VuLibs INTERFACE SDL3::SDL3-static)
 #target_link_libraries(VuLibs INTERFACE VulkanMemoryAllocator)
 #target_include_directories(VuLibs INTERFACE GPUOpen::VulkanMemoryAllocator)
 ####################################################################################################
-
-
 if (VuProfileBuild)
     #Pre-Build:
     set(CBA_DIR "${CMAKE_SOURCE_DIR}/build_utils/ClangBuildAnalyzer")
@@ -169,5 +179,10 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         ${CMAKE_SOURCE_DIR}/bin $<TARGET_FILE_DIR:${PROJECT_NAME}>/bin)
 
 #Alert if forbidden text used
-#search_text_files("${CMAKE_SOURCE_DIR}/src" "std::vector|std::stack|vk_mem")
+search_text_files("${CMAKE_SOURCE_DIR}/src/01_InnerCore" "02_OuterCore|03_Mantle|04_Crust")
+search_text_files("${CMAKE_SOURCE_DIR}/src/02_OuterCore" "03_Mantle|04_Crust")
+search_text_files("${CMAKE_SOURCE_DIR}/src/03_Mantle" "04_Crust")
+#make sure vulkan headers only used in VuCommon.h
+search_text_files("${CMAKE_SOURCE_DIR}/src" "vulkan.hpp|vulkan_raii.hpp")
+
 add_subdirectory(test)

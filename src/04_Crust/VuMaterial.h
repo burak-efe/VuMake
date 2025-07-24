@@ -4,11 +4,14 @@
 #include <functional>  // for hash
 #include <memory>      // for shared_ptr
 #include <string_view> // for hash
+#include <variant>
 
+#include "../02_OuterCore/VuCommon.h"
 #include "01_InnerCore/TypeDefs.h" // for u32
-#include "03_Mantle/VuCommon.h"
 #include "03_Mantle/VuTypes.h"
 #include "InteroptStructs.h"
+
+struct VuMaterialDataHandle;
 
 namespace Vu {
 struct VuShader;

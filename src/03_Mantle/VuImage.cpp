@@ -1,14 +1,10 @@
 #include "VuImage.h"
 
-#include <filesystem> // for path
-#include <string>     // for basic_string
+#include "../02_OuterCore/VuCommon.h"
+#include "VuDevice.h"
 
-#include "stb_image.h"
-#include "VuCommon.h"
-#include "VuMemoryAllocator.h"
-
-std::expected<Vu::VuImage, vk::Result>
-Vu::VuImage::make(const std::shared_ptr<VuDevice>& vuDevice, const VuImageCreateInfo& createInfo) noexcept {
+std::expected<Vu::VuImage, vk::Result> Vu::VuImage::make(const std::shared_ptr<VuDevice>& vuDevice,
+                                                         const VuImageCreateInfo&         createInfo) noexcept {
   try {
     VuImage outImage {vuDevice, createInfo};
     return std::move(outImage);
@@ -62,8 +58,7 @@ Vu::VuImage::VuImage(const std::shared_ptr<VuDevice>& vuDevice, const VuImageCre
   imageView = moveOrTHROW(vuDevice->device.createImageView(viewInfo));
 }
 
-void
-Vu::VuImage::loadImageFile(
+void Vu::VuImage::loadImageFile(
     const std::filesystem::path& path, int& texWidth, int& texHeight, int& texChannels, stbi_uc*& out_pixels) {
   out_pixels = stbi_load(path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 }

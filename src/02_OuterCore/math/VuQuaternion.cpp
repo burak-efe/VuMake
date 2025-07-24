@@ -1,5 +1,7 @@
 #include "VuQuaternion.h"
 
+#include <cmath>
+
 #include "VuFloat3.h"
 #include "VuFloat4.h"
 

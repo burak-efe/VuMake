@@ -5,7 +5,7 @@ SpaceBeforeCpp11BracedList: true
 ColumnLimit: 120
 PointerAlignment: Left
 QualifierAlignment: Left
-BreakAfterReturnType: Automatic
+BreakAfterReturnType: All
 BinPackParameters: OnePerLine
 BinPackArguments: false
 AllowAllArgumentsOnNextLine: true

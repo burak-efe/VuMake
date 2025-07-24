@@ -1,8 +1,8 @@
 #pragma once
 
-#include <span> // for span
-
-#include "vulkan/vulkan.hpp"
+namespace vk {
+enum class CompareOp;
+} // namespace vk
 
 namespace Vu {
 struct VuGraphicsPipeline {
@@ -16,7 +16,6 @@ struct VuGraphicsPipeline {
                      const vk::raii::ShaderModule&                    fragShaderModule,
                      const vk::raii::RenderPass&                      renderPass,
                      std::span<vk::PipelineColorBlendAttachmentState> colorBlends);
-
   static vk::PipelineDepthStencilStateCreateInfo
   fillDepthStencilCreateInfo(bool bDepthTest, bool bDepthWrite, vk::CompareOp compareOp);
 };

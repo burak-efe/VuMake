@@ -10,3 +10,25 @@ Buffer that will be written every frame: ??
 render space: wait idle, create new render space re-create all shaders with new render pass
 
 
+
+
+
+
+scene graph and entity-component system:
+
+A object called is node,
+A node can be child other node,
+A node can hold components,
+Nodes also have transform data
+World holds pools for components and nodes
+There is 16 differnt pools for nodes, each for one depth of transform
+Nodes at level 0 pool are child of RootNode, which it has no parent
+Nodes holds shared ptr of components, that actually reside in world pools
+For every component there is one pool in world
+Node has api for these commands:
+- AddComponent: Creates a component via World and store shared ptr on node
+- RemoveComponent: Remoes Shared ptr
+- HasComponent: Checks if has that type of component
+
+Transform:
+The transform struct stores transform as position, quaternion and scale components

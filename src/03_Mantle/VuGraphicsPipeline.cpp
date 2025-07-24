@@ -1,9 +1,11 @@
 #include "VuGraphicsPipeline.h"
 
-#include <array>  // for array
+#include <array> // for array
+#include <stdint.h>
+#include <utility>
 #include <vector> // for vector
 
-#include "VuCommon.h"
+#include "../02_OuterCore/VuCommon.h"
 
 Vu::VuGraphicsPipeline::VuGraphicsPipeline(const vk::raii::Device&                          device,
                                            const vk::raii::PipelineLayout&                  pipelineLayout,

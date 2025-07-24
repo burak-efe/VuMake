@@ -1,5 +1,16 @@
 #include "VuDeferredRenderSpace.h"
 
+#include <array>
+#include <expected>
+#include <stdint.h>
+#include <utility>
+#include <vulkan/vulkan_enums.hpp>
+#include <vulkan/vulkan_structs.hpp>
+
+#include "../02_OuterCore/VuCommon.h"
+#include "03_Mantle/VuDevice.h"
+#include "03_Mantle/VuImage.h"
+#include "03_Mantle/VuRenderPass.h"
 #include "VuRenderer.h"
 
 namespace Vu {
@@ -87,7 +98,8 @@ VuDeferredRenderSpace::VuDeferredRenderSpace(const std::shared_ptr<VuDevice>&   
   createFramebuffers(*vuDevice);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void VuDeferredRenderSpace::registerImagesToBindless(VuRenderer& vuRenderer) {
+void
+VuDeferredRenderSpace::registerImagesToBindless(VuRenderer& vuRenderer) {
   vuRenderer.registerToBindless(*colorImage);
   vuRenderer.registerToBindless(*normalImage);
   vuRenderer.registerToBindless(*aoRoughMetalImage);
@@ -100,7 +112,8 @@ void VuDeferredRenderSpace::registerImagesToBindless(VuRenderer& vuRenderer) {
   lightningPassMaterialData.depthTexture         = depthStencilImage->bindlessIndex;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void VuDeferredRenderSpace::createFramebuffers(const VuDevice& vuDevice) {
+void
+VuDeferredRenderSpace::createFramebuffers(const VuDevice& vuDevice) {
   gPassFrameBuffers.clear();
   for (size_t i = 0; i < vuSwapChain.imageViews.size(); i++) {
     std::array<vk::ImageView, 5> attachments = {
@@ -144,7 +157,8 @@ void VuDeferredRenderSpace::createFramebuffers(const VuDevice& vuDevice) {
   }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void VuDeferredRenderSpace::beginLightningPass(const vk::CommandBuffer& commandBuffer, const u32 frameIndex) const {
+void
+VuDeferredRenderSpace::beginLightningPass(const vk::CommandBuffer& commandBuffer, const u32 frameIndex) const {
   std::array<vk::ClearValue, 1> clearValues {};
   clearValues[0].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
 
@@ -159,7 +173,8 @@ void VuDeferredRenderSpace::beginLightningPass(const vk::CommandBuffer& commandB
   commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void VuDeferredRenderSpace::beginGBufferPass(const vk::CommandBuffer& commandBuffer, const u32 frameIndex) const {
+void
+VuDeferredRenderSpace::beginGBufferPass(const vk::CommandBuffer& commandBuffer, const u32 frameIndex) const {
   std::array<vk::ClearValue, 5> clearValues {};
   clearValues[0].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
   clearValues[1].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});

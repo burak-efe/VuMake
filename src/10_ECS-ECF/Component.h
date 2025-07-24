@@ -27,4 +27,10 @@ struct Transform : Component {
   void Update() override {}
 };
 
+struct MeshDrawer : Component {
+
+  void Start() override { std::cout << "MeshDrawer()\n"; }
+  void Update() override {}
+};
+
 } // namespace Vu

@@ -4,15 +4,22 @@
 #include <cassert>    // for assert
 #include <filesystem> // for path
 #include <format>     // for format
-#include <string>     // for basic_string, string
-#include <utility>    // for pair
-#include <vector>     // for vector
+#include <optional>
+#include <span>
+#include <stdlib.h>
+#include <string>  // for basic_string, string
+#include <utility> // for pair
+#include <vector>  // for vector
+#include <vulkan/vulkan_structs.hpp>
 
+#include "../02_OuterCore/VuCommon.h"
 #include "01_InnerCore/TypeDefs.h" // for u32
 #include "01_InnerCore/VuLogger.h" // for Logger
 #include "02_OuterCore/VuConfig.h"
 #include "02_OuterCore/VuIO.h"
 #include "03_Mantle/VuDevice.h"
+#include "03_Mantle/VuRenderPass.h"
+#include "04_Crust/VuMaterial.h"
 #include "VuRenderer.h"
 
 std::expected<Vu::VuShader, vk::Result> Vu::VuShader::make(const std::shared_ptr<VuRenderer>&   vuRenderer,

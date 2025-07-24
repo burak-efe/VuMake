@@ -1,52 +1,20 @@
 #pragma once
 
-#include <iostream>
-#include <set>
-
-#include "VuCommon.h"
-#include "VuInstance.h"
-#include "VuTypes.h"
 
 namespace Vu {
+struct VuInstance;
 
 struct VuQueueFamilyIndices {
-  u32 graphicsFamily = {};
-  u32 presentFamily  = {};
+  uint32_t graphicsFamily = {};
+  uint32_t presentFamily  = {};
 
-  VuQueueFamilyIndices(std::nullptr_t) {}
+  VuQueueFamilyIndices(std::nullptr_t);
 
-  static std::expected<VuQueueFamilyIndices, vk::Result> make(const vk::raii::PhysicalDevice& physDevice,
-                                                              const vk::raii::SurfaceKHR&     surface) noexcept {
-    VuQueueFamilyIndices                   indices;
-    std::vector<vk::QueueFamilyProperties> queueFamilies    = physDevice.getQueueFamilyProperties();
-    int                                    queueFamilyIndex = 0;
-
-    std::optional<uint32_t> graphicsOrNull = {std::nullopt};
-    std::optional<uint32_t> presentOrNull  = {std::nullopt};
-
-    for (const auto& queueFamily : queueFamilies) {
-
-      if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) { graphicsOrNull = queueFamilyIndex; }
-
-      if (physDevice.getSurfaceSupportKHR(queueFamilyIndex, surface)) { presentOrNull = queueFamilyIndex; }
-
-      if (graphicsOrNull.has_value() && presentOrNull.has_value()) { break; }
-
-      queueFamilyIndex++;
-    }
-
-    if (!graphicsOrNull.has_value() || !presentOrNull.has_value()) {
-      return std::unexpected {vk::Result::eErrorUnknown};
-    }
-
-    indices.graphicsFamily = graphicsOrNull.value();
-    indices.presentFamily  = presentOrNull.value();
-
-    return indices;
-  }
+  static std::expected<VuQueueFamilyIndices, vk::Result>
+  make(const vk::raii::PhysicalDevice& physDevice, const vk::raii::SurfaceKHR& surface) noexcept;
 
 private:
-  VuQueueFamilyIndices() = default;
+  VuQueueFamilyIndices();
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -55,19 +23,8 @@ struct VuSwapChainSupportDetails {
   std::vector<vk::SurfaceFormatKHR> formats      = {};
   std::vector<vk::PresentModeKHR>   presentModes = {};
 
-  static std::expected<VuSwapChainSupportDetails, vk::Result> make(const vk::raii::PhysicalDevice& physicalDevice,
-                                                                   const vk::raii::SurfaceKHR&     surface) noexcept {
-    VuSwapChainSupportDetails details;
-    try {
-      details.capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
-      details.formats      = physicalDevice.getSurfaceFormatsKHR(surface);
-      details.presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
-    } catch (const std::bad_alloc& badAllocExp) {
-      return std::unexpected {vk::Result::eErrorOutOfHostMemory};
-    } catch (...) { return std::unexpected {vk::Result::eErrorUnknown}; }
-
-    return details;
-  }
+  static std::expected<VuSwapChainSupportDetails, vk::Result>
+  make(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& surface) noexcept;
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -80,80 +37,22 @@ struct VuPhysicalDevice {
   vk::PhysicalDeviceMemoryProperties memoryProperties = {};
   vk::PhysicalDeviceFeatures         features         = {};
 
-  static std::expected<VuPhysicalDevice, vk::Result> make(const std::shared_ptr<VuInstance>& vuInstance,
-                                                          const vk::raii::SurfaceKHR&        surface,
-                                                          std::span<const char*> enabledExtensions) noexcept {
-    try {
-      VuPhysicalDevice outVuPhyDevice {vuInstance, surface, enabledExtensions};
-      return std::move(outVuPhyDevice);
-    } catch (vk::Result res) { return std::unexpected {res}; } catch (...) {
-      return std::unexpected {vk::Result::eErrorUnknown};
-    }
-  }
+  static std::expected<VuPhysicalDevice, vk::Result>
+  make(const std::shared_ptr<VuInstance>& vuInstance,
+       const vk::raii::SurfaceKHR&        surface,
+       std::span<const char*>             enabledExtensions) noexcept;
 
 private:
   VuPhysicalDevice(const std::shared_ptr<VuInstance>& vuInstance,
                    const vk::raii::SurfaceKHR&        surface,
-                   std::span<const char*>             enabledExtensions)
-      : vuInstance {vuInstance} {
+                   std::span<const char*>             enabledExtensions);
 
-    auto phyDevicesOrErr = vuInstance->instance.enumeratePhysicalDevices();
-    // todo
-    if (phyDevicesOrErr->empty()) { throw vk::Result::eErrorInitializationFailed; }
+  static bool
+  isSupported(const vk::raii::PhysicalDevice& phyDevice,
+              const vk::raii::SurfaceKHR&     surface,
+              std::span<const char*>          enabledExtensions);
 
-    for (const vk::raii::PhysicalDevice& phyDevice : phyDevicesOrErr.value()) {
-      if (isSupported(phyDevice, surface, enabledExtensions)) {
-        this->physicalDevice   = phyDevice;
-        auto qIndicesOrErr     = VuQueueFamilyIndices::make(phyDevice, surface);
-        this->indices          = moveOrTHROW(qIndicesOrErr);
-        // todo
-        this->swapChainSupport = *VuSwapChainSupportDetails::make(phyDevice, surface);
-        this->properties       = phyDevice.getProperties();
-        this->memoryProperties = phyDevice.getMemoryProperties();
-        this->features         = phyDevice.getFeatures();
-        return;
-      }
-    }
-
-    throw vk::Result::eErrorInitializationFailed;
-  }
-
-  static bool isSupported(const vk::raii::PhysicalDevice& phyDevice,
-                          const vk::raii::SurfaceKHR&     surface,
-                          std::span<const char*>          enabledExtensions) {
-
-    auto indicesOrErr        = VuQueueFamilyIndices::make(phyDevice, surface);
-    bool extensionsSupported = isExtensionsSupported(phyDevice, enabledExtensions);
-    bool swapChainAdequate   = false;
-    if (extensionsSupported) {
-      auto swapChainSupportOrErr = VuSwapChainSupportDetails::make(phyDevice, surface);
-      // todo
-      throw_if_unexpected(swapChainSupportOrErr);
-      swapChainAdequate = !swapChainSupportOrErr->formats.empty() && !swapChainSupportOrErr->presentModes.empty();
-    }
-
-    vk::PhysicalDeviceFeatures supportedFeatures = phyDevice.getFeatures();
-
-    return indicesOrErr.has_value() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
-  }
-
-  static bool isExtensionsSupported(const vk::raii::PhysicalDevice& device,
-                                    std::span<const char*>          requestedExtensions) {
-
-    std::vector<vk::ExtensionProperties> availableExtensions = device.enumerateDeviceExtensionProperties();
-
-    std::set<std::string> requested(requestedExtensions.begin(), requestedExtensions.end());
-
-    for (const vk::ExtensionProperties extension : availableExtensions) {
-      requested.erase(extension.extensionName);
-    }
-
-    if (requested.empty()) { return true; }
-
-    for (std::string ext : requested) {
-      std::cout << "extension not supported: " << ext << std::endl;
-    }
-    return false;
-  }
+  static bool
+  isExtensionsSupported(const vk::raii::PhysicalDevice& device, std::span<const char*> requestedExtensions);
 };
 } // namespace Vu

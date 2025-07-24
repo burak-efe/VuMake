@@ -195,12 +195,16 @@ Index of this file:
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
 
+#include <float.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
-#include "imgui_internal.h"
-
 // System includes
 #include <stdint.h>     // intptr_t
+
+#include "imgui_internal.h"
 
 // Visual Studio warnings
 #ifdef _MSC_VER

@@ -5,7 +5,6 @@
 #include <memory>    // for make_unique, unique_ptr
 
 #include "01_InnerCore/VuLogger.h" // for LogLevel, Logger
-#include "04_Crust/VuRenderer.h"
 #include "13_Scenes/Scene_GLTF_Load.h"
 #include "GetTimeSinceProcessStart.h"
 

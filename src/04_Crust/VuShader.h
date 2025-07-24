@@ -1,12 +1,10 @@
 #pragma once
-
-#include <unordered_map> // for unordered_map
-
-#include "02_OuterCore/Common.h"          // for path
-#include "03_Mantle/VuGraphicsPipeline.h" // for VuGraphicsPipeline
-#include "VuMaterial.h"                   // for hash, MaterialSettings
+#include "02_OuterCore/Common.h"
+#include "03_Mantle/VuGraphicsPipeline.h"
+#include "VuMaterial.h"
 
 namespace Vu {
+
 struct VuRenderer;
 struct VuRenderPass;
 struct VuDevice;
@@ -26,8 +24,6 @@ struct VuShader {
   vk::raii::ShaderModule                                   fragmentShaderModule = {nullptr};
   time_t                                                   lastModifiedTime     = {0};
   std::unordered_map<MaterialSettings, VuGraphicsPipeline> compiledPipelines    = {};
-
-  VuShader() = default;
 
   static std::expected<VuShader, vk::Result>
   make(const std::shared_ptr<VuRenderer>&   vuRenderer,

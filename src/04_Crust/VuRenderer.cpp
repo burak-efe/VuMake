@@ -1,29 +1,31 @@
 #include "VuRenderer.h"
 
-#include <algorithm>                 // for fill
-#include <array>                     // for array
-#include <expected>                  // for expected
-#include <iostream>                  // for char_traits, basic_ostream
-#include <optional>                  // for optional
-#include <stdexcept>                 // for runtime_error, invalid_arg...
-#include <utility>                   // for move, pair
-#include <vector>                    // for vector
-#include <vulkan/vulkan_core.h>      // for VK_NULL_HANDLE, VK_QUEUE_F...
-#include <vulkan/vulkan_enums.hpp>   // for DescriptorType, operator|
-#include <vulkan/vulkan_structs.hpp> // for DescriptorSetLayoutBinding
+#include <algorithm> // for fill
+#include <array>     // for array
+#include <assert.h>
+#include <expected> // for expected
+#include <functional>
+#include <iostream> // for char_traits, basic_ostream
+#include <memory_resource>
+#include <stdexcept> // for runtime_error, invalid_arg...
+#include <utility>   // for move, pair
+#include <vector>    // for vector
 
+#include "../02_OuterCore/VuCommon.h"
 #include "01_InnerCore/ScopeTimer.h"
 #include "02_OuterCore/Color32.h"         // for Color32
 #include "02_OuterCore/FixedString.h"     // for FixedString
 #include "02_OuterCore/VuConfig.h"        // for MAX_FRAMES_IN_FLIGHT, MATE...
-#include "03_Mantle/VuCommon.h"           // for CommandBuffer, throw_if_un...
 #include "03_Mantle/VuDevice.h"           // for VuDevice
 #include "03_Mantle/VuGraphicsPipeline.h" // for VuGraphicsPipeline
-#include "03_Mantle/VuPhysicalDevice.h"   // for VuPhysicalDevice, VuQueueF...
-#include "03_Mantle/VuSampler.h"          // for VuSampler
-#include "03_Mantle/VuSwapChain.h"        // for VuSwapChain2
-#include "04_Crust/VuShader.h"            // for VuShader
-#include "13_Scenes/Scene_GLTF_Load.h"
+#include "03_Mantle/VuImage.h"
+#include "03_Mantle/VuInstance.h"
+#include "03_Mantle/VuPhysicalDevice.h" // for VuPhysicalDevice, VuQueueF...
+#include "03_Mantle/VuRenderPass.h"
+#include "03_Mantle/VuSampler.h"   // for VuSampler
+#include "03_Mantle/VuSwapChain.h" // for VuSwapChain2
+#include "04_Crust/VuDeferredRenderSpace.h"
+#include "04_Crust/VuShader.h" // for VuShader
 #include "imgui.h"             // for GetDrawData, NewFrame, Render
 #include "imgui_impl_sdl3.h"   // for ImGui_ImplSDL3_NewFrame
 #include "imgui_impl_vulkan.h" // for ImGui_ImplVulkan_NewFrame
@@ -36,10 +38,6 @@
 #include "stb_image.h"         // for stbi_image_free, stbi_uc
 #include "VuMaterial.h"        // for VuMaterial, MaterialSettings
 #include "VuMesh.h"            // for VuMesh
-
-namespace Vu {
-struct VuMaterial;
-}
 
 namespace Vu {
 
@@ -306,7 +304,7 @@ void VuRenderer::beginImgui() const {
   ImGui::NewFrame();
 }
 
-void VuRenderer::endImgui() {
+void VuRenderer::endImgui() const {
   auto& commandBuffer = commandBuffers[currentFrame];
 
   ImGui::Render();
@@ -844,7 +842,7 @@ void VuRenderer::initImGui() {
   init_info.MinImageCount             = 2;
   init_info.ImageCount                = 2;
   init_info.UseDynamicRendering       = false;
-  init_info.RenderPass                = *deferredRenderSpace.gBufferPass->renderPass;
+  init_info.RenderPass                = *deferredRenderSpace.lightningPass->renderPass;
 
   ImGui_ImplVulkan_Init(&init_info);
   disposeStack.push([] { ImGui_ImplVulkan_Shutdown(); });

@@ -1,14 +1,17 @@
 ﻿#pragma once
 
 #include <expected>
-#include <span> // for span
+#include <span>
+#include <type_traits>
 
-#include "01_InnerCore/TypeDefs.h" // for byte, u32orNull
-#include "VuCommon.h"
+#include "../02_OuterCore/VuCommon.h"
+#include "01_InnerCore/TypeDefs.h"
 #include "VuDevice.h"
-#include "VuTypes.h" // for VuName
+#include "VuTypes.h"
 
 namespace Vu {
+struct VuDevice;
+
 struct VuBufferCreateInfo {
   VuName                  name                  = {"VuBuffer"};
   vk::DeviceSize          sizeInBytes           = {1};
@@ -28,10 +31,9 @@ struct VuBuffer {
   u32orNull              bindlessIndex = {};
   VuName                 name          = {"VuBuffer"};
 
-
   VuBuffer() = default;
 
-  static std::expected<Vu::VuBuffer, vk::Result>
+  static std::expected<VuBuffer, vk::Result>
   make(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo);
 
   void

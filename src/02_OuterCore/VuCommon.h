@@ -1,9 +1,7 @@
 #pragma once
 
-#include <iostream>
-#include <source_location>
-
-#include "vulkan/vulkan_raii.hpp" // IWYU pragma: export
+#include "vulkan/vulkan.hpp"
+#include "vulkan/vulkan_raii.hpp"
 
 #define VK_RET_ON_FAIL(res)                                                                                            \
   do {                                                                                                                 \
@@ -31,14 +29,11 @@ T&& moveOrTHROW(std::expected<T, E>&& exp,
 
 template <typename T, typename E>
 T&& moveOrTHROW(std::expected<T, E>& exp,
-               const char* throwMessage = "unexpected error",
-               std::source_location loc = std::source_location::current()) {
+                const char*          throwMessage = "unexpected error",
+                std::source_location loc          = std::source_location::current()) {
   if (!exp) {
-    throw std::runtime_error(std::format("{},\n at {}, line {},\n function {}\n",
-                                         throwMessage,
-                                         loc.file_name(),
-                                         loc.line(),
-                                         loc.function_name()));
+    throw std::runtime_error(std::format(
+        "{},\n at {}, line {},\n function {}\n", throwMessage, loc.file_name(), loc.line(), loc.function_name()));
   }
   return std::move(*exp);
 }

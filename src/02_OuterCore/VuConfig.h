@@ -3,7 +3,6 @@
 
 #include "01_InnerCore/TypeDefs.h"
 #include "02_OuterCore/VuPlatform.h"
-#include "vulkan/vulkan.hpp"
 
 namespace Vu::config {
 

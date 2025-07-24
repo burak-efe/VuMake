@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vulkan/vulkan.hpp"
+#include "../02_OuterCore/VuCommon.h"
 
 namespace Vu
 {

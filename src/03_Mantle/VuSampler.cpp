@@ -1,5 +1,6 @@
 #include "VuSampler.h"
 
+#include "../02_OuterCore/VuCommon.h"
 #include "VuDevice.h"
 
 std::expected<Vu::VuSampler, vk::Result>

@@ -1,12 +1,12 @@
 #pragma once
-
-#include "03_Mantle/VuImage.h"
-#include "03_Mantle/VuRenderPass.h"
 #include "03_Mantle/VuSwapChain.h"
 #include "InteroptStructs.h"
 
 namespace Vu {
 struct VuRenderer;
+struct VuDevice;
+struct VuImage;
+struct VuRenderPass;
 
 struct VuDeferredRenderSpace {
   std::shared_ptr<VuRenderer> vuRenderer = {};
@@ -29,14 +29,18 @@ struct VuDeferredRenderSpace {
   VuDeferredRenderSpace(const std::shared_ptr<VuDevice>&             vuDevice,
                         const std::shared_ptr<vk::raii::SurfaceKHR>& surface);
 
-  void registerImagesToBindless(VuRenderer& vuInstance);
+  void
+  registerImagesToBindless(VuRenderer& vuInstance);
 
-  void beginGBufferPass(const vk::CommandBuffer& commandBuffer, u32 frameIndex) const;
+  void
+  beginGBufferPass(const vk::CommandBuffer& commandBuffer, uint32_t frameIndex) const;
 
-  void beginLightningPass(const vk::CommandBuffer& commandBuffer, u32 frameIndex) const;
+  void
+  beginLightningPass(const vk::CommandBuffer& commandBuffer, uint32_t frameIndex) const;
 
 private:
-  void createFramebuffers(const VuDevice& vuDevice);
+  void
+  createFramebuffers(const VuDevice& vuDevice);
 };
 
 } // namespace Vu

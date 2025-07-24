@@ -27,6 +27,10 @@
 
 #pragma once
 #ifndef IMGUI_DISABLE
+#include <stdint.h>
+#include <string.h>
+#include <vulkan/vulkan_core.h>
+
 #include "imgui.h"      // IMGUI_IMPL_API
 
 // [Configuration] in order to use a custom Vulkan function loader:

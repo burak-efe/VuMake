@@ -1,7 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan_raii.hpp>
-
+#include "../02_OuterCore/VuCommon.h"
 #include "01_InnerCore/TypeDefs.h" // for u32orNull
 
 namespace Vu {

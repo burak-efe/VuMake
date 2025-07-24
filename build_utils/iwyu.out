@@ -1,0 +1,1340 @@
+====================[ Build | VuMake | Debug-Clang ]============================
+/snap/clion/353/bin/cmake/linux/x64/bin/cmake --build /home/User0/Coding/Repos/VuMake/build/debug-clang --target VuMake -j 22
+[0/1] Re-running CMake...
+Running IWYU
+-- Could NOT find simdjson (missing: simdjson_DIR)
+-- fastgltf: Found simdjson (Version 3.9.4)
+-- dynamic libasound -> libasound.so.2
+-- Checking for module 'jack'
+--   Package 'jack', required by 'virtual:world', not found
+-- Checking for module 'libpipewire-0.3>=0.3.44'
+--   Package 'libpipewire-0.3', required by 'virtual:world', not found
+-- Checking for module 'libpulse>=0.9.15'
+--   Found libpulse, version 16.1
+-- dynamic libpulse -> libpulse.so.0
+-- Checking for module 'sndio'
+--   Found sndio, version 1.9.0
+-- dynamic libsndio -> libsndio.so.7
+-- dynamic libX11 -> libX11.so.6
+-- dynamic libXext -> libXext.so.6
+-- dynamic libXcursor -> libXcursor.so.1
+-- dynamic libXi -> libXi.so.6
+-- dynamic libXfixes -> libXfixes.so.3
+-- dynamic libXrandr -> libXrandr.so.2
+-- dynamic libXrender -> libXrender.so.1
+-- dynamic libXss -> libXss.so.1
+-- Checking for module 'libdrm'
+--   Found libdrm, version 2.4.122
+-- Checking for module 'gbm'
+--   Found gbm, version 24.2.8-1ubuntu1~24.04.1
+-- dynamic libdrm -> libdrm.so.2
+-- dynamic libgbm -> libgbm.so.1
+-- Checking for modules 'wayland-client>=1.18;wayland-egl;wayland-cursor;egl;xkbcommon>=0.5.0'
+--   Found wayland-client, version 1.22.0
+--   Found wayland-egl, version 18.1.0
+--   Found wayland-cursor, version 1.22.0
+--   Found egl, version 1.5
+--   Found xkbcommon, version 1.6.0
+-- dynamic libwayland-client -> libwayland-client.so.0
+-- dynamic libwayland-egl -> libwayland-egl.so.1
+-- dynamic libwayland-cursor -> libwayland-cursor.so.0
+-- dynamic libxkbcommon -> libxkbcommon.so.0
+-- dynamic libdecor-0 -> libdecor-0.so.0
+-- dynamic libudev -> libudev.so.1
+-- Checking for one of the modules 'liburing-ffi'
+-- Checking for modules 'libunwind;libunwind-generic'
+--   Package 'libunwind', required by 'virtual:world', not found
+--   Package 'libunwind-generic', required by 'virtual:world', not found
+-- Checking for module 'libusb-1.0>=1.0.16'
+--   Package 'libusb-1.0', required by 'virtual:world', not found
+-- Could NOT find LibUSB (missing: LibUSB_LIBRARY LibUSB_INCLUDE_PATH) (found version "LibUSB_VERSION-NOTFOUND")
+-- 
+-- SDL3 was configured with the following options:
+-- 
+-- Platform: Linux-6.11.0-26-generic
+-- 64-bit:   TRUE
+-- Compiler: /lib/llvm-19/bin/clang
+-- Revision: SDL3-3.2.4-release-3.2.4
+-- Vendor:   
+-- 
+-- Subsystems:
+--   Audio:    ON
+--   Video:    ON
+--   GPU:      ON
+--   Render:   ON
+--   Camera:   OFF
+--   Joystick: OFF
+--   Haptic:   OFF
+--   Hidapi:   ON
+--   Power:    ON
+--   Sensor:   ON
+--   Dialog:   ON
+-- 
+-- Options:
+--   SDL_ALSA                    (Wanted: ON): ON
+--   SDL_ALSA_SHARED             (Wanted: ON): ON
+--   SDL_ALTIVEC                 (Wanted: OFF): OFF
+--   SDL_ARMNEON                 (Wanted: OFF): OFF
+--   SDL_ASAN                    (Wanted: OFF): OFF
+--   SDL_ASSEMBLY                (Wanted: ON): ON
+--   SDL_ASSERTIONS              (Wanted: auto): auto
+--   SDL_AVX                     (Wanted: ON): ON
+--   SDL_AVX2                    (Wanted: ON): ON
+--   SDL_AVX512F                 (Wanted: ON): ON
+--   SDL_BACKGROUNDING_SIGNAL    (Wanted: OFF): OFF
+--   SDL_CCACHE                  (Wanted: OFF): OFF
+--   SDL_CLANG_TIDY              (Wanted: OFF): OFF
+--   SDL_CLOCK_GETTIME           (Wanted: ON): ON
+--   SDL_COCOA                   (Wanted: OFF): OFF
+--   SDL_DBUS                    (Wanted: ON): ON
+--   SDL_DIRECTX                 (Wanted: OFF): OFF
+--   SDL_DISKAUDIO               (Wanted: ON): ON
+--   SDL_DUMMYAUDIO              (Wanted: ON): ON
+--   SDL_DUMMYCAMERA             (Wanted: OFF): OFF
+--   SDL_DUMMYVIDEO              (Wanted: ON): ON
+--   SDL_EXAMPLES                (Wanted: OFF): OFF
+--   SDL_EXAMPLES_LINK_SHARED    (Wanted: OFF): OFF
+--   SDL_FOREGROUNDING_SIGNAL    (Wanted: OFF): OFF
+--   SDL_GCC_ATOMICS             (Wanted: ON): ON
+--   SDL_GPU_DXVK                (Wanted: OFF): OFF
+--   SDL_HIDAPI                  (Wanted: ON): ON
+--   SDL_HIDAPI_JOYSTICK         (Wanted: ON): OFF
+--   SDL_HIDAPI_LIBUSB           (Wanted: ON): OFF
+--   SDL_HIDAPI_LIBUSB_SHARED    (Wanted: ON): OFF
+--   SDL_IBUS                    (Wanted: ON): ON
+--   SDL_INSTALL                 (Wanted: OFF): OFF
+--   SDL_INSTALL_TESTS           (Wanted: OFF): OFF
+--   SDL_JACK                    (Wanted: ON): OFF
+--   SDL_JACK_SHARED             (Wanted: ON): OFF
+--   SDL_KMSDRM                  (Wanted: ON): ON
+--   SDL_KMSDRM_SHARED           (Wanted: ON): ON
+--   SDL_LASX                    (Wanted: OFF): OFF
+--   SDL_LIBC                    (Wanted: ON): ON
+--   SDL_LIBICONV                (Wanted: OFF): OFF
+--   SDL_LIBUDEV                 (Wanted: ON): ON
+--   SDL_LIBURING                (Wanted: ON): OFF
+--   SDL_LSX                     (Wanted: OFF): OFF
+--   SDL_METAL                   (Wanted: OFF): OFF
+--   SDL_MMX                     (Wanted: ON): ON
+--   SDL_OFFSCREEN               (Wanted: ON): ON
+--   SDL_OPENGL                  (Wanted: ON): ON
+--   SDL_OPENGLES                (Wanted: ON): ON
+--   SDL_OPENVR                  (Wanted: OFF): OFF
+--   SDL_OSS                     (Wanted: OFF): OFF
+--   SDL_PIPEWIRE                (Wanted: ON): OFF
+--   SDL_PIPEWIRE_SHARED         (Wanted: ON): OFF
+--   SDL_PTHREADS                (Wanted: ON): ON
+--   SDL_PTHREADS_SEM            (Wanted: ON): ON
+--   SDL_PULSEAUDIO              (Wanted: ON): ON
+--   SDL_PULSEAUDIO_SHARED       (Wanted: ON): ON
+--   SDL_RENDER_D3D              (Wanted: OFF): OFF
+--   SDL_RENDER_D3D11            (Wanted: OFF): OFF
+--   SDL_RENDER_D3D12            (Wanted: OFF): OFF
+--   SDL_RENDER_GPU              (Wanted: ON): ON
+--   SDL_RENDER_METAL            (Wanted: ON): OFF
+--   SDL_RENDER_VULKAN           (Wanted: ON): ON
+--   SDL_ROCKCHIP                (Wanted: OFF): OFF
+--   SDL_RPATH                   (Wanted: ON): ON
+--   SDL_RPI                     (Wanted: OFF): OFF
+--   SDL_SNDIO                   (Wanted: ON): ON
+--   SDL_SNDIO_SHARED            (Wanted: ON): ON
+--   SDL_SSE                     (Wanted: ON): ON
+--   SDL_SSE2                    (Wanted: ON): ON
+--   SDL_SSE3                    (Wanted: ON): ON
+--   SDL_SSE4_1                  (Wanted: ON): ON
+--   SDL_SSE4_2                  (Wanted: ON): ON
+--   SDL_SYSTEM_ICONV            (Wanted: ON): ON
+--   SDL_TESTS                   (Wanted: OFF): OFF
+--   SDL_TESTS_LINK_SHARED       (Wanted: OFF): OFF
+--   SDL_UNINSTALL               (Wanted: OFF): OFF
+--   SDL_VIRTUAL_JOYSTICK        (Wanted: ON): OFF
+--   SDL_VIVANTE                 (Wanted: OFF): OFF
+--   SDL_VULKAN                  (Wanted: ON): ON
+--   SDL_WASAPI                  (Wanted: OFF): OFF
+--   SDL_WAYLAND                 (Wanted: ON): ON
+--   SDL_WAYLAND_LIBDECOR        (Wanted: ON): ON
+--   SDL_WAYLAND_LIBDECOR_SHARED (Wanted: ON): ON
+--   SDL_WAYLAND_SHARED          (Wanted: ON): ON
+--   SDL_X11                     (Wanted: ON): ON
+--   SDL_X11_SHARED              (Wanted: ON): ON
+--   SDL_X11_XCURSOR             (Wanted: ON): ON
+--   SDL_X11_XDBE                (Wanted: ON): ON
+--   SDL_X11_XFIXES              (Wanted: ON): ON
+--   SDL_X11_XINPUT              (Wanted: ON): ON
+--   SDL_X11_XRANDR              (Wanted: ON): ON
+--   SDL_X11_XSCRNSAVER          (Wanted: ON): ON
+--   SDL_X11_XSHAPE              (Wanted: ON): ON
+--   SDL_X11_XSYNC               (Wanted: ON): ON
+--   SDL_XINPUT                  (Wanted: OFF): OFF
+-- 
+--  Build Shared Library: FALSE;BOOL
+--  Build Static Library: TRUE;BOOL
+--  Build Static Library with Position Independent Code: 
+-- 
+-- If something was not detected, although the libraries
+-- were installed, then make sure you have set the
+-- CMAKE_C_FLAGS and CMAKE_PREFIX_PATH CMake variables correctly.
+-- 
+-- Configuring done (0.6s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/User0/Coding/Repos/VuMake/build/debug-clang
+[7/36] Building CXX object CMakeFiles/VuMake.dir/src/02_OuterCore/math/VuQuaternion.cpp.o
+Warning: include-what-you-use reported diagnostics:
+
+/home/User0/Coding/Repos/VuMake/src/02_OuterCore/math/VuQuaternion.h should add these lines:
+
+/home/User0/Coding/Repos/VuMake/src/02_OuterCore/math/VuQuaternion.h should remove these lines:
+- #include <cmath>  // lines 2-2
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/02_OuterCore/math/VuQuaternion.h:
+namespace Vu { namespace Math { struct Float3; } }  // lines 5-5
+namespace Vu { namespace Math { struct Float4; } }  // lines 6-6
+---
+
+/home/User0/Coding/Repos/VuMake/src/02_OuterCore/math/VuQuaternion.cpp should add these lines:
+#include <cmath>       // for sin, cos, atan2, abs, acos, asin, copysign, sqrt
+
+/home/User0/Coding/Repos/VuMake/src/02_OuterCore/math/VuQuaternion.cpp should remove these lines:
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/02_OuterCore/math/VuQuaternion.cpp:
+#include "VuQuaternion.h"
+#include <cmath>       // for sin, cos, atan2, abs, acos, asin, copysign, sqrt
+#include "VuFloat3.h"  // for Float3, cross, operator*, operator+, normalize
+#include "VuFloat4.h"  // for Float4
+---
+
+[9/36] Building CXX object CMakeFiles/VuMake.dir/external/imgui/imgui_demo.cpp.o
+Warning: include-what-you-use reported diagnostics:
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_demo.cpp should add these lines:
+#include <float.h>     // for FLT_MIN, FLT_MAX
+#include <stdarg.h>    // for va_end, va_list, va_start
+#include <stddef.h>    // for offsetof
+#include <string.h>    // for strlen, memcpy, memcmp, memset, strcmp, strcpy
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_demo.cpp should remove these lines:
+- #include <stdint.h>  // lines 116-116
+
+The full include-list for /home/User0/Coding/Repos/VuMake/external/imgui/imgui_demo.cpp:
+#include <ctype.h>     // for toupper
+#include <float.h>     // for FLT_MIN, FLT_MAX
+#include <inttypes.h>  // for intptr_t, PRId64, PRIu64
+#include <limits.h>    // for INT_MAX, LLONG_MAX, UINT_MAX, ULLONG_MAX, INT_MIN
+#include <math.h>      // for floorf, sinf, fmodf, cosf, fabsf, powf
+#include <stdarg.h>    // for va_end, va_list, va_start
+#include <stddef.h>    // for offsetof
+#include <stdio.h>     // for NULL, sprintf, snprintf, size_t, vsnprintf
+#include <stdlib.h>    // for qsort
+#include <string.h>    // for strlen, memcpy, memcmp, memset, strcmp, strcpy
+#include "imgui.h"     // for ImVec2, Text, SameLine, CheckboxFlags, ImGuiTa...
+struct ImGuiDemoWindowData;  // lines 206-206
+---
+
+[10/36] Building CXX object CMakeFiles/VuMake.dir/external/imgui/imgui_impl_sdl3.cpp.o
+Warning: include-what-you-use reported diagnostics:
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_impl_sdl3.h should add these lines:
+#include <stddef.h>           // for NULL
+#include "SDL3/SDL_events.h"  // for SDL_Event
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_impl_sdl3.h should remove these lines:
+
+The full include-list for /home/User0/Coding/Repos/VuMake/external/imgui/imgui_impl_sdl3.h:
+#include <stddef.h>           // for NULL
+#include "SDL3/SDL_events.h"  // for SDL_Event
+#include "imgui.h"            // for IMGUI_IMPL_API
+struct SDL_Gamepad;  // lines 32-32
+struct SDL_Renderer;  // lines 31-31
+struct SDL_Window;  // lines 30-30
+---
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_impl_sdl3.cpp should add these lines:
+#include <float.h>               // for FLT_MAX
+#include <stdint.h>              // for intptr_t
+#include <string.h>              // for memset, strlen, strncmp
+#include "SDL3/SDL_clipboard.h"  // for SDL_GetClipboardText, SDL_SetClipboa...
+#include "SDL3/SDL_gamepad.h"    // for SDL_GamepadButton, SDL_GamepadAxis
+#include "SDL3/SDL_hints.h"      // for SDL_SetHint, SDL_HINT_MOUSE_AUTO_CAP...
+#include "SDL3/SDL_joystick.h"   // for SDL_JoystickID
+#include "SDL3/SDL_keyboard.h"   // for SDL_GetKeyboardFocus, SDL_SetTextInp...
+#include "SDL3/SDL_keycode.h"    // for SDLK_APOSTROPHE, SDLK_GRAVE, SDL_Key...
+#include "SDL3/SDL_mouse.h"      // for SDL_CreateSystemCursor, SDL_SystemCu...
+#include "SDL3/SDL_rect.h"       // for SDL_Rect
+#include "SDL3/SDL_render.h"     // for SDL_Renderer
+#include "SDL3/SDL_scancode.h"   // for SDL_Scancode
+#include "SDL3/SDL_stdinc.h"     // for SDL_free, Uint64, SDL_strdup, Uint32
+#include "SDL3/SDL_timer.h"      // for SDL_GetPerformanceCounter, SDL_GetPe...
+#include "SDL3/SDL_touch.h"      // for SDL_TOUCH_MOUSEID
+#include "SDL3/SDL_video.h"      // for SDL_Window, SDL_GL_MakeCurrent, SDL_...
+struct ImGuiContext;
+struct VkAllocationCallbacks;
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_impl_sdl3.cpp should remove these lines:
+- #include <SDL3/SDL.h>  // lines 67-67
+
+The full include-list for /home/User0/Coding/Repos/VuMake/external/imgui/imgui_impl_sdl3.cpp:
+#include "imgui_impl_sdl3.h"
+#include <SDL3/SDL_vulkan.h>     // for SDL_Vulkan_CreateSurface, VkInstance
+#include <float.h>               // for FLT_MAX
+#include <stdint.h>              // for intptr_t
+#include <string.h>              // for memset, strlen, strncmp
+#include "SDL3/SDL_clipboard.h"  // for SDL_GetClipboardText, SDL_SetClipboa...
+#include "SDL3/SDL_gamepad.h"    // for SDL_GamepadButton, SDL_GamepadAxis
+#include "SDL3/SDL_hints.h"      // for SDL_SetHint, SDL_HINT_MOUSE_AUTO_CAP...
+#include "SDL3/SDL_joystick.h"   // for SDL_JoystickID
+#include "SDL3/SDL_keyboard.h"   // for SDL_GetKeyboardFocus, SDL_SetTextInp...
+#include "SDL3/SDL_keycode.h"    // for SDLK_APOSTROPHE, SDLK_GRAVE, SDL_Key...
+#include "SDL3/SDL_mouse.h"      // for SDL_CreateSystemCursor, SDL_SystemCu...
+#include "SDL3/SDL_rect.h"       // for SDL_Rect
+#include "SDL3/SDL_render.h"     // for SDL_Renderer
+#include "SDL3/SDL_scancode.h"   // for SDL_Scancode
+#include "SDL3/SDL_stdinc.h"     // for SDL_free, Uint64, SDL_strdup, Uint32
+#include "SDL3/SDL_timer.h"      // for SDL_GetPerformanceCounter, SDL_GetPe...
+#include "SDL3/SDL_touch.h"      // for SDL_TOUCH_MOUSEID
+#include "SDL3/SDL_video.h"      // for SDL_Window, SDL_GL_MakeCurrent, SDL_...
+#include "imgui.h"               // for ImGuiKey, ImGuiIO, ImVec2, ImGuiView...
+struct ImGuiContext;
+struct VkAllocationCallbacks;
+---
+
+[11/36] Building CXX object CMakeFiles/VuMake.dir/src/02_OuterCore/Common.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+
+/home/User0/Coding/Repos/VuMake/src/02_OuterCore/Common.h should add these lines:
+#include <string>      // for basic_string
+
+/home/User0/Coding/Repos/VuMake/src/02_OuterCore/Common.h should remove these lines:
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/02_OuterCore/Common.h:
+#include <filesystem>  // for path
+#include <string>      // for basic_string
+namespace Vu { namespace Math { struct Float2; } }  // lines 8-8
+namespace Vu { namespace Math { struct Float3; } }  // lines 9-9
+namespace Vu { namespace Math { struct Float4; } }  // lines 10-10
+namespace Vu { namespace Math { struct Float4x4; } }  // lines 11-11
+namespace Vu { namespace Math { struct Quaternion; } }  // lines 12-12
+---
+
+(/home/User0/Coding/Repos/VuMake/src/02_OuterCore/Common.cpp has correct #includes/fwd-decls)
+
+[12/36] Building CXX object CMakeFiles/VuMake.dir/external/imgui/imgui_impl_vulkan.cpp.o
+Warning: include-what-you-use reported diagnostics:
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_impl_vulkan.h should add these lines:
+#include <stdint.h>              // for uint32_t
+#include <string.h>              // for memset
+#include <vulkan/vulkan_core.h>  // for VkPresentModeKHR, VkPhysicalDevice
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_impl_vulkan.h should remove these lines:
+- #include <vulkan/vulkan.h>  // lines 59-59
+- struct ImGui_ImplVulkanH_Frame;  // lines 145-145
+
+The full include-list for /home/User0/Coding/Repos/VuMake/external/imgui/imgui_impl_vulkan.h:
+#include <stdint.h>              // for uint32_t
+#include <string.h>              // for memset
+#include <vulkan/vulkan_core.h>  // for VkPresentModeKHR, VkPhysicalDevice
+#include "imgui.h"               // for IMGUI_IMPL_API, ImDrawData (ptr only)
+struct ImGui_ImplVulkanH_Window;  // lines 146-146
+---
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_impl_vulkan.cpp should add these lines:
+#include <stddef.h>  // for offsetof
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_impl_vulkan.cpp should remove these lines:
+- #include <stdio.h>  // lines 86-86
+
+The full include-list for /home/User0/Coding/Repos/VuMake/external/imgui/imgui_impl_vulkan.cpp:
+#include "imgui_impl_vulkan.h"
+#include <stddef.h>  // for offsetof
+#include "imgui.h"   // for ImVec2, IM_ASSERT, ImVector, ImGuiViewport, ImDr...
+struct ImGui_ImplVulkan_FrameRenderBuffers;  // lines 97-97
+struct ImGui_ImplVulkan_WindowRenderBuffers;  // lines 98-98
+---
+
+[14/36] Building CXX object CMakeFiles/VuMake.dir/src/10_ECS-ECF/GameObject.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+
+/home/User0/Coding/Repos/VuMake/src/10_ECS-ECF/GameObject.h should add these lines:
+#include <memory>         // for unique_ptr, make_unique
+#include <string>         // for basic_string, string
+#include <type_traits>    // for is_base_of_v
+#include <utility>        // for forward, move, pair
+
+/home/User0/Coding/Repos/VuMake/src/10_ECS-ECF/GameObject.h should remove these lines:
+- #include "02_OuterCore/Common.h"  // lines 7-7
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/10_ECS-ECF/GameObject.h:
+#include <memory>         // for unique_ptr, make_unique
+#include <string>         // for basic_string, string
+#include <type_traits>    // for is_base_of_v
+#include <typeindex>      // for type_index, hash
+#include <unordered_map>  // for unordered_map, operator==, _Node_iterator
+#include <utility>        // for forward, move, pair
+#include <vector>         // for vector
+#include "Component.h"    // for Component
+---
+
+(/home/User0/Coding/Repos/VuMake/src/10_ECS-ECF/GameObject.cpp has correct #includes/fwd-decls)
+
+[15/36] Building CXX object CMakeFiles/VuMake.dir/external/imgui/imgui_draw.cpp.o
+Warning: include-what-you-use reported diagnostics:
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_draw.cpp should add these lines:
+#include <float.h>           // for FLT_MAX
+#include <stddef.h>          // for offsetof
+#include <string.h>          // for memset, memcpy, memcmp, strlen, memchr
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_draw.cpp should remove these lines:
+
+The full include-list for /home/User0/Coding/Repos/VuMake/external/imgui/imgui_draw.cpp:
+#include <float.h>           // for FLT_MAX
+#include <stddef.h>          // for offsetof
+#include <stdio.h>           // for NULL, size_t
+#include <string.h>          // for memset, memcpy, memcmp, strlen, memchr
+#include "imgui.h"           // for ImVec2, ImVec4, ImDrawList, ImVector
+#include "imgui_internal.h"  // for ImRect, ImDrawListSharedData, ImMax, ImLerp
+#include "imstb_rectpack.h"  // for stbrp_rect, stbrp_pack_rects, stbrp_context
+#include "imstb_truetype.h"  // for stbtt_pack_context, stbtt_FindGlyphIndex
+---
+
+[16/36] Building CXX object CMakeFiles/VuMake.dir/external/imgui/imgui_tables.cpp.o
+Warning: include-what-you-use reported diagnostics:
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_tables.cpp should add these lines:
+#include <float.h>           // for FLT_MAX, FLT_MIN
+#include <stdio.h>           // for sscanf
+#include <string.h>          // for NULL, memcpy, memset, memcmp, size_t
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_tables.cpp should remove these lines:
+
+The full include-list for /home/User0/Coding/Repos/VuMake/external/imgui/imgui_tables.cpp:
+#include <float.h>           // for FLT_MAX, FLT_MIN
+#include <stdint.h>          // for intptr_t
+#include <stdio.h>           // for sscanf
+#include <string.h>          // for NULL, memcpy, memset, memcmp, size_t
+#include "imgui.h"           // for ImVec2, ImGuiTableFlags_, ImGuiTableColu...
+#include "imgui_internal.h"  // for ImGuiTable, ImGuiTableColumn, ImRect
+---
+
+[17/36] Building CXX object CMakeFiles/VuMake.dir/external/imgui/imgui.cpp.o
+Warning: include-what-you-use reported diagnostics:
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui.h should add these lines:
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui.h should remove these lines:
+- enum ImGuiMouseSource : int;  // lines 210-210
+- enum ImGuiSortDirection : ImU8;  // lines 211-211
+- struct ImColor;  // lines 176-176
+- struct ImDrawChannel;  // lines 163-163
+- struct ImDrawListSplitter;  // lines 168-168
+- struct ImDrawVert;  // lines 169-169
+- struct ImFontConfig;  // lines 173-173
+- struct ImFontGlyph;  // lines 174-174
+- struct ImFontGlyphRangesBuilder;  // lines 175-175
+- struct ImGuiKeyData;  // lines 180-180
+- struct ImGuiListClipper;  // lines 181-181
+- struct ImGuiOnceUponAFrame;  // lines 183-183
+- struct ImGuiSelectionBasicStorage;  // lines 188-188
+- struct ImGuiSelectionExternalStorage;  // lines 189-189
+- struct ImGuiStoragePair;  // lines 193-193
+- struct ImGuiTextBuffer;  // lines 197-197
+- struct ImGuiTextFilter;  // lines 198-198
+
+The full include-list for /home/User0/Coding/Repos/VuMake/external/imgui/imgui.h:
+#include <assert.h>    // for assert
+#include <float.h>     // for FLT_MAX, FLT_MIN
+#include <stdarg.h>    // for va_list
+#include <stddef.h>    // for NULL, size_t, ptrdiff_t, offsetof
+#include <string.h>    // for memset, memcpy, memmove, memcmp, strcmp
+#include "imconfig.h"  // for IMGUI_DEFINE_MATH_OPERATORS
+enum ImGuiDir : int;  // lines 208-208
+enum ImGuiKey : int;  // lines 209-209
+struct ImDrawCmd;  // lines 164-164
+struct ImDrawData;  // lines 165-165
+struct ImDrawList;  // lines 166-166
+struct ImDrawListSharedData;  // lines 167-167
+struct ImFont;  // lines 170-170
+struct ImFontAtlas;  // lines 171-171
+struct ImFontBuilderIO;  // lines 172-172
+struct ImGuiContext;  // lines 177-177
+struct ImGuiIO;  // lines 178-178
+struct ImGuiInputTextCallbackData;  // lines 179-179
+struct ImGuiMultiSelectIO;  // lines 182-182
+struct ImGuiPayload;  // lines 184-184
+struct ImGuiPlatformIO;  // lines 185-185
+struct ImGuiPlatformImeData;  // lines 186-186
+struct ImGuiPlatformMonitor;  // lines 187-187
+struct ImGuiSelectionRequest;  // lines 190-190
+struct ImGuiSizeCallbackData;  // lines 191-191
+struct ImGuiStorage;  // lines 192-192
+struct ImGuiStyle;  // lines 194-194
+struct ImGuiTableColumnSortSpecs;  // lines 196-196
+struct ImGuiTableSortSpecs;  // lines 195-195
+struct ImGuiViewport;  // lines 199-199
+struct ImGuiWindowClass;  // lines 200-200
+---
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui.cpp should add these lines:
+#include <limits.h>          // for INT_MAX
+#include <stdlib.h>          // for exit, free, malloc, WEXITSTATUS
+#include <sys/types.h>       // for pid_t
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui.cpp should remove these lines:
+
+The full include-list for /home/User0/Coding/Repos/VuMake/external/imgui/imgui.cpp:
+#include "imgui.h"
+#include <limits.h>          // for INT_MAX
+#include <stdint.h>          // for intptr_t, uint32_t, uintptr_t
+#include <stdio.h>           // for sscanf, fseek, ftell, vsnprintf, fclose
+#include <stdlib.h>          // for exit, free, malloc, WEXITSTATUS
+#include <sys/types.h>       // for pid_t
+#include <sys/wait.h>        // for waitpid
+#include <unistd.h>          // for execvp, fork
+#include "imgui_internal.h"  // for ImGuiContext, ImGuiWindow, ImGuiDockNode
+---
+
+[18/36] Building CXX object CMakeFiles/VuMake.dir/external/imgui/imgui_widgets.cpp.o
+Warning: include-what-you-use reported diagnostics:
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_widgets.cpp should add these lines:
+#include <float.h>           // for FLT_MAX, DBL_MAX, FLT_MIN
+#include <limits.h>          // for INT_MAX, INT_MIN, LLONG_MIN, ULLONG_MAX
+#include <stdarg.h>          // for va_list, va_end, va_start
+#include <stddef.h>          // for offsetof
+#include <stdio.h>           // for sscanf
+#include <string.h>          // for NULL, memcpy, strlen, size_t, memmove
+
+/home/User0/Coding/Repos/VuMake/external/imgui/imgui_widgets.cpp should remove these lines:
+
+The full include-list for /home/User0/Coding/Repos/VuMake/external/imgui/imgui_widgets.cpp:
+#include <float.h>           // for FLT_MAX, DBL_MAX, FLT_MIN
+#include <limits.h>          // for INT_MAX, INT_MIN, LLONG_MIN, ULLONG_MAX
+#include <stdarg.h>          // for va_list, va_end, va_start
+#include <stddef.h>          // for offsetof
+#include <stdint.h>          // for intptr_t
+#include <stdio.h>           // for sscanf
+#include <string.h>          // for NULL, memcpy, strlen, size_t, memmove
+#include "imgui.h"           // for ImVec2, ImGuiStyle, ImGuiColorEditFlags_
+#include "imgui_internal.h"  // for ImGuiContext, ImRect, ImGuiWindow, ImGui...
+#include "imstb_textedit.h"  // for STB_TexteditState, stb_textedit_click
+#include "imstb_textedit.h"  // for STB_TexteditState, stb_textedit_click
+---
+
+[19/36] Building CXX object CMakeFiles/VuMake.dir/src/03_Mantle/VuInstance.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuInstance.h should add these lines:
+#include <stdint.h>                      // for uint32_t
+#include <vulkan/vulkan_core.h>          // for VkValidationFeatureEnableEXT
+#include <span>                          // for span
+#include <utility>                       // for move
+#include <vector>                        // for vector
+#include <vulkan/vulkan.hpp>             // for makeApiVersion, ArrayWrapper1D
+#include <vulkan/vulkan_enums.hpp>       // for operator|, DebugUtilsMessage...
+#include <vulkan/vulkan_handles.hpp>     // for Instance
+#include <vulkan/vulkan_hpp_macros.hpp>  // for VULKAN_HPP_DEFAULT_DISPATCHER
+#include <vulkan/vulkan_structs.hpp>     // for InstanceCreateInfo, Applicat...
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuInstance.h should remove these lines:
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/03_Mantle/VuInstance.h:
+#include <stdint.h>                      // for uint32_t
+#include <vulkan/vulkan_core.h>          // for VkValidationFeatureEnableEXT
+#include <cstring>                       // for strcmp
+#include <expected>                      // for expected, unexpected
+#include <iostream>                      // for char_traits, basic_ostream
+#include <span>                          // for span
+#include <utility>                       // for move
+#include <vector>                        // for vector
+#include <vulkan/vulkan.hpp>             // for makeApiVersion, ArrayWrapper1D
+#include <vulkan/vulkan_enums.hpp>       // for operator|, DebugUtilsMessage...
+#include <vulkan/vulkan_handles.hpp>     // for Instance
+#include <vulkan/vulkan_hpp_macros.hpp>  // for VULKAN_HPP_DEFAULT_DISPATCHER
+#include <vulkan/vulkan_raii.hpp>        // for Instance, Context, DebugUtil...
+#include <vulkan/vulkan_structs.hpp>     // for InstanceCreateInfo, Applicat...
+---
+
+(/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuInstance.cpp has correct #includes/fwd-decls)
+
+[20/36] Building CXX object CMakeFiles/VuMake.dir/src/03_Mantle/VuGraphicsPipeline.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuGraphicsPipeline.h should add these lines:
+#include <vulkan/vulkan_structs.hpp>  // for PipelineColorBlendAttachmentSta...
+namespace vk { enum class CompareOp; }
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuGraphicsPipeline.h should remove these lines:
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/03_Mantle/VuGraphicsPipeline.h:
+#include <span>                       // for span
+#include <vulkan/vulkan_structs.hpp>  // for PipelineColorBlendAttachmentSta...
+#include "vulkan/vulkan_raii.hpp"     // for Pipeline, ShaderModule, Device
+namespace vk { enum class CompareOp; }
+---
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuGraphicsPipeline.cpp should add these lines:
+#include <stdint.h>                   // for uint32_t
+#include <vulkan/vulkan_core.h>       // for VK_NULL_HANDLE
+#include <utility>                    // for move
+#include <vulkan/vulkan.hpp>          // for False, ArrayWrapper1D, True
+#include <vulkan/vulkan_enums.hpp>    // for DynamicState, CompareOp, Shader...
+#include <vulkan/vulkan_handles.hpp>  // for ShaderModule, Pipeline, Pipelin...
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuGraphicsPipeline.cpp should remove these lines:
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/03_Mantle/VuGraphicsPipeline.cpp:
+#include "VuGraphicsPipeline.h"
+#include <stdint.h>                   // for uint32_t
+#include <vulkan/vulkan_core.h>       // for VK_NULL_HANDLE
+#include <array>                      // for array
+#include <utility>                    // for move
+#include <vector>                     // for vector
+#include <vulkan/vulkan.hpp>          // for False, ArrayWrapper1D, True
+#include <vulkan/vulkan_enums.hpp>    // for DynamicState, CompareOp, Shader...
+#include <vulkan/vulkan_handles.hpp>  // for ShaderModule, Pipeline, Pipelin...
+#include "VuCommon.h"                 // for ShaderModule, PipelineLayout
+---
+
+[21/36] Building CXX object CMakeFiles/VuMake.dir/src/03_Mantle/VuCommon.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuCommon.h should add these lines:
+#include <expected>         // for expected
+#include <format>           // for format
+#include <stdexcept>        // for runtime_error
+#include <string>           // for basic_string
+#include <utility>          // for move
+#include <vulkan/vulkan_raii.hpp>
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuCommon.h should remove these lines:
+- #include <iostream>  // lines 3-3
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/03_Mantle/VuCommon.h:
+#include <expected>         // for expected
+#include <format>           // for format
+#include <source_location>  // for source_location
+#include <stdexcept>        // for runtime_error
+#include <string>           // for basic_string
+#include <utility>          // for move
+#include <vulkan/vulkan_raii.hpp>
+#include "vulkan/vulkan_raii.hpp"
+---
+
+(/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuCommon.cpp has correct #includes/fwd-decls)
+
+[22/36] Building CXX object CMakeFiles/VuMake.dir/src/03_Mantle/VuBuffer.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuBuffer.h should add these lines:
+#include <type_traits>              // for is_move_assignable_v, is_move_con...
+#include <vulkan/vulkan.hpp>        // for DeviceSize, DeviceAddress
+#include <vulkan/vulkan_enums.hpp>  // for operator|, MemoryPropertyFlagBits
+namespace Vu { struct VuDevice; }
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuBuffer.h should remove these lines:
+- #include "VuDevice.h"  // lines 8-8
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/03_Mantle/VuBuffer.h:
+#include <expected>                 // for expected
+#include <span>                     // for span
+#include <type_traits>              // for is_move_assignable_v, is_move_con...
+#include <vulkan/vulkan.hpp>        // for DeviceSize, DeviceAddress
+#include <vulkan/vulkan_enums.hpp>  // for operator|, MemoryPropertyFlagBits
+#include "01_InnerCore/TypeDefs.h"  // for byte, u32orNull
+#include "VuCommon.h"               // for Buffer, DeviceMemory
+#include "VuTypes.h"                // for VuName
+namespace Vu { struct VuDevice; }
+---
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuBuffer.cpp should add these lines:
+#include <vulkan/vulkan_core.h>       // for VkDeviceSize
+#include <cstddef>                    // for byte, size_t
+#include <cstring>                    // for memcpy
+#include <exception>                  // for bad_exception
+#include <utility>                    // for move
+#include <vulkan/vulkan_funcs.hpp>    // for Device::getBufferAddress, Devic...
+#include <vulkan/vulkan_handles.hpp>  // for Device, Buffer, DeviceMemory
+#include <vulkan/vulkan_structs.hpp>  // for BufferCreateInfo, BindBufferMem...
+#include "03_Mantle/VuCommon.h"       // for Buffer, DeviceMemory, throw_if_...
+#include "03_Mantle/VuDevice.h"       // for VuDevice
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuBuffer.cpp should remove these lines:
+- #include "VuMemoryAllocator.h"  // lines 3-3
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/03_Mantle/VuBuffer.cpp:
+#include "VuBuffer.h"
+#include <vulkan/vulkan_core.h>       // for VkDeviceSize
+#include <cstddef>                    // for byte, size_t
+#include <cstring>                    // for memcpy
+#include <exception>                  // for bad_exception
+#include <utility>                    // for move
+#include <vulkan/vulkan_funcs.hpp>    // for Device::getBufferAddress, Devic...
+#include <vulkan/vulkan_handles.hpp>  // for Device, Buffer, DeviceMemory
+#include <vulkan/vulkan_structs.hpp>  // for BufferCreateInfo, BindBufferMem...
+#include "03_Mantle/VuCommon.h"       // for Buffer, DeviceMemory, throw_if_...
+#include "03_Mantle/VuDevice.h"       // for VuDevice
+---
+
+[23/36] Building CXX object CMakeFiles/VuMake.dir/src/03_Mantle/VuPhysicalDevice.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuPhysicalDevice.h should add these lines:
+#include <stdint.h>                   // for uint32_t
+#include <expected>                   // for expected, unexpected
+#include <memory>                     // for shared_ptr, __shared_ptr_access
+#include <new>                        // for bad_alloc
+#include <optional>                   // for optional, nullopt, nullopt_t
+#include <span>                       // for span
+#include <string>                     // for basic_string, operator<<, opera...
+#include <utility>                    // for move
+#include <vector>                     // for vector
+#include <version>                    // for nullptr_t
+#include <vulkan/vulkan.hpp>          // for ArrayWrapper1D
+#include <vulkan/vulkan_enums.hpp>    // for Result, Flags, PresentModeKHR (...
+#include <vulkan/vulkan_structs.hpp>  // for SurfaceFormatKHR, PhysicalDevic...
+#include "01_InnerCore/TypeDefs.h"    // for u32
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuPhysicalDevice.h should remove these lines:
+- #include "VuTypes.h"  // lines 8-8
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/03_Mantle/VuPhysicalDevice.h:
+#include <stdint.h>                   // for uint32_t
+#include <expected>                   // for expected, unexpected
+#include <iostream>                   // for char_traits, basic_ostream, ope...
+#include <memory>                     // for shared_ptr, __shared_ptr_access
+#include <new>                        // for bad_alloc
+#include <optional>                   // for optional, nullopt, nullopt_t
+#include <set>                        // for set, _Rb_tree_const_iterator
+#include <span>                       // for span
+#include <string>                     // for basic_string, operator<<, opera...
+#include <utility>                    // for move
+#include <vector>                     // for vector
+#include <version>                    // for nullptr_t
+#include <vulkan/vulkan.hpp>          // for ArrayWrapper1D
+#include <vulkan/vulkan_enums.hpp>    // for Result, Flags, PresentModeKHR (...
+#include <vulkan/vulkan_structs.hpp>  // for SurfaceFormatKHR, PhysicalDevic...
+#include "01_InnerCore/TypeDefs.h"    // for u32
+#include "VuCommon.h"                 // for PhysicalDevice, SurfaceKHR, mov...
+#include "VuInstance.h"               // for VuInstance
+---
+
+(/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuPhysicalDevice.cpp has correct #includes/fwd-decls)
+
+[24/36] Building CXX object CMakeFiles/VuMake.dir/src/03_Mantle/VuDevice.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuDevice.h should add these lines:
+#include <stdint.h>                   // for uint32_t
+#include <vulkan/vulkan_core.h>       // for VK_FALSE, VK_TRUE
+#include <array>                      // for array
+#include <expected>                   // for expected, unexpected
+#include <memory>                     // for shared_ptr, __shared_ptr_access
+#include <span>                       // for span
+#include <utility>                    // for move
+#include <vector>                     // for vector
+#include <vulkan/vulkan.hpp>          // for True, ArrayWrapper1D
+#include <vulkan/vulkan_enums.hpp>    // for MemoryPropertyFlags, Result, Flags
+#include <vulkan/vulkan_structs.hpp>  // for DeviceQueueCreateInfo, DeviceCr...
+#include "01_InnerCore/TypeDefs.h"    // for u32
+namespace vk { class DescriptorSetLayout; }
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuDevice.h should remove these lines:
+- #include <vulkan/vulkan_raii.hpp>  // lines 3-3
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/03_Mantle/VuDevice.h:
+#include <stdint.h>                   // for uint32_t
+#include <vulkan/vulkan_core.h>       // for VK_FALSE, VK_TRUE
+#include <array>                      // for array
+#include <expected>                   // for expected, unexpected
+#include <memory>                     // for shared_ptr, __shared_ptr_access
+#include <set>                        // for set, _Rb_tree_const_iterator
+#include <span>                       // for span
+#include <utility>                    // for move
+#include <vector>                     // for vector
+#include <vulkan/vulkan.hpp>          // for True, ArrayWrapper1D
+#include <vulkan/vulkan_enums.hpp>    // for MemoryPropertyFlags, Result, Flags
+#include <vulkan/vulkan_structs.hpp>  // for DeviceQueueCreateInfo, DeviceCr...
+#include "01_InnerCore/TypeDefs.h"    // for u32
+#include "VuCommon.h"                 // for Device, Queue, throw_if_unexpected
+#include "VuPhysicalDevice.h"         // for VuPhysicalDevice, VuQueueFamily...
+namespace vk { class DescriptorSetLayout; }
+---
+
+(/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuDevice.cpp has correct #includes/fwd-decls)
+
+[25/36] Building CXX object CMakeFiles/VuMake.dir/src/02_OuterCore/HeaderOnlyIncludes.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+
+/home/User0/Coding/Repos/VuMake/src/02_OuterCore/HeaderOnlyIncludes.cpp should add these lines:
+#include <vulkan/vulkan.hpp>             // for DispatchLoaderDynamic
+#include <vulkan/vulkan_hpp_macros.hpp>  // for VULKAN_HPP_DEFAULT_DISPATCH_...
+
+/home/User0/Coding/Repos/VuMake/src/02_OuterCore/HeaderOnlyIncludes.cpp should remove these lines:
+- #include "vulkan/vulkan_raii.hpp"  // lines 7-7
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/02_OuterCore/HeaderOnlyIncludes.cpp:
+#include <vulkan/vulkan.hpp>             // for DispatchLoaderDynamic
+#include <vulkan/vulkan_hpp_macros.hpp>  // for VULKAN_HPP_DEFAULT_DISPATCH_...
+#include "GetTimeSinceProcessStart.h"  // lines 2-2
+#include "stb_image.h"  // lines 5-5
+---
+
+[26/36] Building CXX object CMakeFiles/VuMake.dir/src/04_Crust/VuMaterial.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuMaterial.h should add these lines:
+#include <cstdint>                  // for uint32_t
+#include <variant>                  // for hash
+#include <vulkan/vulkan_enums.hpp>  // for CullModeFlagBits, CullModeFlags
+struct VuMaterialDataHandle;
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuMaterial.h should remove these lines:
+- #include <string_view>  // lines 6-6
+- #include "01_InnerCore/TypeDefs.h"  // lines 8-8
+- #include "03_Mantle/VuCommon.h"  // lines 9-9
+- #include "03_Mantle/VuTypes.h"  // lines 10-10
+- #include "InteroptStructs.h"  // lines 11-11
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/04_Crust/VuMaterial.h:
+#include <cstddef>                  // for size_t
+#include <cstdint>                  // for uint32_t
+#include <functional>               // for hash
+#include <memory>                   // for shared_ptr
+#include <variant>                  // for hash
+#include <vulkan/vulkan_enums.hpp>  // for CullModeFlagBits, CullModeFlags
+namespace Vu { struct VuShader; }  // lines 14-14
+struct VuMaterialDataHandle;
+---
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuMaterial.cpp should add these lines:
+namespace Vu { struct VuGraphicsPipeline; }
+struct VuMaterialDataHandle;
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuMaterial.cpp should remove these lines:
+- #include "03_Mantle/VuGraphicsPipeline.h"  // lines 3-3
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/04_Crust/VuMaterial.cpp:
+#include "VuMaterial.h"
+#include "VuShader.h"  // for VuShader
+namespace Vu { struct VuGraphicsPipeline; }
+struct VuMaterialDataHandle;
+---
+
+[27/36] Building CXX object CMakeFiles/VuMake.dir/src/03_Mantle/VuSwapChain.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuSwapChain.h should add these lines:
+#include <stddef.h>                   // for size_t
+#include <vulkan/vulkan_core.h>       // for VK_NULL_HANDLE, VK_TRUE
+#include <algorithm>                  // for clamp
+#include <format>                     // for vector
+#include <limits>                     // for numeric_limits
+#include <memory>                     // for shared_ptr, __shared_ptr_access
+#include <span>                       // for span
+#include <utility>                    // for move
+#include <vector>                     // for vector
+#include <vulkan/vulkan_enums.hpp>    // for ComponentSwizzle, PresentModeKHR
+#include <vulkan/vulkan_handles.hpp>  // for Image, SurfaceKHR, SwapchainKHR
+#include <vulkan/vulkan_structs.hpp>  // for Extent2D, SwapchainCreateInfoKHR
+#include "01_InnerCore/TypeDefs.h"    // for u32
+#include "03_Mantle/VuCommon.h"       // for ImageView, SwapchainKHR, throw_...
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuSwapChain.h should remove these lines:
+- #include <vulkan/vulkan_raii.hpp>  // lines 2-2
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/03_Mantle/VuSwapChain.h:
+#include <stddef.h>                   // for size_t
+#include <vulkan/vulkan_core.h>       // for VK_NULL_HANDLE, VK_TRUE
+#include <algorithm>                  // for clamp
+#include <format>                     // for vector
+#include <limits>                     // for numeric_limits
+#include <memory>                     // for shared_ptr, __shared_ptr_access
+#include <span>                       // for span
+#include <utility>                    // for move
+#include <vector>                     // for vector
+#include <vulkan/vulkan_enums.hpp>    // for ComponentSwizzle, PresentModeKHR
+#include <vulkan/vulkan_handles.hpp>  // for Image, SurfaceKHR, SwapchainKHR
+#include <vulkan/vulkan_structs.hpp>  // for Extent2D, SwapchainCreateInfoKHR
+#include "01_InnerCore/TypeDefs.h"    // for u32
+#include "03_Mantle/VuCommon.h"       // for ImageView, SwapchainKHR, throw_...
+#include "VuDevice.h"                 // for VuDevice
+#include "VuPhysicalDevice.h"         // for VuPhysicalDevice, VuQueueFamily...
+---
+
+(/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuSwapChain.cpp has correct #includes/fwd-decls)
+
+[29/36] Building CXX object CMakeFiles/VuMake.dir/src/03_Mantle/VuImage.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuImage.h should add these lines:
+#include <expected>                 // for expected
+#include <memory>                   // for shared_ptr
+#include <type_traits>              // for is_constructible_v, is_copy_assig...
+#include <version>                  // for nullptr_t
+#include <vulkan/vulkan_enums.hpp>  // for ImageUsageFlagBits, operator|
+#include <vulkan/vulkan_raii.hpp>   // for DeviceMemory, Image, ImageView
+namespace Vu { struct VuDevice; }
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuImage.h should remove these lines:
+- #include "VuDevice.h"  // lines 8-8
+- #include "vulkan/vulkan.hpp"  // lines 9-9
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/03_Mantle/VuImage.h:
+#include <cstdint>                  // for uint32_t
+#include <expected>                 // for expected
+#include <filesystem>               // for path
+#include <memory>                   // for shared_ptr
+#include <type_traits>              // for is_constructible_v, is_copy_assig...
+#include <version>                  // for nullptr_t
+#include <vulkan/vulkan_enums.hpp>  // for ImageUsageFlagBits, operator|
+#include <vulkan/vulkan_raii.hpp>   // for DeviceMemory, Image, ImageView
+#include "01_InnerCore/TypeDefs.h"  // for u32orNull
+#include "stb_image.h"              // for stbi_uc
+namespace Vu { struct VuDevice; }
+---
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuImage.cpp should add these lines:
+#include <utility>                    // for move
+#include <vulkan/vulkan_handles.hpp>  // for Image, DeviceMemory
+#include <vulkan/vulkan_structs.hpp>  // for ImageCreateInfo, ImageViewCreat...
+#include "03_Mantle/VuDevice.h"       // for VuDevice
+
+/home/User0/Coding/Repos/VuMake/src/03_Mantle/VuImage.cpp should remove these lines:
+- #include "VuMemoryAllocator.h"  // lines 8-8
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/03_Mantle/VuImage.cpp:
+#include "VuImage.h"
+#include <filesystem>                 // for path
+#include <string>                     // for basic_string
+#include <utility>                    // for move
+#include <vulkan/vulkan_handles.hpp>  // for Image, DeviceMemory
+#include <vulkan/vulkan_structs.hpp>  // for ImageCreateInfo, ImageViewCreat...
+#include "03_Mantle/VuDevice.h"       // for VuDevice
+#include "VuCommon.h"                 // for moveOrTHROW, throw_if_unexpected
+#include "stb_image.h"                // for stbi_load, STBI_rgb_alpha, stbi_uc
+---
+
+[30/36] Building CXX object CMakeFiles/VuMake.dir/src/04_Crust/VuRenderer.Init.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuRenderer.Init.cpp should add these lines:
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuRenderer.Init.cpp should remove these lines:
+- #include "VuRenderer.h"  // lines 1-1
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/04_Crust/VuRenderer.Init.cpp:
+---
+
+[31/36] Building CXX object CMakeFiles/VuMake.dir/src/04_Crust/VuDeferredRenderSpace.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuDeferredRenderSpace.h should add these lines:
+#include <memory>                     // for shared_ptr
+#include <vector>                     // for vector
+#include <vulkan/vulkan_handles.hpp>  // for CommandBuffer
+#include <vulkan/vulkan_raii.hpp>     // for Framebuffer, SurfaceKHR (ptr only)
+#include "01_InnerCore/TypeDefs.h"    // for u32
+namespace Vu { struct VuDevice; }
+namespace Vu { struct VuImage; }
+namespace Vu { struct VuRenderPass; }
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuDeferredRenderSpace.h should remove these lines:
+- #include "03_Mantle/VuImage.h"  // lines 3-3
+- #include "03_Mantle/VuRenderPass.h"  // lines 4-4
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/04_Crust/VuDeferredRenderSpace.h:
+#include <memory>                     // for shared_ptr
+#include <vector>                     // for vector
+#include <vulkan/vulkan_handles.hpp>  // for CommandBuffer
+#include <vulkan/vulkan_raii.hpp>     // for Framebuffer, SurfaceKHR (ptr only)
+#include "01_InnerCore/TypeDefs.h"    // for u32
+#include "03_Mantle/VuSwapChain.h"    // for VuSwapChain
+#include "InteroptStructs.h"          // for MatData_PbrDeferred
+namespace Vu { struct VuDevice; }
+namespace Vu { struct VuImage; }
+namespace Vu { struct VuRenderPass; }
+namespace Vu { struct VuRenderer; }  // lines 9-9
+---
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuDeferredRenderSpace.cpp should add these lines:
+#include <stddef.h>                   // for size_t
+#include <stdint.h>                   // for uint32_t
+#include <array>                      // for array
+#include <expected>                   // for expected
+#include <utility>                    // for move
+#include <vulkan/vulkan.hpp>          // for DispatchLoaderDynamic
+#include <vulkan/vulkan_enums.hpp>    // for ImageUsageFlagBits, operator|
+#include <vulkan/vulkan_funcs.hpp>    // for CommandBuffer::beginRenderPass
+#include <vulkan/vulkan_structs.hpp>  // for Extent2D, FramebufferCreateInfo
+#include "03_Mantle/VuCommon.h"       // for throw_if_unexpected
+#include "03_Mantle/VuDevice.h"       // for VuDevice
+#include "03_Mantle/VuImage.h"        // for VuImage, VuImageCreateInfo
+#include "03_Mantle/VuRenderPass.h"   // for VuRenderPass
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuDeferredRenderSpace.cpp should remove these lines:
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/04_Crust/VuDeferredRenderSpace.cpp:
+#include "VuDeferredRenderSpace.h"
+#include <stddef.h>                   // for size_t
+#include <stdint.h>                   // for uint32_t
+#include <array>                      // for array
+#include <expected>                   // for expected
+#include <utility>                    // for move
+#include <vulkan/vulkan.hpp>          // for DispatchLoaderDynamic
+#include <vulkan/vulkan_enums.hpp>    // for ImageUsageFlagBits, operator|
+#include <vulkan/vulkan_funcs.hpp>    // for CommandBuffer::beginRenderPass
+#include <vulkan/vulkan_structs.hpp>  // for Extent2D, FramebufferCreateInfo
+#include "03_Mantle/VuCommon.h"       // for throw_if_unexpected
+#include "03_Mantle/VuDevice.h"       // for VuDevice
+#include "03_Mantle/VuImage.h"        // for VuImage, VuImageCreateInfo
+#include "03_Mantle/VuRenderPass.h"   // for VuRenderPass
+#include "VuRenderer.h"               // for VuRenderer
+---
+
+[32/36] Building CXX object CMakeFiles/VuMake.dir/Main.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+
+/home/User0/Coding/Repos/VuMake/Main.cpp should add these lines:
+
+/home/User0/Coding/Repos/VuMake/Main.cpp should remove these lines:
+- #include "04_Crust/VuRenderer.h"  // lines 8-8
+
+The full include-list for /home/User0/Coding/Repos/VuMake/Main.cpp:
+#include <cstdio>                       // for puts
+#include <cstdlib>                      // for EXIT_SUCCESS
+#include <exception>                    // for exception
+#include <iostream>                     // for char_traits, basic_ostream
+#include <memory>                       // for make_unique, unique_ptr
+#include "01_InnerCore/VuLogger.h"      // for LogLevel, Logger
+#include "13_Scenes/Scene_GLTF_Load.h"  // for Scene_GLTF_Load
+#include "GetTimeSinceProcessStart.h"   // for GetTimeSinceProcessStart
+---
+
+[33/36] Building CXX object CMakeFiles/VuMake.dir/src/04_Crust/VuShader.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuShader.h should add these lines:
+#include <time.h>                          // for size_t, time_t
+#include <expected>                        // for expected
+#include <filesystem>                      // for path
+#include <memory>                          // for shared_ptr
+#include <vulkan/vulkan_enums.hpp>         // for Result
+#include <vulkan/vulkan_handles.hpp>       // for RenderPass
+#include <vulkan/vulkan_raii.hpp>          // for ShaderModule
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuShader.h should remove these lines:
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/04_Crust/VuShader.h:
+#include <time.h>                          // for size_t, time_t
+#include <expected>                        // for expected
+#include <filesystem>                      // for path
+#include <memory>                          // for shared_ptr
+#include <unordered_map>                   // for unordered_map
+#include <vulkan/vulkan_enums.hpp>         // for Result
+#include <vulkan/vulkan_handles.hpp>       // for RenderPass
+#include <vulkan/vulkan_raii.hpp>          // for ShaderModule
+#include "02_OuterCore/Common.h"           // for path
+#include "03_Mantle/VuGraphicsPipeline.h"  // for VuGraphicsPipeline
+#include "VuMaterial.h"                    // for hash, MaterialSettings
+namespace Vu { struct VuDevice; }  // lines 12-12
+namespace Vu { struct VuRenderPass; }  // lines 11-11
+namespace Vu { struct VuRenderer; }  // lines 10-10
+---
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuShader.cpp should add these lines:
+#include <stdlib.h>                   // for system
+#include <optional>                   // for optional
+#include <span>                       // for span
+#include <vulkan/vulkan_structs.hpp>  // for ShaderModuleCreateInfo, Pipelin...
+#include "03_Mantle/VuCommon.h"       // for throw_if_unexpected
+#include "03_Mantle/VuRenderPass.h"   // for VuRenderPass
+#include "04_Crust/VuMaterial.h"      // for MaterialSettings, hash, operator==
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuShader.cpp should remove these lines:
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/04_Crust/VuShader.cpp:
+#include "VuShader.h"
+#include <stdlib.h>                   // for system
+#include <algorithm>                  // for max
+#include <cassert>                    // for assert
+#include <filesystem>                 // for path
+#include <format>                     // for format
+#include <optional>                   // for optional
+#include <span>                       // for span
+#include <string>                     // for basic_string, string
+#include <utility>                    // for move, pair
+#include <vector>                     // for vector
+#include <vulkan/vulkan_structs.hpp>  // for ShaderModuleCreateInfo, Pipelin...
+#include "01_InnerCore/TypeDefs.h"    // for u32
+#include "01_InnerCore/VuLogger.h"    // for Logger
+#include "02_OuterCore/VuConfig.h"    // for getShaderCompilerPath
+#include "02_OuterCore/VuIO.h"        // for getlastModifiedTime, readFile
+#include "03_Mantle/VuCommon.h"       // for throw_if_unexpected
+#include "03_Mantle/VuDevice.h"       // for VuDevice
+#include "03_Mantle/VuRenderPass.h"   // for VuRenderPass
+#include "04_Crust/VuMaterial.h"      // for MaterialSettings, hash, operator==
+#include "VuRenderer.h"               // for VuRenderer
+---
+
+[34/36] Building CXX object CMakeFiles/VuMake.dir/src/04_Crust/VuRenderer.cpp.o
+Warning: include-what-you-use reported diagnostics:
+/usr/include/c++/14/bits/unicode-data.h:1:1: warning: no private include name for @headername mapping
+/usr/include/vulkan/vulkan_enums.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_handles.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_structs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/vulkan/vulkan_funcs.hpp:12:1: warning: Unknown or malformed pragma (private; include "vulkan.hpp")
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+/usr/include/c++/14/bits/mofunc_impl.h:1:1: warning: no private include name for @headername mapping
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuRenderer.h should add these lines:
+#include <stdint.h>                        // for uint32_t
+#include <cstddef>                         // for byte, size_t
+#include <span>                            // for span
+#include <vulkan/vulkan.hpp>               // for DeviceSize
+#include <vulkan/vulkan_handles.hpp>       // for DescriptorSet, Buffer, Com...
+#include "02_OuterCore/Common.h"           // for path
+#include "02_OuterCore/math/VuFloat4.h"    // for Float4
+#include "02_OuterCore/math/VuFloat4x4.h"  // for Float4x4
+#include "03_Mantle/VuImage.h"             // for VuImage
+#include "InteroptStructs.h"               // for VuMaterialDataHandle, Fram...
+#include "SDL3/SDL_events.h"               // for SDL_Event
+#include "SDL3/SDL_video.h"                // for SDL_Window
+namespace Vu { struct VuSampler; }
+namespace vk { enum class Format; }
+namespace vk { enum class ImageLayout; }
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuRenderer.h should remove these lines:
+- #include "03_Mantle/VuSampler.h"  // lines 9-9
+- #include "SDL3/SDL.h"  // lines 11-11
+- #include "VuShader.h"  // lines 14-14
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/04_Crust/VuRenderer.h:
+#include <stdint.h>                        // for uint32_t
+#include <cstddef>                         // for byte, size_t
+#include <memory>                          // for shared_ptr, __shared_ptr_a...
+#include <span>                            // for span
+#include <vulkan/vulkan.hpp>               // for DeviceSize
+#include <vulkan/vulkan_handles.hpp>       // for DescriptorSet, Buffer, Com...
+#include "01_InnerCore/IndexAllocator.h"   // for IndexAllocator
+#include "01_InnerCore/TypeDefs.h"         // for u32, vector, byte, u64
+#include "02_OuterCore/Common.h"           // for path
+#include "02_OuterCore/VuConfig.h"         // for MATERIAL_DATA_SIZE
+#include "02_OuterCore/math/VuFloat4.h"    // for Float4
+#include "02_OuterCore/math/VuFloat4x4.h"  // for Float4x4
+#include "03_Mantle/VuBuffer.h"            // for VuBuffer
+#include "03_Mantle/VuImage.h"             // for VuImage
+#include "03_Mantle/VuTypes.h"             // for VuDisposeStack
+#include "InteroptStructs.h"               // for VuMaterialDataHandle, Fram...
+#include "SDL3/SDL_events.h"               // for SDL_Event
+#include "SDL3/SDL_video.h"                // for SDL_Window
+#include "VuDeferredRenderSpace.h"         // for VuDeferredRenderSpace
+#include "vulkan/vulkan_raii.hpp"          // for Semaphore, CommandBuffer
+namespace Vu { struct VuDevice; }  // lines 19-19
+namespace Vu { struct VuInstance; }  // lines 21-21
+namespace Vu { struct VuMaterial; }  // lines 22-22
+namespace Vu { struct VuMesh; }  // lines 23-23
+namespace Vu { struct VuPhysicalDevice; }  // lines 20-20
+namespace Vu { struct VuSampler; }
+namespace vk { enum class Format; }
+namespace vk { enum class ImageLayout; }
+struct ImGui_ImplVulkanH_Window;  // lines 16-16
+---
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuRenderer.cpp should add these lines:
+#include <assert.h>                          // for assert
+#include <functional>                        // for function
+#include <memory_resource>                   // for new_delete_resource
+#include <vulkan/vulkan_funcs.hpp>           // for CommandBuffer::bindDescr...
+#include "03_Mantle/VuInstance.h"            // for VuInstance
+#include "03_Mantle/VuRenderPass.h"          // for VuRenderPass
+#include "04_Crust/VuDeferredRenderSpace.h"  // for VuDeferredRenderSpace
+
+/home/User0/Coding/Repos/VuMake/src/04_Crust/VuRenderer.cpp should remove these lines:
+- #include <optional>  // lines 7-7
+- #include "13_Scenes/Scene_GLTF_Load.h"  // lines 26-26
+- namespace Vu { struct VuMaterial; }  // lines 41-41
+
+The full include-list for /home/User0/Coding/Repos/VuMake/src/04_Crust/VuRenderer.cpp:
+#include "VuRenderer.h"
+#include <assert.h>                          // for assert
+#include <vulkan/vulkan_core.h>              // for VK_QUEUE_FAMILY_IGNORED
+#include <algorithm>                         // for fill
+#include <array>                             // for array
+#include <expected>                          // for expected
+#include <functional>                        // for function
+#include <iostream>                          // for char_traits, basic_ostream
+#include <memory_resource>                   // for new_delete_resource
+#include <stdexcept>                         // for runtime_error, invalid_a...
+#include <utility>                           // for move, pair
+#include <vector>                            // for vector
+#include <vulkan/vulkan_enums.hpp>           // for DescriptorType, operator|
+#include <vulkan/vulkan_funcs.hpp>           // for CommandBuffer::bindDescr...
+#include <vulkan/vulkan_structs.hpp>         // for DescriptorSetLayoutBinding
+#include "01_InnerCore/ScopeTimer.h"         // for ScopeTimer
+#include "02_OuterCore/Color32.h"            // for Color32
+#include "02_OuterCore/FixedString.h"        // for FixedString
+#include "02_OuterCore/VuConfig.h"           // for MAX_FRAMES_IN_FLIGHT
+#include "03_Mantle/VuCommon.h"              // for CommandBuffer, Semaphore
+#include "03_Mantle/VuDevice.h"              // for VuDevice, VuDeviceCreate...
+#include "03_Mantle/VuGraphicsPipeline.h"    // for VuGraphicsPipeline
+#include "03_Mantle/VuInstance.h"            // for VuInstance
+#include "03_Mantle/VuPhysicalDevice.h"      // for VuPhysicalDevice, VuQueu...
+#include "03_Mantle/VuRenderPass.h"          // for VuRenderPass
+#include "03_Mantle/VuSampler.h"             // for VuSampler
+#include "03_Mantle/VuSwapChain.h"           // for VuSwapChain
+#include "04_Crust/VuDeferredRenderSpace.h"  // for VuDeferredRenderSpace
+#include "04_Crust/VuShader.h"               // for VuShader
+#include "SDL3/SDL_events.h"                 // for SDL_PollEvent, SDL_WaitE...
+#include "SDL3/SDL_init.h"                   // for SDL_Init, SDL_INIT_EVENTS
+#include "SDL3/SDL_mouse.h"                  // for SDL_GetMouseState
+#include "SDL3/SDL_timer.h"                  // for SDL_GetTicksNS, SDL_GetT...
+#include "SDL3/SDL_video.h"                  // for SDL_GetWindowFlags, SDL_...
+#include "SDL3/SDL_vulkan.h"                 // for SDL_Vulkan_CreateSurface
+#include "VuMaterial.h"                      // for VuMaterial, MaterialSett...
+#include "VuMesh.h"                          // for VuMesh
+#include "imgui.h"                           // for CreateContext, DestroyCo...
+#include "imgui_impl_sdl3.h"                 // for ImGui_ImplSDL3_InitForVu...
+#include "imgui_impl_vulkan.h"               // for ImGui_ImplVulkan_InitInfo
+#include "stb_image.h"                       // for stbi_image_free, stbi_uc
+---
+
+[35/36] Linking CXX executable VuMake
+
+Build finished
+

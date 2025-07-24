@@ -53,7 +53,28 @@
 //  2023-02-23: Accept SDL_GetPerformanceCounter() not returning a monotonically increasing value. (#6189, #6114, #3644)
 //  2023-02-07: Forked "imgui_impl_sdl2" into "imgui_impl_sdl3". Removed version checks for old feature. Refer to imgui_impl_sdl2.cpp for older changelog.
 
+#include <float.h>
+#include <stdint.h>
+#include <string.h>
+
 #include "imgui.h"
+#include "SDL3/SDL_clipboard.h"
+#include "SDL3/SDL_gamepad.h"
+#include "SDL3/SDL_hints.h"
+#include "SDL3/SDL_joystick.h"
+#include "SDL3/SDL_keyboard.h"
+#include "SDL3/SDL_keycode.h"
+#include "SDL3/SDL_mouse.h"
+#include "SDL3/SDL_rect.h"
+#include "SDL3/SDL_render.h"
+#include "SDL3/SDL_scancode.h"
+#include "SDL3/SDL_stdinc.h"
+#include "SDL3/SDL_timer.h"
+#include "SDL3/SDL_touch.h"
+#include "SDL3/SDL_video.h"
+
+struct ImGuiContext;
+struct VkAllocationCallbacks;
 #ifndef IMGUI_DISABLE
 #include "imgui_impl_sdl3.h"
 
@@ -63,8 +84,6 @@
 #pragma clang diagnostic ignored "-Wimplicit-int-float-conversion"  // warning: implicit conversion from 'xxx' to 'float' may lose precision
 #endif
 
-// SDL
-#include <SDL3/SDL.h>
 #if defined(__APPLE__)
 #include <TargetConditionals.h>
 #endif
@@ -1099,6 +1118,7 @@ static void ImGui_ImplSDL3_SwapBuffers(ImGuiViewport* viewport, void*)
 // Vulkan support (the Vulkan renderer needs to call a platform-side support function to create the surface)
 // SDL is graceful enough to _not_ need <vulkan/vulkan.h> so we can safely include this.
 #include <SDL3/SDL_vulkan.h>
+
 static int ImGui_ImplSDL3_CreateVkSurface(ImGuiViewport* viewport, ImU64 vk_instance, const void* vk_allocator, ImU64* out_vk_surface)
 {
     ImGui_ImplSDL3_ViewportData* vd = (ImGui_ImplSDL3_ViewportData*)viewport->PlatformUserData;
