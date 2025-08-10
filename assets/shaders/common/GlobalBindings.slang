@@ -32,18 +32,19 @@ struct Mesh {
 
 }
 
-struct PushConsts: PushConsts_RawData {
-
-    property Mesh mesh { get { return (Mesh)mesh_rd;}};
+struct PushConsts {
+    PushConsts_RawData data;
+    //property Mesh mesh { get { return (Mesh)mesh_rd;}};
 }
 
-struct FrameConst : FrameConst_RawData
+struct FrameConst
 {
+    FrameConst_RawData data;
 };
 
 
 [[vk::push_constant]]
-PushConsts pc;
+PushConsts pushConstants;
 
 [[vk::binding(0, 0)]]
 ConstantBuffer<FrameConst> frameConst;

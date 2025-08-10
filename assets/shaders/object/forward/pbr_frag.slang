@@ -10,7 +10,8 @@ static const float specularIntensity = 0.5f;
 [shader("fragment")]
 float4 fragmentMain(VSOutput i) : SV_Target
 {
-    var fc = frameConst;
+        var pc = pushConstants.data;
+    var fc = frameConst.data;
 
     float3 lightPos = fc.cameraPos.xyz;
 

@@ -10,6 +10,7 @@ option(VuRunIWYU "Run Include-What-You-use on build" OFF)
 option(VuRunSanitizers "Run Address Sanitizer" OFF)
 
 
+
 ####################################################################################################
 project("VuMake")
 add_executable(${PROJECT_NAME} Main.cpp)
@@ -18,6 +19,12 @@ target_link_libraries(${PROJECT_NAME} PRIVATE VuLibs)
 ####################################################################################################
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 23)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+# Apply compiler warnings and treat them as errors
+target_compile_options(${PROJECT_NAME} PRIVATE
+        $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra >
+        $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra >
+        $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+)
 ####################################################################################################
 if (VuRunSanitizers)
     target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
@@ -110,7 +117,7 @@ set(SDL_CAMERA OFF)
 FetchContent_Declare(
         fetch_SDL
         GIT_REPOSITORY https://github.com/libsdl-org/SDL
-        GIT_TAG release-3.2.4
+        GIT_TAG release-3.2.20
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
 )

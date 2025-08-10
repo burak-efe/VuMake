@@ -4,23 +4,22 @@
 #include "02_OuterCore/math/VuFloat2.h"
 #include "02_OuterCore/math/VuFloat3.h"
 #include "02_OuterCore/math/VuFloat4.h"
+#include "03_Mantle/VuImage.h"
 #include "fastgltf/core.hpp"
 #include "fastgltf/tools.hpp"
 #include "VuMesh.h"
 #include "VuRenderer.h"
-#include "03_Mantle/VuImage.h"
-
 
 namespace Vu {
 
-std::expected<VuImage, vk::Result>
+std::expected<VuImage, VkResult>
 VuAssetLoader::loadMapFromGLTF(VuRenderer& vuRenderer, const std::filesystem::path& gltfPath, MapType type) {
 
   fastgltf::Parser parser;
 
   auto data = fastgltf::GltfDataBuffer::FromPath(gltfPath);
 
-  if (data.error() != fastgltf::Error::None) { return std::unexpected {vk::Result::eErrorUnknown}; }
+  if (data.error() != fastgltf::Error::None) { return std::unexpected {VK_ERROR_UNKNOWN}; }
 
   auto asset = parser.loadGltf(data.get(), gltfPath.parent_path(), fastgltf::Options::LoadExternalBuffers);
 
@@ -35,7 +34,7 @@ VuAssetLoader::loadMapFromGLTF(VuRenderer& vuRenderer, const std::filesystem::pa
   path parentPath     = gltfPath.parent_path();
   auto matIndexOrNull = primitive.materialIndex;
 
-  if (matIndexOrNull.has_value() == false) { return std::unexpected {vk::Result::eErrorUnknown}; }
+  if (matIndexOrNull.has_value() == false) { return std::unexpected {VK_ERROR_UNKNOWN}; }
 
   fastgltf::Material& material = asset->materials.at(matIndexOrNull.value());
 
@@ -47,10 +46,10 @@ VuAssetLoader::loadMapFromGLTF(VuRenderer& vuRenderer, const std::filesystem::pa
       fastgltf::sources::URI colorPath    = std::get<fastgltf::sources::URI>(colorImage.data);
       auto                   colorTexPath = parentPath / colorPath.uri.string();
 
-      VuImage img = vuRenderer.createImageFromAsset(colorTexPath, vk::Format::eR8G8B8A8Srgb);
+      VuImage img = vuRenderer.createImageFromAsset(colorTexPath, VK_FORMAT_R8G8B8A8_SRGB);
       return img;
     }
-    return std::unexpected {vk::Result::eErrorUnknown};
+    return std::unexpected {VK_ERROR_UNKNOWN};
   } else if (type == MapType::normal) {
 
     auto& textureInfoOrNull = material.normalTexture;
@@ -59,10 +58,10 @@ VuAssetLoader::loadMapFromGLTF(VuRenderer& vuRenderer, const std::filesystem::pa
       fastgltf::sources::URI path     = std::get<fastgltf::sources::URI>(image.data);
       auto                   realPath = parentPath / path.uri.string();
 
-      VuImage img = vuRenderer.createImageFromAsset(realPath, vk::Format::eR8G8B8A8Unorm);
+      VuImage img = vuRenderer.createImageFromAsset(realPath, VK_FORMAT_R8G8B8A8_UNORM);
       return img;
     }
-    return std::unexpected {vk::Result::eErrorUnknown};
+    return std::unexpected {VK_ERROR_UNKNOWN};
 
   } else if (type == MapType::ao_rough_metal) {
     fastgltf::Optional<fastgltf::TextureInfo>& textureInfoOrNull = material.pbrData.metallicRoughnessTexture;
@@ -71,15 +70,16 @@ VuAssetLoader::loadMapFromGLTF(VuRenderer& vuRenderer, const std::filesystem::pa
       fastgltf::sources::URI path     = std::get<fastgltf::sources::URI>(image.data);
       auto                   realPath = parentPath / path.uri.string();
 
-      VuImage img = vuRenderer.createImageFromAsset(realPath, vk::Format::eR8G8B8A8Unorm);
+      VuImage img = vuRenderer.createImageFromAsset(realPath, VK_FORMAT_R8G8B8A8_UNORM);
       return img;
     }
-    return std::unexpected {vk::Result::eErrorUnknown};
+    return std::unexpected {VK_ERROR_UNKNOWN};
   } else {
-    return std::unexpected {vk::Result::eErrorUnknown};
+    return std::unexpected {VK_ERROR_UNKNOWN};
   }
 }
-void VuAssetLoader::loadGLTF(VuRenderer& vuRenderer, const std::filesystem::path& gltfPath, VuMesh& dstMesh) {
+void
+VuAssetLoader::loadGLTF(VuRenderer& vuRenderer, const std::filesystem::path& gltfPath, VuMesh& dstMesh) {
   fastgltf::Parser parser;
 
   auto data = fastgltf::GltfDataBuffer::FromPath(gltfPath);
@@ -106,7 +106,7 @@ void VuAssetLoader::loadGLTF(VuRenderer& vuRenderer, const std::filesystem::path
   //     fastgltf::sources::URI colorPath    = std::get<fastgltf::sources::URI>(colorImage.data);
   //     auto                   colorTexPath = parentPath / colorPath.uri.string();
   //
-  //     auto vuRenderer.createImageFromAsset(colorTexPath,vk::Format::eR8G8B8A8Srgb);
+  //     auto vuRenderer.createImageFromAsset(colorTexPath,VkFormat::eR8G8B8A8Srgb);
   //
   //   }
   // }
@@ -132,15 +132,15 @@ void VuAssetLoader::loadGLTF(VuRenderer& vuRenderer, const std::filesystem::path
   fastgltf::Accessor& indexAccessor = asset->accessors[primitive.indicesAccessor.value()];
   u32                 indexCount    = static_cast<u32>(indexAccessor.count);
 
-  auto indexBufferOrErr = VuBuffer::make(*vuRenderer.vuDevice,
+  auto indexBufferOrErr = VuBuffer::make(vuRenderer.m_vuDevice,
                                          {.name         = "IndexBuffer",
                                           .sizeInBytes  = indexCount * sizeof(uint32_t),
-                                          .vkUsageFlags = vk::BufferUsageFlagBits::eIndexBuffer});
-  throw_if_unexpected(indexBufferOrErr);
-  dstMesh.indexBuffer = std::make_shared<VuBuffer>(std::move(indexBufferOrErr.value()));
+                                          .vkUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT});
+  THROW_if_unexpected(indexBufferOrErr);
+  dstMesh.m_indexBuffer = std::make_shared<VuBuffer>(std::move(indexBufferOrErr.value()));
   // vuRenderer.registerToBindless( *dstMesh.indexBuffer);
 
-  auto& indexBuffer = dstMesh.indexBuffer;
+  auto& indexBuffer = dstMesh.m_indexBuffer;
 
   indexBuffer->map();
   std::span<byte> indexSpanByte = indexBuffer->getMappedSpan(0, indexCount * sizeof(u32));
@@ -153,7 +153,7 @@ void VuAssetLoader::loadGLTF(VuRenderer& vuRenderer, const std::filesystem::path
   fastgltf::Attribute* positionIt       = primitive.findAttribute("POSITION");
   fastgltf::Accessor&  positionAccessor = asset->accessors[positionIt->accessorIndex];
 
-  dstMesh.vertexCount = positionAccessor.count;
+  dstMesh.m_vertexCount = positionAccessor.count;
   // vuDevice.createBuffer(
   //     {.name          = "VertexBuffer",
   //      .length        = dstMesh.vertexCount * dstMesh.totalAttributesSizePerVertex(),
@@ -162,40 +162,40 @@ void VuAssetLoader::loadGLTF(VuRenderer& vuRenderer, const std::filesystem::path
   // dstMesh.vertexBuffer = ;
 
   auto vertexBufferOrErr = VuBuffer::make(
-      *vuRenderer.vuDevice,
+      vuRenderer.m_vuDevice,
       {
           .name         = "VertexBuffer",
-          .sizeInBytes  = dstMesh.vertexCount * VuMesh::totalAttributesSizePerVertex(),
-          .vkUsageFlags = vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+          .sizeInBytes  = dstMesh.m_vertexCount * VuMesh::totalAttributesSizePerVertex(),
+          .vkUsageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
       });
-  throw_if_unexpected(vertexBufferOrErr);
-  dstMesh.vertexBuffer = std::make_shared<VuBuffer>(std::move(vertexBufferOrErr.value()));
-  vuRenderer.registerToBindless(*dstMesh.vertexBuffer);
+  THROW_if_unexpected(vertexBufferOrErr);
+  dstMesh.m_vertexBuffer = std::make_shared<VuBuffer>(std::move(vertexBufferOrErr.value()));
+  vuRenderer.registerToBindless(*dstMesh.m_vertexBuffer);
 
-  VuBuffer* vertexBuffer = dstMesh.vertexBuffer.get();
+  VuBuffer* vertexBuffer = dstMesh.m_vertexBuffer.get();
   vertexBuffer->map();
 
   std::span<byte> vertexSpanByte =
-      vertexBuffer->getMappedSpan(0, sizeof(fastgltf::math::f32vec3) * dstMesh.vertexCount);
+      vertexBuffer->getMappedSpan(0, sizeof(fastgltf::math::f32vec3) * dstMesh.m_vertexCount);
   std::span<fastgltf::math::f32vec3> vertexSpan =
-      std::span(reinterpret_cast<fastgltf::math::f32vec3*>(vertexSpanByte.data()), dstMesh.vertexCount);
+      std::span(reinterpret_cast<fastgltf::math::f32vec3*>(vertexSpanByte.data()), dstMesh.m_vertexCount);
 
   std::span<byte>                    normalSpanByte = vertexBuffer->getMappedSpan(dstMesh.getNormalOffsetAsByte(),
-                                                               sizeof(fastgltf::math::f32vec3) * dstMesh.vertexCount);
+                                                               sizeof(fastgltf::math::f32vec3) * dstMesh.m_vertexCount);
   std::span<fastgltf::math::f32vec3> normalSpan =
-      std::span(reinterpret_cast<fastgltf::math::f32vec3*>(normalSpanByte.data()), dstMesh.vertexCount);
+      std::span(reinterpret_cast<fastgltf::math::f32vec3*>(normalSpanByte.data()), dstMesh.m_vertexCount);
 
   std::span<byte> tangentSpanByte = vertexBuffer->getMappedSpan(dstMesh.getTangentOffsetAsByte(),
-                                                                sizeof(fastgltf::math::f32vec4) * dstMesh.vertexCount);
+                                                                sizeof(fastgltf::math::f32vec4) * dstMesh.m_vertexCount);
 
   std::span<fastgltf::math::f32vec4> tangentSpan =
-      std::span(reinterpret_cast<fastgltf::math::f32vec4*>(tangentSpanByte.data()), dstMesh.vertexCount);
+      std::span(reinterpret_cast<fastgltf::math::f32vec4*>(tangentSpanByte.data()), dstMesh.m_vertexCount);
 
   std::span<byte> uvSpanByte =
-      vertexBuffer->getMappedSpan(dstMesh.getUV_OffsetAsByte(), sizeof(fastgltf::math::f32vec2) * dstMesh.vertexCount);
+      vertexBuffer->getMappedSpan(dstMesh.getUV_OffsetAsByte(), sizeof(fastgltf::math::f32vec2) * dstMesh.m_vertexCount);
 
   std::span<fastgltf::math::f32vec2> uvSpan =
-      std::span(reinterpret_cast<fastgltf::math::f32vec2*>(uvSpanByte.data()), dstMesh.vertexCount);
+      std::span(reinterpret_cast<fastgltf::math::f32vec2*>(uvSpanByte.data()), dstMesh.m_vertexCount);
 
   // pos
   {

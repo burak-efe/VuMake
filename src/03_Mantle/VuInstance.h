@@ -3,31 +3,45 @@
 namespace Vu {
 
 struct VuInstance {
-  vk::raii::Context                raiiContext    = {};
-  vk::raii::Instance               instance       = {nullptr};
-  vk::raii::DebugUtilsMessengerEXT debugMessenger = {nullptr};
+  VkInstance               m_instance {nullptr};
+  VkDebugUtilsMessengerEXT m_debugMessenger {nullptr};
+
+  //--------------------------------------------------------------------------------------------------------------------
 
   VuInstance();
 
-private:
-public:
-  static std::expected<VuInstance, vk::Result>
-  make(bool                   enableValidationLayers,
-       std::span<const char*> validationLayers,
-       std::span<const char*> extensions) noexcept;
+  VuInstance(const VuInstance&) = delete;
+  VuInstance&
+  operator=(const VuInstance&) = delete;
+
+  VuInstance(VuInstance&& other) noexcept;
+
+  VuInstance&
+  operator=(VuInstance&& other) noexcept;
+
+  ~VuInstance();
+
+  SETUP_EXPECTED_WRAPPER(VuInstance,
+                         (bool                   enableValidationLayers,
+                          std::span<const char*> validationLayers,
+                          std::span<const char*> extensions),
+                         (enableValidationLayers, validationLayers, extensions))
 
 private:
-  // can throw vk::Result
+  void
+  cleanup();
+  //--------------------------------------------------------------------------------------------------------------------
+
   VuInstance(bool enableValidationLayers, std::span<const char*> validationLayers, std::span<const char*> extensions);
 
   static bool
-  checkValidationLayerSupport(const vk::raii::Context& raiiContext, const std::span<const char*> validationLayers);
+  checkValidationLayerSupport(const std::span<const char*>& validationLayers);
 
-  static vk::Bool32
-  debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
-                vk::DebugUtilsMessageTypeFlagsEXT             messageType,
-                const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                void*                                         pUserData);
+  static VkBool32
+  debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
+                VkDebugUtilsMessageTypeFlagsEXT             messageType,
+                const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                void*                                       pUserData);
 };
 
 } // namespace Vu

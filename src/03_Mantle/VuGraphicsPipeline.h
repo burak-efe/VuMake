@@ -1,22 +1,47 @@
 #pragma once
 #include "02_OuterCore/VuCommon.h"
-namespace vk {
-enum class CompareOp;
-} // namespace vk
-
 namespace Vu {
+struct VuDevice;
 struct VuGraphicsPipeline {
-  vk::raii::Pipeline pipeline = {nullptr};
+  std::shared_ptr<VuDevice> m_vuDevice {nullptr};
+  VkPipeline                m_pipeline {nullptr};
 
-  VuGraphicsPipeline() = default;
+  SETUP_EXPECTED_WRAPPER(VuGraphicsPipeline,
+                         (std::shared_ptr<VuDevice>                      vuDevice,
+                          const VkPipelineLayout&                        pipelineLayout,
+                          const VkShaderModule&                          vertShaderModule,
+                          const VkShaderModule&                          fragShaderModule,
+                          const VkRenderPass&                            renderPass,
+                          std::span<VkPipelineColorBlendAttachmentState> colorBlends),
+                         (vuDevice, pipelineLayout, vertShaderModule, fragShaderModule, renderPass, colorBlends))
+public:
+  VuGraphicsPipeline();
 
-  VuGraphicsPipeline(const vk::raii::Device&                          device,
-                     const vk::raii::PipelineLayout&                  pipelineLayout,
-                     const vk::raii::ShaderModule&                    vertShaderModule,
-                     const vk::raii::ShaderModule&                    fragShaderModule,
-                     const vk::raii::RenderPass&                      renderPass,
-                     std::span<vk::PipelineColorBlendAttachmentState> colorBlends);
-  static vk::PipelineDepthStencilStateCreateInfo
-  fillDepthStencilCreateInfo(bool bDepthTest, bool bDepthWrite, vk::CompareOp compareOp);
+  VuGraphicsPipeline(const VuGraphicsPipeline&) = delete;
+
+  VuGraphicsPipeline&
+  operator=(const VuGraphicsPipeline&) = delete;
+
+  VuGraphicsPipeline(VuGraphicsPipeline&& other) noexcept;
+
+  VuGraphicsPipeline&
+  operator=(VuGraphicsPipeline&& other) noexcept;
+
+  ~VuGraphicsPipeline();
+
+private:
+  void
+  cleanup();
+
+  VuGraphicsPipeline(std::shared_ptr<VuDevice>                      vuDevice,
+                     const VkPipelineLayout&                        pipelineLayout,
+                     const VkShaderModule&                          vertShaderModule,
+                     const VkShaderModule&                          fragShaderModule,
+                     const VkRenderPass&                            renderPass,
+                     std::span<VkPipelineColorBlendAttachmentState> colorBlends);
+
+public:
+  static VkPipelineDepthStencilStateCreateInfo
+  fillDepthStencilCreateInfo(bool bDepthTest, bool bDepthWrite, VkCompareOp compareOp);
 };
 } // namespace Vu

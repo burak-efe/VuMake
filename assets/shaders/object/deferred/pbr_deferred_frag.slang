@@ -12,9 +12,10 @@ struct GPassFragOutput
 [shader("fragment")]
 GPassFragOutput fragmentMain(VSOutput input)
 {    
+    var pc = pushConstants.data;
     MatData_PbrDeferred *matData = getMaterialDataAs<MatData_PbrDeferred>(pc.material_data_handle.index);
     
-    GPassFragOutput out = {};
+    GPassFragOutput outData = {};
 
     float2 uv = input.UV;
 
@@ -26,10 +27,10 @@ GPassFragOutput fragmentMain(VSOutput input)
 
     float3 normalWS = mul(normalSample,TBN);
 
-    out.color = colorSample;
-    out.normal = float4(normalWS, 1);
-    out.arm = float4(armSample, 1);
-    out.posWS = float4(input.PosWS,1);
+    outData.color = colorSample;
+    outData.normal = float4(normalWS, 1);
+    outData.arm = float4(armSample, 1);
+    outData.posWS = float4(input.PosWS,1);
 
-    return out;
+    return outData;
 }

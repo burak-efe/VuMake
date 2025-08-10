@@ -1,8 +1,8 @@
 #pragma once
 #include <filesystem>
 
-#include "02_OuterCore/VuCommon.h"
 #include "01_InnerCore/TypeDefs.h"
+#include "02_OuterCore/VuCommon.h"
 #include "02_OuterCore/VuPlatform.h"
 
 namespace Vu::config {
@@ -12,8 +12,8 @@ constexpr u32 START_HEIGHT = 720u;
 
 constexpr u32 MAX_FRAMES_IN_FLIGHT = 2u;
 
-constexpr vk::DeviceSize MATERIAL_DATA_SIZE = 64u;
-constexpr u32            PUSH_CONST_SIZE    = 256u;
+constexpr VkDeviceSize MATERIAL_DATA_SIZE = 64u;
+constexpr u32          PUSH_CONST_SIZE    = 256u;
 
 // constexpr u32 DEVICE_MAX_IMAGE_COUNT         = 256u;
 // constexpr u32 DEVICE_MAX_SAMPLER_COUNT       = 256u;

@@ -9,34 +9,33 @@ struct VuImage;
 struct VuRenderPass;
 
 struct VuDeferredRenderSpace {
-  std::shared_ptr<VuRenderer> vuRenderer = {};
+  std::shared_ptr<VuRenderer>   m_vuRenderer {};
+  std::shared_ptr<VuDevice>     m_vuDevice {};
+  std::shared_ptr<VuImage>      m_colorImage {};
+  std::shared_ptr<VuImage>      m_normalImage {};
+  std::shared_ptr<VuImage>      m_aoRoughMetalImage {};
+  std::shared_ptr<VuImage>      m_worldSpacePosImage {};
+  std::shared_ptr<VuImage>      m_depthStencilImage {};
+  std::vector<VkFramebuffer>    m_gPassFrameBuffers {};
+  std::vector<VkFramebuffer>    m_lightningPassFrameBuffers {};
+  std::shared_ptr<VuRenderPass> m_gBufferPass {};
+  std::shared_ptr<VuRenderPass> m_lightningPass {};
+  MatData_PbrDeferred           m_lightningPassMaterialData {};
+  VuSwapChain                   m_vuSwapChain {};
 
-  std::shared_ptr<VuDevice>          vuDevice                  = {};
-  VuSwapChain                        vuSwapChain               = {};
-  std::shared_ptr<VuImage>           colorImage                = {};
-  std::shared_ptr<VuImage>           normalImage               = {};
-  std::shared_ptr<VuImage>           aoRoughMetalImage         = {};
-  std::shared_ptr<VuImage>           worldSpacePosImage        = {};
-  std::shared_ptr<VuImage>           depthStencilImage         = {};
-  std::vector<vk::raii::Framebuffer> gPassFrameBuffers         = {};
-  std::vector<vk::raii::Framebuffer> lightningPassFrameBuffers = {};
-  std::shared_ptr<VuRenderPass>      gBufferPass               = {};
-  std::shared_ptr<VuRenderPass>      lightningPass             = {};
-  MatData_PbrDeferred                lightningPassMaterialData = {};
-
+  // TODO member funcs
   VuDeferredRenderSpace() = default;
 
-  VuDeferredRenderSpace(const std::shared_ptr<VuDevice>&             vuDevice,
-                        const std::shared_ptr<vk::raii::SurfaceKHR>& surface);
+  VuDeferredRenderSpace(std::shared_ptr<VuDevice> vuDevice, std::shared_ptr<VkSurfaceKHR> surface);
 
   void
   registerImagesToBindless(VuRenderer& vuInstance);
 
   void
-  beginGBufferPass(const vk::CommandBuffer& commandBuffer, uint32_t frameIndex) const;
+  beginGBufferPass(const VkCommandBuffer& commandBuffer, uint32_t frameIndex) const;
 
   void
-  beginLightningPass(const vk::CommandBuffer& commandBuffer, uint32_t frameIndex) const;
+  beginLightningPass(const VkCommandBuffer& commandBuffer, uint32_t frameIndex) const;
 
 private:
   void

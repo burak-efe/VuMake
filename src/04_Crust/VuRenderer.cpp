@@ -7,14 +7,15 @@
 #include <functional>
 #include <iostream> // for char_traits, basic_ostream
 #include <memory_resource>
+#include <queue>
 #include <stdexcept> // for runtime_error, invalid_arg...
 #include <utility>   // for move, pair
 #include <vector>    // for vector
 
-#include "../02_OuterCore/VuCommon.h"
 #include "01_InnerCore/ScopeTimer.h"
-#include "02_OuterCore/Color32.h"         // for Color32
-#include "02_OuterCore/FixedString.h"     // for FixedString
+#include "02_OuterCore/Color32.h"     // for Color32
+#include "02_OuterCore/FixedString.h" // for FixedString
+#include "02_OuterCore/VuCommon.h"
 #include "02_OuterCore/VuConfig.h"        // for MAX_FRAMES_IN_FLIGHT, MATE...
 #include "03_Mantle/VuDevice.h"           // for VuDevice
 #include "03_Mantle/VuGraphicsPipeline.h" // for VuGraphicsPipeline
@@ -42,24 +43,24 @@
 namespace Vu {
 
 VuRenderer::VuRenderer(const VuRendererCreateInfo& createInfo) :
-    imgBindlessIndexAllocator {createInfo.sampledImageCount, std::pmr::new_delete_resource()},
-    samplerBindlessIndexAllocator {createInfo.samplerCount, std::pmr::new_delete_resource()},
-    bufferBindlessIndexAllocator {createInfo.storageBufferCount, std::pmr::new_delete_resource()},
-    materialDataBindlessIndexAllocator {1024, std::pmr::new_delete_resource()},
-    lastCreateInfo {createInfo} {
+    m_imgBindlessIndexAllocator {createInfo.sampledImageCount, std::pmr::new_delete_resource()},
+    m_samplerBindlessIndexAllocator {createInfo.samplerCount, std::pmr::new_delete_resource()},
+    m_bufferBindlessIndexAllocator {createInfo.storageBufferCount, std::pmr::new_delete_resource()},
+    m_materialDataBindlessIndexAllocator {1024, std::pmr::new_delete_resource()},
+    m_lastCreateInfo {createInfo} {
   ScopeTimer timer;
   bool       isValidationEnabled = config::ENABLE_VALIDATION_LAYERS_LAYERS;
 
   // window
   assert(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) == true);
 
-  this->window = SDL_CreateWindow(
+  this->m_window = SDL_CreateWindow(
       "VuRenderer", Vu::config::START_WIDTH, Vu::config::START_HEIGHT, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
-  disposeStack.push([&] { SDL_DestroyWindow(this->window); });
 
   // instance extensions
-  u32                      count                          = 0;
-  const char* const*       sdlRequestedInstanceExtensions = SDL_Vulkan_GetInstanceExtensions(&count);
+  u32                count                          = 0;
+  const char* const* sdlRequestedInstanceExtensions = SDL_Vulkan_GetInstanceExtensions(&count);
+
   std::vector<const char*> instanceExtensions(sdlRequestedInstanceExtensions, sdlRequestedInstanceExtensions + count);
 
   for (auto extension : Vu::config::INSTANCE_EXTENSIONS) {
@@ -72,35 +73,29 @@ VuRenderer::VuRenderer(const VuRendererCreateInfo& createInfo) :
 
   // instance
   auto instanceOrErr = Vu::VuInstance::make(enableValidationLayers, Vu::config::VALIDATION_LAYERS, instanceExtensions);
-  // todo
-  throw_if_unexpected(instanceOrErr);
-  this->vuInstance = std::make_shared<VuInstance>(std::move(instanceOrErr.value()));
+  THROW_if_unexpected(instanceOrErr);
+  this->m_vuInstance = std::make_shared<VuInstance>(std::move(instanceOrErr.value()));
 
   // surface
-  VkSurfaceKHR nonRaiiSurface = nullptr;
-  bool         surfaceResult  = SDL_Vulkan_CreateSurface(window, *vuInstance->instance, nullptr, &nonRaiiSurface);
+  VkSurfaceKHR tempSurface = nullptr;
+  bool surfaceResult = SDL_Vulkan_CreateSurface(m_window, m_vuInstance->m_instance, NO_ALLOC_CALLBACK, &tempSurface);
   assert(surfaceResult == true);
 
   // instance
-  this->surface = std::make_shared<vk::raii::SurfaceKHR>(vuInstance->instance, nonRaiiSurface);
+  this->m_surface = std::make_shared<VkSurfaceKHR>(tempSurface);
 
   // phyDevice
-  auto phyDevOrErr = Vu::VuPhysicalDevice::make(vuInstance, *surface, Vu::config::DEVICE_EXTENSIONS);
-  throw_if_unexpected(phyDevOrErr);
-  this->vuPhysicalDevice = std::make_shared<VuPhysicalDevice>(std::move(phyDevOrErr.value()));
+  auto phyDevOrErr = Vu::VuPhysicalDevice::make(m_vuInstance, tempSurface, Vu::config::DEVICE_EXTENSIONS);
+  THROW_if_unexpected(phyDevOrErr);
+  this->m_vuPhysicalDevice = std::make_shared<VuPhysicalDevice>(std::move(phyDevOrErr.value()));
 
   // device
   VuDeviceCreateFeatureChain defaultFeatureChain {};
 
-  auto vuDeviceOrErr = VuDevice::make(vuPhysicalDevice, defaultFeatureChain.deviceFeatures2, config::DEVICE_EXTENSIONS);
-  throw_if_unexpected(vuDeviceOrErr);
-  this->vuDevice = std::make_shared<VuDevice>(std::move(vuDeviceOrErr.value()));
-
-  // imgBindlessIndexAllocator          = IndexAllocator {createInfo.sampledImageCount,
-  // std::pmr::new_delete_resource()}; samplerBindlessIndexAllocator      = IndexAllocator {createInfo.samplerCount,
-  // std::pmr::new_delete_resource()}; bufferBindlessIndexAllocator       = IndexAllocator
-  // {createInfo.storageBufferCount, std::pmr::new_delete_resource()}; materialDataBindlessIndexAllocator =
-  // IndexAllocator {1024, std::pmr::new_delete_resource()};
+  auto vuDeviceOrErr =
+      VuDevice::make(m_vuPhysicalDevice, defaultFeatureChain.deviceFeatures2, config::DEVICE_EXTENSIONS);
+  THROW_if_unexpected(vuDeviceOrErr);
+  this->m_vuDevice = std::make_shared<VuDevice>(std::move(vuDeviceOrErr.value()));
 
   initCommandPool(createInfo);
   initBindlessDescriptorSetLayout(createInfo);
@@ -112,53 +107,54 @@ VuRenderer::VuRenderer(const VuRendererCreateInfo& createInfo) :
 
   // init uniform buffers
 
-  uniformBuffers.clear();
+  m_uniformBuffers.clear();
   for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
-    vk::DeviceSize bufferSize = sizeof(frameConst);
+    VkDeviceSize bufferSize = sizeof(m_frameConst);
 
     // uniformBuffers[i] = VuBuffer {nullptr};
     VuBufferCreateInfo bufferCreateInfo {
         .name         = "UniformBuffer",
         .sizeInBytes  = bufferSize,
-        .vkUsageFlags = vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        .vkUsageFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
     };
-    uniformBuffers.emplace_back(moveOrTHROW(VuBuffer::make(*vuDevice, bufferCreateInfo)));
-    uniformBuffers[i].map();
+    m_uniformBuffers.emplace_back(move_or_THROW(VuBuffer::make(m_vuDevice, bufferCreateInfo)));
+    THROW_if_fail(m_uniformBuffers[i].map());
   }
   for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
-    writeUBO_ToGlobalPool(uniformBuffers[i], 0, i);
+    writeUBO_ToGlobalPool(m_uniformBuffers[i], 0, i);
   }
 
   // init command buffers
 
-  vk::CommandBufferAllocateInfo allocInfo {};
-  allocInfo.commandPool        = commandPool;
-  allocInfo.level              = vk::CommandBufferLevel::ePrimary;
+  VkCommandBufferAllocateInfo allocInfo {.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  allocInfo.commandPool        = m_commandPool;
+  allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
   allocInfo.commandBufferCount = static_cast<u32>(config::MAX_FRAMES_IN_FLIGHT);
 
-  auto commandBuffersOrErr = vuDevice->device.allocateCommandBuffers(allocInfo);
+  m_commandBuffers.resize(config::MAX_FRAMES_IN_FLIGHT);
+  VkResult cmdBuffersRes = vkAllocateCommandBuffers(m_vuDevice->m_device, &allocInfo, m_commandBuffers.data());
+  THROW_if_fail(cmdBuffersRes);
 
-  throw_if_unexpected(commandBuffersOrErr);
-  commandBuffers.clear();
-  for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
-    commandBuffers.emplace_back(std::move(commandBuffersOrErr.value()[i]));
-  }
-
-  VuDeferredRenderSpace rp {vuDevice, surface};
-  this->deferredRenderSpace = std::move(rp);
-  deferredRenderSpace.registerImagesToBindless(*this);
+  VuDeferredRenderSpace rp {m_vuDevice, m_surface};
+  this->m_deferredRenderSpace = std::move(rp);
+  m_deferredRenderSpace.registerImagesToBindless(*this);
 
   // init sync objects
-  vk::SemaphoreCreateInfo semaphoreInfo {};
-  vk::FenceCreateInfo     fenceInfo {};
+  VkSemaphoreCreateInfo semaphoreInfo {.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+  VkFenceCreateInfo     fenceInfo {.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
 
-  fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+  fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-  uint32_t swapChainImageCount = deferredRenderSpace.vuSwapChain.images.size();
+  uint32_t swapChainImageCount = m_deferredRenderSpace.m_vuSwapChain.m_images.size();
+  m_imageAvailableSemaphores.resize(swapChainImageCount);
+  m_renderFinishedSemaphores.resize(swapChainImageCount);
+  m_inFlightFences.resize(swapChainImageCount);
   for (size_t i = 0; i < swapChainImageCount; i++) {
-    imageAvailableSemaphores.emplace_back(moveOrTHROW(vuDevice->device.createSemaphore(semaphoreInfo)));
-    renderFinishedSemaphores.emplace_back(moveOrTHROW(vuDevice->device.createSemaphore(semaphoreInfo)));
-    inFlightFences.emplace_back(moveOrTHROW(vuDevice->device.createFence(fenceInfo)));
+    THROW_if_fail(
+        vkCreateSemaphore(m_vuDevice->m_device, &semaphoreInfo, NO_ALLOC_CALLBACK, &m_imageAvailableSemaphores[i]));
+    THROW_if_fail(
+        vkCreateSemaphore(m_vuDevice->m_device, &semaphoreInfo, NO_ALLOC_CALLBACK, &m_renderFinishedSemaphores[i]));
+    THROW_if_fail(vkCreateFence(m_vuDevice->m_device, &fenceInfo, NO_ALLOC_CALLBACK, &m_inFlightFences[i]));
   }
 
   initImGui();
@@ -166,174 +162,178 @@ VuRenderer::VuRenderer(const VuRendererCreateInfo& createInfo) :
 
 bool
 VuRenderer::shouldWindowClose() const {
-  return sdlEvent.type == SDL_EVENT_QUIT;
+  return m_sdlEvent.type == SDL_EVENT_QUIT;
 }
 
 void
 VuRenderer::waitForFences() const {
-  auto waitRes = vuDevice->device.waitForFences(*inFlightFences[currentFrame], vk::True, UINT64_MAX);
-  if (waitRes != vk::Result::eSuccess) { throw std::runtime_error("VuRenderer::waitForFences: vk::Result failed"); }
+  THROW_if_fail(vkWaitForFences(m_vuDevice->m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX));
 }
 
 void
 VuRenderer::beginFrame() {
   waitForFences();
-  std::pair<vk::Result, uint32_t> resultAndImageIndex = deferredRenderSpace.vuSwapChain.swapchain.acquireNextImage(
-      UINT64_MAX, imageAvailableSemaphores[currentFrame], nullptr);
 
-  if (resultAndImageIndex.first == vk::Result::eErrorOutOfDateKHR) {
+  uint32_t swapChainImageIndex {};
+  VkResult imageIndexRes = vkAcquireNextImageKHR(m_vuDevice->m_device,
+                                                 m_deferredRenderSpace.m_vuSwapChain.m_swapchain,
+                                                 UINT64_MAX,
+                                                 m_imageAvailableSemaphores[m_currentFrame],
+                                                 nullptr,
+                                                 &swapChainImageIndex);
+  // std::pair<VkResult, uint32_t> resultAndImageIndex = deferredRenderSpace.vuSwapChain.swapchain.acquireNextImage(
+  //     UINT64_MAX, imageAvailableSemaphores[currentFrame], nullptr);
+
+  if (imageIndexRes == VK_ERROR_OUT_OF_DATE_KHR) {
     resetSwapChain();
     std::cerr << "[INFO]: SwapChain Recreated because of VK_ERROR_OUT_OF_DATE_KHR" << "\n";
-  } else if (resultAndImageIndex.first != vk::Result::eSuccess &&
-             resultAndImageIndex.first != vk::Result::eSuboptimalKHR) {
+  } else if (imageIndexRes != VK_SUCCESS && imageIndexRes != VK_SUBOPTIMAL_KHR) {
     throw std::runtime_error("failed to acquire swap chain image!");
   }
 
-  if (resultAndImageIndex.first != vk::Result::eSuccess) {
-    throw std::runtime_error("VuRenderer::beginFrame: swapchain acquire failed");
-  }
-  currentFrameImageIndex = resultAndImageIndex.second;
+  if (imageIndexRes != VK_SUCCESS) { throw std::runtime_error("VuRenderer::beginFrame: swapchain acquire failed"); }
+  m_currentFrameImageIndex = swapChainImageIndex;
 
-  // todo no return ?
-  vuDevice->device.resetFences(*inFlightFences[currentFrame]);
+  THROW_if_fail(vkResetFences(m_vuDevice->m_device, 1, &m_inFlightFences[m_currentFrame]));
+  THROW_if_fail(vkResetCommandBuffer(m_commandBuffers[m_currentFrame], ZERO_FLAG));
 
-  commandBuffers[currentFrame].reset();
+  VkCommandBufferBeginInfo beginInfo {.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
 
-  vk::CommandBufferBeginInfo beginInfo {};
+  THROW_if_fail(vkBeginCommandBuffer(m_commandBuffers[m_currentFrame], &beginInfo));
 
-  // todo no ret ?
-  commandBuffers[currentFrame].begin(beginInfo);
+  m_deferredRenderSpace.beginGBufferPass(m_commandBuffers[m_currentFrame], m_currentFrameImageIndex);
 
-  deferredRenderSpace.beginGBufferPass(commandBuffers[currentFrame], currentFrameImageIndex);
-
-  vk::Viewport viewport {};
+  VkViewport viewport {};
   viewport.x        = 0.0f;
-  viewport.y        = (float)deferredRenderSpace.vuSwapChain.extend2D.height;
-  viewport.width    = (float)deferredRenderSpace.vuSwapChain.extend2D.width;
-  viewport.height   = -(float)deferredRenderSpace.vuSwapChain.extend2D.height;
+  viewport.y        = (float)m_deferredRenderSpace.m_vuSwapChain.m_extend2D.height;
+  viewport.width    = (float)m_deferredRenderSpace.m_vuSwapChain.m_extend2D.width;
+  viewport.height   = -(float)m_deferredRenderSpace.m_vuSwapChain.m_extend2D.height;
   viewport.minDepth = 0.0f;
   viewport.maxDepth = 1.0f;
-  commandBuffers[currentFrame].setViewport(0, viewport);
+  vkCmdSetViewport(m_commandBuffers[m_currentFrame], 0, 1, &viewport);
 
-  vk::Rect2D scissor {};
-  scissor.offset = vk::Offset2D {0, 0};
-  scissor.extent = deferredRenderSpace.vuSwapChain.extend2D;
-  commandBuffers[currentFrame].setScissor(0, scissor);
-  bindGlobalBindlessSet(commandBuffers[currentFrame]);
+  VkRect2D scissor {};
+  scissor.offset = VkOffset2D {0, 0};
+  scissor.extent = m_deferredRenderSpace.m_vuSwapChain.m_extend2D;
+  vkCmdSetScissor(m_commandBuffers[m_currentFrame], 0, 1, &scissor);
+  bindGlobalBindlessSet(m_commandBuffers[m_currentFrame]);
 }
 
 void
 VuRenderer::beginLightningPass() const {
-  const vk::raii::CommandBuffer& cb = commandBuffers[currentFrame];
-  cb.endRenderPass();
+  const VkCommandBuffer& cb = m_commandBuffers[m_currentFrame];
+  vkCmdEndRenderPass(cb);
 
-  vk::PipelineStageFlags srcStage =
-      vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eLateFragmentTests;
+  VkPipelineStageFlags srcStage =
+      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 
-  vk::PipelineStageFlags dstStage =
-      vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eColorAttachmentOutput;
+  VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-  vk::MemoryBarrier memoryBarrier;
-  memoryBarrier.srcAccessMask =
-      vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-  memoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+  VkMemoryBarrier memoryBarrier = {.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER};
 
-  cb.pipelineBarrier(srcStage, dstStage, {}, memoryBarrier, {}, {});
+  memoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+  memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+  vkCmdPipelineBarrier(cb, srcStage, dstStage, ZERO_FLAG, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
 
   // lightning pass
-  deferredRenderSpace.beginLightningPass(commandBuffers[currentFrame], currentFrameImageIndex);
+  m_deferredRenderSpace.beginLightningPass(m_commandBuffers[m_currentFrame], m_currentFrameImageIndex);
 }
 
 void
 VuRenderer::endFrame() {
-  const vk::raii::CommandBuffer& cb = commandBuffers[currentFrame];
-  cb.endRenderPass();
-  cb.end();
+  const VkCommandBuffer& cb = m_commandBuffers[m_currentFrame];
+  vkCmdEndRenderPass(cb);
+  THROW_if_fail(vkEndCommandBuffer(cb));
 
-  vk::Semaphore          waitSemaphores[]   = {imageAvailableSemaphores[currentFrame]};
-  vk::PipelineStageFlags waitStages[]       = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
-  vk::Semaphore          signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+  VkSemaphore          waitSemaphores[]   = {m_imageAvailableSemaphores[m_currentFrame]};
+  VkPipelineStageFlags waitStages[]       = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+  VkSemaphore          signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame]};
 
-  vk::SubmitInfo submitInfo {};
+  VkSubmitInfo submitInfo {.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO};
   submitInfo.waitSemaphoreCount   = 1u;
   submitInfo.pWaitSemaphores      = waitSemaphores;
   submitInfo.pWaitDstStageMask    = waitStages;
   submitInfo.commandBufferCount   = 1u;
-  submitInfo.pCommandBuffers      = &*commandBuffers[currentFrame];
+  submitInfo.pCommandBuffers      = &m_commandBuffers[m_currentFrame];
   submitInfo.signalSemaphoreCount = 1u;
   submitInfo.pSignalSemaphores    = signalSemaphores;
 
-  vuDevice->graphicsQueue.submit(submitInfo, inFlightFences[currentFrame]);
+  THROW_if_fail(vkQueueSubmit(m_vuDevice->m_graphicsQueue, 1, &submitInfo, m_inFlightFences[m_currentFrame]));
 
-  vk::SwapchainKHR swapChains[] = {deferredRenderSpace.vuSwapChain.swapchain};
+  VkSwapchainKHR swapChains[] = {m_deferredRenderSpace.m_vuSwapChain.m_swapchain};
 
-  vk::PresentInfoKHR presentInfo {};
+  VkPresentInfoKHR presentInfo {.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
   presentInfo.pNext              = nullptr;
   presentInfo.waitSemaphoreCount = 1u;
   presentInfo.pWaitSemaphores    = signalSemaphores;
   presentInfo.swapchainCount     = 1u;
   presentInfo.pSwapchains        = swapChains;
-  presentInfo.pImageIndices      = &currentFrameImageIndex;
+  presentInfo.pImageIndices      = &m_currentFrameImageIndex;
   presentInfo.pResults           = VK_NULL_HANDLE;
 
-  auto result = vuDevice->graphicsQueue.presentKHR(presentInfo);
+  VkResult presentRes = vkQueuePresentKHR(m_vuDevice->m_presentQueue, &presentInfo);
 
-  if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR) {
+  if (presentRes == VK_ERROR_OUT_OF_DATE_KHR || presentRes == VK_SUBOPTIMAL_KHR) {
     resetSwapChain();
-  } else if (result != vk::Result::eSuccess) {
+  } else if (presentRes != VK_SUCCESS) {
     throw std::runtime_error("failed to present swap chain image!");
   }
-  currentFrame = (currentFrame + 1) % config::MAX_FRAMES_IN_FLIGHT;
+  m_currentFrame = (m_currentFrame + 1) % config::MAX_FRAMES_IN_FLIGHT;
 }
 
 void
 VuRenderer::bindMesh(VuMesh& mesh) {
   // we are using vertex pulling, so only index buffers we need to bind
-  auto& commandBuffer = commandBuffers[currentFrame];
-  auto  indexBuffer   = mesh.indexBuffer.get();
-  commandBuffer.bindIndexBuffer(*indexBuffer->buffer, 0, vk::IndexType::eUint32);
+  auto& commandBuffer = m_commandBuffers[m_currentFrame];
+  auto  indexBuffer   = mesh.m_indexBuffer.get();
+  vkCmdBindIndexBuffer(commandBuffer, indexBuffer->m_buffer, 0, VK_INDEX_TYPE_UINT32);
 }
 
 void
 VuRenderer::bindMaterial(std::shared_ptr<VuMaterial>& material) {
-  auto& commandBuffer = commandBuffers[currentFrame];
+  auto& commandBuffer = m_commandBuffers[m_currentFrame];
   bindMaterial(commandBuffer, material);
 }
 
 void
 VuRenderer::drawIndexed(u32 indexCount) const {
-  auto& commandBuffer = commandBuffers[currentFrame];
-  commandBuffer.drawIndexed(indexCount, 1, 0, 0, 0);
+  auto& commandBuffer = m_commandBuffers[m_currentFrame];
+  vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
 }
 
 void
 VuRenderer::pushConstants(const PushConsts_RawData& pushConstant) {
-  auto& commandBuffer = commandBuffers[currentFrame];
-  commandBuffer.pushConstants<PushConsts_RawData>(globalPipelineLayout, vk::ShaderStageFlagBits::eAll, 0, pushConstant);
-  // vkCmdPushConstants(commandBuffer, vuDevice.globalPipelineLayout, VK_SHADER_STAGE_ALL, 0, config::PUSH_CONST_SIZE,
-  //                    &pushConstant);
+  auto& commandBuffer = m_commandBuffers[m_currentFrame];
+  vkCmdPushConstants(commandBuffer,
+                     m_globalPipelineLayout,
+                     VK_SHADER_STAGE_ALL,
+                     MakeVkOffset(0),
+                     config::PUSH_CONST_SIZE,
+                     &pushConstant);
 }
 
 void
 VuRenderer::beginImgui() const {
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplSDL3_NewFrame();
-  ImGui_ImplSDL3_ProcessEvent(&sdlEvent);
+  ImGui_ImplSDL3_ProcessEvent(&m_sdlEvent);
   ImGui::NewFrame();
 }
 
 void
 VuRenderer::endImgui() const {
-  auto& commandBuffer = commandBuffers[currentFrame];
+  auto& commandBuffer = m_commandBuffers[m_currentFrame];
 
   ImGui::Render();
-  ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *commandBuffer);
+  ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 }
 
 void
 VuRenderer::updateFrameConstantBuffer(FrameConst_RawData ubo) const {
-  auto res = uniformBuffers[currentFrame].setData(&ubo, sizeof(ubo));
-  if (res != vk::Result::eSuccess) { throw std::runtime_error("failed to update frame constant buffer!"); }
+  auto res = m_uniformBuffers[m_currentFrame].setData(&ubo, sizeof(ubo));
+  if (res != VK_SUCCESS) { throw std::runtime_error("failed to update frame constant buffer!"); }
 }
 
 void
@@ -342,41 +342,47 @@ VuRenderer::resetSwapChain() {
 
   int width  = 0;
   int height = 0;
-  SDL_GetWindowSize(window, &width, &height);
-  auto minimized = (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) == SDL_WINDOW_MINIMIZED;
+  SDL_GetWindowSize(m_window, &width, &height);
+  auto minimized = (SDL_GetWindowFlags(m_window) & SDL_WINDOW_MINIMIZED) == SDL_WINDOW_MINIMIZED;
 
   while (width <= 0 || height <= 0 || minimized) {
-    SDL_GetWindowSize(window, &width, &height);
-    minimized = (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) == SDL_WINDOW_MINIMIZED;
+    SDL_GetWindowSize(m_window, &width, &height);
+    minimized = (SDL_GetWindowFlags(m_window) & SDL_WINDOW_MINIMIZED) == SDL_WINDOW_MINIMIZED;
     SDL_WaitEvent(&event);
   }
-  vuDevice->device.waitIdle();
+  THROW_if_fail(vkDeviceWaitIdle(m_vuDevice->m_device));
 
-  VuDeferredRenderSpace rp {vuDevice, surface};
-  this->deferredRenderSpace = std::move(rp);
-  deferredRenderSpace.registerImagesToBindless(*this);
+  VuDeferredRenderSpace rp {m_vuDevice, m_surface};
+  this->m_deferredRenderSpace = std::move(rp);
+  m_deferredRenderSpace.registerImagesToBindless(*this);
 }
 void
-VuRenderer::bindGlobalBindlessSet(const vk::CommandBuffer& commandBuffer) const {
+VuRenderer::bindGlobalBindlessSet(const VkCommandBuffer& commandBuffer) const {
 
-  commandBuffer.bindDescriptorSets(
-      vk::PipelineBindPoint::eGraphics, globalPipelineLayout, 0, 1, &globalDescriptorSets[currentFrame], 0, nullptr);
+  vkCmdBindDescriptorSets(commandBuffer,
+                          VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          m_globalPipelineLayout,
+                          0,
+                          1,
+                          &m_globalDescriptorSets[m_currentFrame],
+                          0,
+                          nullptr);
 }
 void
 VuRenderer::preUpdate() {
   // nano => micro => mili => second
-  SDL_PollEvent(&sdlEvent);
-  deltaAsSecond        = (SDL_GetTicksNS() - prevTimeAsNanoSecond) / 1000.0f / 1000.0f / 1000.0f;
-  prevTimeAsNanoSecond = SDL_GetTicksNS();
+  SDL_PollEvent(&m_sdlEvent);
+  m_deltaAsSecond        = (SDL_GetTicksNS() - m_prevTimeAsNanoSecond) / 1000.0f / 1000.0f / 1000.0f;
+  m_prevTimeAsNanoSecond = SDL_GetTicksNS();
 }
 void
 VuRenderer::pollUserInput() {
   // SDL_GetRelativeMouseState(&mouseDeltaX, &mouseDeltaY);
-  float prevx = mouseX;
-  float prevy = mouseY;
-  SDL_GetMouseState(&mouseX, &mouseY);
-  mouseDeltaX = prevx - mouseX;
-  mouseDeltaY = prevy - mouseY;
+  float prevx = m_mouseX;
+  float prevy = m_mouseY;
+  SDL_GetMouseState(&m_mouseX, &m_mouseY);
+  m_mouseDeltaX = prevx - m_mouseX;
+  m_mouseDeltaY = prevy - m_mouseY;
 }
 float
 VuRenderer::time() {
@@ -384,122 +390,119 @@ VuRenderer::time() {
 }
 void
 VuRenderer::writeUBO_ToGlobalPool(const VuBuffer& buffer, u32 writeIndex, u32 setIndex) const {
-  vk::DescriptorBufferInfo bufferInfo {};
-  bufferInfo.buffer = buffer.buffer;
+  VkDescriptorBufferInfo bufferInfo {};
+  bufferInfo.buffer = buffer.m_buffer;
   bufferInfo.offset = 0;
   bufferInfo.range  = sizeof(FrameConst_RawData);
 
-  vk::WriteDescriptorSet descriptorWrite {};
-  descriptorWrite.dstSet          = globalDescriptorSets[setIndex];
+  VkWriteDescriptorSet descriptorWrite {.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+  descriptorWrite.dstSet          = m_globalDescriptorSets[setIndex];
   descriptorWrite.dstBinding      = 0;
   descriptorWrite.dstArrayElement = 0;
-  descriptorWrite.descriptorType  = vk::DescriptorType::eUniformBuffer;
+  descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   descriptorWrite.descriptorCount = 1;
   descriptorWrite.pBufferInfo     = &bufferInfo;
-  vuDevice->device.updateDescriptorSets(descriptorWrite, {});
+  vkUpdateDescriptorSets(m_vuDevice->m_device, 1, &descriptorWrite, 0, nullptr);
 }
 void
 VuRenderer::registerToBindless(VuBuffer& vuBuffer) {
-  uint32_t          bindlessIndex = bufferBindlessIndexAllocator.allocate();
-  vk::DeviceAddress address       = vuBuffer.getDeviceAddress();
+  uint32_t        bindlessIndex = m_bufferBindlessIndexAllocator.allocate();
+  VkDeviceAddress address       = vuBuffer.getDeviceAddress();
   // TODO handle error
   // auto view                       = std::span((uint64_t*)bdaBuffer.mapPtr, bdaBuffer.sizeInBytes / 64);
-  auto res = bdaBuffer.setData(&address, sizeof(vk::DeviceAddress), bindlessIndex * sizeof(vk::DeviceAddress));
-  if (res != vk::Result::eSuccess) { throw std::runtime_error("failed to set buffer data"); }
-  vuBuffer.bindlessIndex = bindlessIndex;
+  auto res = m_bdaBuffer.setData(&address, sizeof(VkDeviceAddress), bindlessIndex * sizeof(VkDeviceAddress));
+  if (res != VK_SUCCESS) { throw std::runtime_error("failed to set buffer data"); }
+  vuBuffer.m_bindlessIndex = bindlessIndex;
 }
 void
 VuRenderer::registerToBindless(VuImage& vuImage) {
-  uint32_t bindlessIndex = imgBindlessIndexAllocator.allocate();
+  uint32_t bindlessIndex = m_imgBindlessIndexAllocator.allocate();
 
-  vk::DescriptorImageInfo imageInfo {};
+  VkDescriptorImageInfo imageInfo {};
   imageInfo.sampler     = nullptr;
-  imageInfo.imageView   = vuImage.imageView;
-  imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+  imageInfo.imageView   = vuImage.m_imageView;
+  imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
   for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
-    vk::WriteDescriptorSet descriptorWrite {};
-    descriptorWrite.dstSet          = globalDescriptorSets[i];
-    descriptorWrite.dstBinding      = lastCreateInfo.sampledImageBinding;
+    VkWriteDescriptorSet descriptorWrite {.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+    descriptorWrite.dstSet          = m_globalDescriptorSets[i];
+    descriptorWrite.dstBinding      = m_lastCreateInfo.sampledImageBinding;
     descriptorWrite.dstArrayElement = bindlessIndex;
-    descriptorWrite.descriptorType  = vk::DescriptorType::eSampledImage;
+    descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     descriptorWrite.descriptorCount = 1;
     descriptorWrite.pImageInfo      = &imageInfo;
-    vuDevice->device.updateDescriptorSets(descriptorWrite, {});
+    vkUpdateDescriptorSets(m_vuDevice->m_device, 1, &descriptorWrite, 0, nullptr);
   }
-  vuImage.bindlessIndex = bindlessIndex;
+  vuImage.m_bindlessIndex = bindlessIndex;
 }
 void
 VuRenderer::registerToBindless(VuSampler& vuSampler) {
-  uint32_t                bindlessIndex = samplerBindlessIndexAllocator.allocate();
-  vk::DescriptorImageInfo imageInfo {
-      .sampler = vuSampler.sampler,
+  uint32_t              bindlessIndex = m_samplerBindlessIndexAllocator.allocate();
+  VkDescriptorImageInfo imageInfo {
+      .sampler = vuSampler.m_sampler,
   };
 
   for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
-    vk::WriteDescriptorSet descriptorWrite {};
-    descriptorWrite.dstSet          = globalDescriptorSets[i];
-    descriptorWrite.dstBinding      = lastCreateInfo.samplerBinding;
+    VkWriteDescriptorSet descriptorWrite {.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+    descriptorWrite.dstSet          = m_globalDescriptorSets[i];
+    descriptorWrite.dstBinding      = m_lastCreateInfo.samplerBinding;
     descriptorWrite.dstArrayElement = bindlessIndex;
-    descriptorWrite.descriptorType  = vk::DescriptorType::eSampler;
+    descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
     descriptorWrite.descriptorCount = 1;
     descriptorWrite.pImageInfo      = &imageInfo;
-    vuDevice->device.updateDescriptorSets(descriptorWrite, {});
+    vkUpdateDescriptorSets(m_vuDevice->m_device, 1, &descriptorWrite, 0, nullptr);
   }
-  vuSampler.bindlessIndex = bindlessIndex;
+  vuSampler.m_bindlessIndex = bindlessIndex;
 }
-void
-VuRenderer::uninit() {
-  disposeStack.disposeAll();
-}
+// void
+// VuRenderer::uninit() {
+//   m_disposeStack.disposeAll();
+// }
 void
 VuRenderer::initCommandPool(const VuRendererCreateInfo& info) {
-  vk::CommandPoolCreateInfo poolInfo {};
-  poolInfo.flags            = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-  poolInfo.queueFamilyIndex = vuPhysicalDevice->indices.graphicsFamily;
-  auto commandPoolOrErr     = vuDevice->device.createCommandPool(poolInfo);
-  // Todo
-  throw_if_unexpected(commandPoolOrErr);
-  commandPool = std::move(commandPoolOrErr.value());
+  VkCommandPoolCreateInfo poolInfo {.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+  poolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+  poolInfo.queueFamilyIndex = m_vuPhysicalDevice->m_indices.graphicsFamily;
+  THROW_if_fail(vkCreateCommandPool(m_vuDevice->m_device, &poolInfo, NO_ALLOC_CALLBACK, &m_commandPool));
 }
 void
 VuRenderer::initPipelineLayout() {
-  std::array descSetLayouts {*globalDescriptorSetLayout};
-  auto       pipelineLayoutOrErr = vuDevice->createPipelineLayout(descSetLayouts, config::PUSH_CONST_SIZE);
-  throw_if_unexpected(pipelineLayoutOrErr);
-  globalPipelineLayout = std::move(pipelineLayoutOrErr.value());
+  std::array descSetLayouts {m_globalDescriptorSetLayout};
+  auto       pipelineLayoutOrErr = m_vuDevice->createPipelineLayout(descSetLayouts, config::PUSH_CONST_SIZE);
+  THROW_if_unexpected(pipelineLayoutOrErr);
+  m_globalPipelineLayout = std::move(pipelineLayoutOrErr.value());
 }
 void
 VuRenderer::initBindlessDescriptorSetLayout(const VuRendererCreateInfo& info) {
-  vk::DescriptorSetLayoutBinding ubo {};
+  VkDescriptorSetLayoutBinding ubo {};
   ubo.binding         = info.uboBinding;
-  ubo.descriptorType  = vk::DescriptorType::eUniformBuffer;
+  ubo.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   ubo.descriptorCount = info.uboCount;
-  ubo.stageFlags      = vk::ShaderStageFlagBits::eAll;
+  ubo.stageFlags      = VK_SHADER_STAGE_ALL;
 
-  vk::DescriptorSetLayoutBinding sampler {};
+  VkDescriptorSetLayoutBinding sampler {};
   sampler.binding         = info.samplerBinding;
-  sampler.descriptorType  = vk::DescriptorType::eSampler;
+  sampler.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
   sampler.descriptorCount = info.samplerCount;
-  sampler.stageFlags      = vk::ShaderStageFlagBits::eAll;
+  sampler.stageFlags      = VK_SHADER_STAGE_ALL;
 
-  vk::DescriptorSetLayoutBinding sampledImage {};
-  sampledImage.binding         = info.sampledImageBinding;
-  sampledImage.descriptorType  = vk::DescriptorType::eSampledImage;
-  sampledImage.descriptorCount = info.sampledImageCount;
-  sampledImage.stageFlags      = vk::ShaderStageFlagBits::eAll;
+  VkDescriptorSetLayoutBinding sampledImage = {};
+  sampledImage.binding                      = info.sampledImageBinding;
+  sampledImage.descriptorType               = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+  sampledImage.descriptorCount              = info.sampledImageCount;
+  sampledImage.stageFlags                   = VK_SHADER_STAGE_ALL;
 
-  vk::DescriptorSetLayoutBinding storageImage {};
+  VkDescriptorSetLayoutBinding storageImage {};
   storageImage.binding         = info.storageImageBinding;
-  storageImage.descriptorType  = vk::DescriptorType::eStorageImage;
+  storageImage.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
   storageImage.descriptorCount = info.storageImageCount;
-  storageImage.stageFlags      = vk::ShaderStageFlagBits::eAll;
+  storageImage.stageFlags      = VK_SHADER_STAGE_ALL;
 
-  vk::DescriptorSetLayoutBinding storageBuffer {};
+  VkDescriptorSetLayoutBinding storageBuffer {};
   storageBuffer.binding         = info.storageBufferBinding;
-  storageBuffer.descriptorType  = vk::DescriptorType::eStorageBuffer;
+  storageBuffer.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
   storageBuffer.descriptorCount = 1;
-  storageBuffer.stageFlags      = vk::ShaderStageFlagBits::eAll;
+  storageBuffer.stageFlags      = VK_SHADER_STAGE_ALL;
 
   std::array descriptorSetLayoutBindings {
       ubo,
@@ -509,59 +512,53 @@ VuRenderer::initBindlessDescriptorSetLayout(const VuRendererCreateInfo& info) {
       storageBuffer,
   };
 
-  vk::DescriptorSetLayoutCreateInfo descSetLayoutCreateInfo {};
-  descSetLayoutCreateInfo.flags        = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPoolEXT;
+  VkDescriptorSetLayoutCreateInfo descSetLayoutCreateInfo {.sType =
+                                                               VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
+
+  descSetLayoutCreateInfo.flags        = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
   descSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(descriptorSetLayoutBindings.size());
   descSetLayoutCreateInfo.pBindings    = descriptorSetLayoutBindings.data();
 
-  const vk::DescriptorBindingFlagsEXT flag = vk::DescriptorBindingFlagBitsEXT::ePartiallyBound |
-                                             vk::DescriptorBindingFlagBitsEXT::eUpdateAfterBind |
-                                             vk::DescriptorBindingFlagBitsEXT::eUpdateUnusedWhilePending;
+  constexpr VkDescriptorBindingFlagsEXT flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+                                               VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+                                               VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
 
   std::array descriptorSetLayoutFlags {flag, flag, flag, flag, flag};
 
-  vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT binding_flags {};
-  binding_flags.bindingCount    = descriptorSetLayoutFlags.size();
-  binding_flags.pBindingFlags   = descriptorSetLayoutFlags.data();
+  VkDescriptorSetLayoutBindingFlagsCreateInfo binding_flags {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
+  binding_flags.bindingCount  = descriptorSetLayoutFlags.size();
+  binding_flags.pBindingFlags = descriptorSetLayoutFlags.data();
+
   descSetLayoutCreateInfo.pNext = &binding_flags;
 
-  auto descSetLayoutOrErr = vuDevice->device.createDescriptorSetLayout(descSetLayoutCreateInfo);
-  throw_if_unexpected(descSetLayoutOrErr);
-  globalDescriptorSetLayout = std::move(descSetLayoutOrErr.value());
+  VkResult layoutRes = vkCreateDescriptorSetLayout(
+      m_vuDevice->m_device, &descSetLayoutCreateInfo, NO_ALLOC_CALLBACK, &m_globalDescriptorSetLayout);
+  THROW_if_fail(layoutRes);
 }
 void
 VuRenderer::initDefaultResources() {
-
   VuBufferCreateInfo stagingBufferCreateInfo {};
   stagingBufferCreateInfo.name         = "stagingBuffer";
   stagingBufferCreateInfo.sizeInBytes  = 1024 * 1024 * 64;
-  stagingBufferCreateInfo.vkUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
+  stagingBufferCreateInfo.vkUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
-  auto stagingOrErr = VuBuffer::make(*vuDevice, stagingBufferCreateInfo);
-  throw_if_unexpected(stagingOrErr);
-  this->stagingBuffer = std::move(stagingOrErr.value());
-  stagingBuffer.map();
-
-  // debugBufferHnd =
-  //     createBuffer({.name           = "defaultBuffer",
-  //                   .length         = 4096,
-  //                   .strideInBytes  = 1,
-  //                   .vkUsageFlags   = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-  //                   VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, .vmaMemoryUsage = VMA_MEMORY_USAGE_AUTO,
-  //                   .vmaCreateFlags = 0});
+  auto stagingOrErr = VuBuffer::make(m_vuDevice, stagingBufferCreateInfo);
+  THROW_if_unexpected(stagingOrErr);
+  this->m_stagingBuffer = std::move(stagingOrErr.value());
+  THROW_if_fail(m_stagingBuffer.map());
 
   VuBufferCreateInfo debugBufferCreateInfo {};
-  debugBufferCreateInfo.name        = "debugBuffer";
-  debugBufferCreateInfo.sizeInBytes = 4096;
-  debugBufferCreateInfo.vkUsageFlags =
-      vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress;
+  debugBufferCreateInfo.name         = "debugBuffer";
+  debugBufferCreateInfo.sizeInBytes  = 4096;
+  debugBufferCreateInfo.vkUsageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-  auto debugBufferOrErr = VuBuffer::make(*vuDevice, debugBufferCreateInfo);
-  throw_if_unexpected(debugBufferOrErr);
-  this->debugBuffer = std::make_shared<VuBuffer>(std::move(debugBufferOrErr.value()));
+  auto debugBufferOrErr = VuBuffer::make(m_vuDevice, debugBufferCreateInfo);
+  THROW_if_unexpected(debugBufferOrErr);
+  this->m_debugBuffer = std::make_shared<VuBuffer>(std::move(debugBufferOrErr.value()));
 
-  registerToBindless(*debugBuffer);
-  assert(debugBuffer->bindlessIndex == 0);
+  registerToBindless(*m_debugBuffer);
+  assert(m_debugBuffer->m_bindlessIndex == 0);
 
   std::vector<Color32> colorData;
   Color32              defaultColor = Color32(0.0f, 0.0f, 0.0f);
@@ -576,162 +573,154 @@ VuRenderer::initDefaultResources() {
     }
   }
 
-  auto defaultImageOrErr = VuImage::make(vuDevice, {.width = 512, .height = 512, .format = vk::Format::eR8G8B8A8Srgb});
-  throw_if_unexpected(defaultImageOrErr);
-  defaultImage = std::make_shared<VuImage>(std::move(defaultImageOrErr.value()));
-  uploadToImage(*defaultImage, reinterpret_cast<const byte*>(colorData.data()), colorData.size() * sizeof(Color32));
-  registerToBindless(*defaultImage);
-  assert(defaultImage->bindlessIndex == 0);
+  auto defaultImageOrErr = VuImage::make(m_vuDevice, {.width = 512, .height = 512, .format = VK_FORMAT_R8G8B8A8_SRGB});
+  THROW_if_unexpected(defaultImageOrErr);
+  m_defaultImage = std::make_shared<VuImage>(std::move(defaultImageOrErr.value()));
+  uploadToImage(*m_defaultImage, reinterpret_cast<const byte*>(colorData.data()), colorData.size() * sizeof(Color32));
+  registerToBindless(*m_defaultImage);
+  assert(m_defaultImage->m_bindlessIndex == 0);
 
-  Color32 normalColor = Color32(uint8_t(128), uint8_t(128), uint8_t(255), uint8_t(255));
+  Color32 normalColor {uint8_t {128}, uint8_t {128}, uint8_t {255}, uint8_t {255}};
   std::fill(colorData.begin(), colorData.end(), normalColor);
   auto defaultNormalImageOrErr =
-      VuImage::make(vuDevice, {.width = 512, .height = 512, .format = vk::Format::eR8G8B8A8Unorm});
-  throw_if_unexpected(defaultNormalImageOrErr);
-  defaultNormalImage = std::make_shared<VuImage>(std::move(defaultNormalImageOrErr.value()));
+      VuImage::make(m_vuDevice, {.width = 512, .height = 512, .format = VK_FORMAT_R8G8B8A8_UNORM});
+  THROW_if_unexpected(defaultNormalImageOrErr);
+  m_defaultNormalImage = std::make_shared<VuImage>(std::move(defaultNormalImageOrErr.value()));
 
   uploadToImage(
-      *defaultNormalImage, reinterpret_cast<const byte*>(colorData.data()), colorData.size() * sizeof(Color32));
-  registerToBindless(*defaultNormalImage);
-  assert(defaultNormalImage->bindlessIndex == 1);
+      *m_defaultNormalImage, reinterpret_cast<const byte*>(colorData.data()), colorData.size() * sizeof(Color32));
+  registerToBindless(*m_defaultNormalImage);
+  assert(m_defaultNormalImage->m_bindlessIndex == 1);
 
   // TODO pass physical props max
 
-  auto defaultSamplerOrErr = VuSampler::make(vuDevice, {.maxAnisotropy = 16.0f});
-  throw_if_unexpected(defaultSamplerOrErr);
-  defaultSampler = std::make_shared<VuSampler>(std::move(defaultSamplerOrErr.value()));
-  registerToBindless(*defaultSampler);
-  assert(defaultSampler->bindlessIndex == 0);
+  auto defaultSamplerOrErr = VuSampler::make(m_vuDevice, {.maxAnisotropy = 16.0f});
+  THROW_if_unexpected(defaultSamplerOrErr);
+  m_defaultSampler = std::make_shared<VuSampler>(std::move(defaultSamplerOrErr.value()));
+  registerToBindless(*m_defaultSampler);
+  assert(m_defaultSampler->m_bindlessIndex == 0);
 
   VuBufferCreateInfo matDataBufferCreateInfo {};
-  matDataBufferCreateInfo.name        = "materialDataBuffer";
-  matDataBufferCreateInfo.sizeInBytes = 4096;
-  matDataBufferCreateInfo.vkUsageFlags =
-      vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress;
+  matDataBufferCreateInfo.name         = "materialDataBuffer";
+  matDataBufferCreateInfo.sizeInBytes  = 4096;
+  matDataBufferCreateInfo.vkUsageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-  auto matDatBufferOrrErr = VuBuffer::make(*vuDevice, matDataBufferCreateInfo);
-  throw_if_unexpected(matDatBufferOrrErr);
-  this->materialDataBuffer = std::make_shared<VuBuffer>(std::move(matDatBufferOrrErr.value()));
-  registerToBindless(*materialDataBuffer);
-  assert(materialDataBuffer->bindlessIndex == 1);
-  materialDataBuffer->map();
+  auto matDatBufferOrrErr = VuBuffer::make(m_vuDevice, matDataBufferCreateInfo);
+  THROW_if_unexpected(matDatBufferOrrErr);
+  this->m_materialDataBuffer = std::make_shared<VuBuffer>(std::move(matDatBufferOrrErr.value()));
+  registerToBindless(*m_materialDataBuffer);
+  assert(m_materialDataBuffer->m_bindlessIndex == 1);
+  THROW_if_fail(m_materialDataBuffer->map());
 }
 void
 VuRenderer::initDescriptorPool(const VuRendererCreateInfo& info) {
-  std::array<vk::DescriptorPoolSize, 5> poolSizes;
+  std::array<VkDescriptorPoolSize, 5> poolSizes;
 
-  poolSizes[0].type            = vk::DescriptorType::eUniformBuffer;
+  poolSizes[0].type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   poolSizes[0].descriptorCount = info.uboCount * config::MAX_FRAMES_IN_FLIGHT;
 
-  poolSizes[1].type            = vk::DescriptorType::eSampler;
+  poolSizes[1].type            = VK_DESCRIPTOR_TYPE_SAMPLER;
   poolSizes[1].descriptorCount = info.samplerCount * config::MAX_FRAMES_IN_FLIGHT;
 
-  poolSizes[2].type            = vk::DescriptorType::eSampledImage;
+  poolSizes[2].type            = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
   poolSizes[2].descriptorCount = info.sampledImageCount * config::MAX_FRAMES_IN_FLIGHT;
 
-  poolSizes[3].type            = vk::DescriptorType::eStorageImage;
+  poolSizes[3].type            = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
   poolSizes[3].descriptorCount = info.storageImageCount * config::MAX_FRAMES_IN_FLIGHT;
 
-  poolSizes[4].type            = vk::DescriptorType::eStorageBuffer;
+  poolSizes[4].type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
   poolSizes[4].descriptorCount = info.storageBufferCount * config::MAX_FRAMES_IN_FLIGHT;
 
-  vk::DescriptorPoolCreateInfo poolInfo;
-  poolInfo.flags         = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind;
+  VkDescriptorPoolCreateInfo poolInfo {.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+  poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
   poolInfo.maxSets       = 2;
   poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
   poolInfo.pPoolSizes    = poolSizes.data();
 
-  auto descPoolOrErr = vuDevice->device.createDescriptorPool(poolInfo);
-  throw_if_unexpected(descPoolOrErr);
-  this->descriptorPool = std::move(descPoolOrErr.value());
+  THROW_if_fail(vkCreateDescriptorPool(m_vuDevice->m_device, &poolInfo, NO_ALLOC_CALLBACK, &m_descriptorPool));
 }
 void
 VuRenderer::initBindlessDescriptorSet() {
-  std::array<vk::DescriptorSetLayout, config::MAX_FRAMES_IN_FLIGHT> globalDescLayout;
-  globalDescLayout.fill(globalDescriptorSetLayout);
+  std::array<VkDescriptorSetLayout, config::MAX_FRAMES_IN_FLIGHT> globalDescLayout;
+  globalDescLayout.fill(m_globalDescriptorSetLayout);
 
-  vk::DescriptorSetAllocateInfo globalSetsAllocInfo;
-  globalSetsAllocInfo.descriptorPool     = descriptorPool;
+  VkDescriptorSetAllocateInfo globalSetsAllocInfo {.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+  globalSetsAllocInfo.descriptorPool     = m_descriptorPool;
   globalSetsAllocInfo.descriptorSetCount = static_cast<uint32_t>(globalDescLayout.size());
   globalSetsAllocInfo.pSetLayouts        = globalDescLayout.data();
 
   std::array<VkDescriptorSet, config::MAX_FRAMES_IN_FLIGHT> tempDescSets {};
-  vkAllocateDescriptorSets(*vuDevice->device, globalSetsAllocInfo, tempDescSets.data());
-  globalDescriptorSets.resize(config::MAX_FRAMES_IN_FLIGHT);
+  THROW_if_fail(vkAllocateDescriptorSets(m_vuDevice->m_device, &globalSetsAllocInfo, tempDescSets.data()));
+  m_globalDescriptorSets.resize(config::MAX_FRAMES_IN_FLIGHT);
   for (uint32_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
-    globalDescriptorSets[i] = vk::DescriptorSet {tempDescSets[i]};
+    m_globalDescriptorSets[i] = VkDescriptorSet {tempDescSets[i]};
   }
 }
-vk::raii::CommandBuffer
-VuRenderer::BeginSingleTimeCommands() const {
-  vk::CommandBufferAllocateInfo cbAllocInfo;
-  cbAllocInfo.level              = vk::CommandBufferLevel::ePrimary;
-  cbAllocInfo.commandPool        = commandPool;
+VkCommandBuffer
+VuRenderer::beginSingleTimeCommands() const {
+  VkCommandBufferAllocateInfo cbAllocInfo {.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  cbAllocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  cbAllocInfo.commandPool        = m_commandPool;
   cbAllocInfo.commandBufferCount = 1;
 
-  auto commandBufferOrErr = vuDevice->device.allocateCommandBuffers(cbAllocInfo);
-  throw_if_unexpected(commandBufferOrErr);
+  VkCommandBuffer commandBuffer {};
+  THROW_if_fail(vkAllocateCommandBuffers(m_vuDevice->m_device, &cbAllocInfo, &commandBuffer));
 
-  vk::raii::CommandBuffer commandBuffer = std::move(commandBufferOrErr.value()[0]);
-
-  vk::CommandBufferBeginInfo beginInfo;
-  beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
-  // todo no return ?
-  commandBuffer.begin(beginInfo);
-
+  VkCommandBufferBeginInfo beginInfo {.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+  THROW_if_fail(vkBeginCommandBuffer(commandBuffer, &beginInfo));
   return commandBuffer;
 }
 void
-VuRenderer::EndSingleTimeCommands(const vk::raii::CommandBuffer& commandBuffer) const {
-  commandBuffer.end();
+VuRenderer::endSingleTimeCommands(const VkCommandBuffer& commandBuffer) const {
+  THROW_if_fail(vkEndCommandBuffer(commandBuffer));
 
-  vk::SubmitInfo submitInfo;
+  VkSubmitInfo submitInfo {.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO};
   submitInfo.commandBufferCount = 1;
-  submitInfo.pCommandBuffers    = &*commandBuffer;
+  submitInfo.pCommandBuffers    = &commandBuffer;
 
-  vuDevice->graphicsQueue.submit(submitInfo);
-  vuDevice->graphicsQueue.waitIdle();
+  THROW_if_fail(vkQueueSubmit(m_vuDevice->m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE));
+  THROW_if_fail(vkQueueWaitIdle(m_vuDevice->m_graphicsQueue));
 
-  // device.freeCommandBuffers(commandPool, 1, &commandBuffer);
+  vkFreeCommandBuffers(m_vuDevice->m_device, m_commandPool, 1, &commandBuffer);
 }
 void
 VuRenderer::initBindlessResourceManager(const VuRendererCreateInfo& info) {
 
   VuBufferCreateInfo bufferCreateInfo {
       .name        = "BDA_Buffer",
-      .sizeInBytes = info.storageBufferCount * sizeof(vk::DeviceAddress),
+      .sizeInBytes = info.storageBufferCount * sizeof(VkDeviceAddress),
   };
-  auto bdaBufferOrErr = VuBuffer::make(*vuDevice, bufferCreateInfo);
-  throw_if_unexpected(bdaBufferOrErr);
-  bdaBuffer = std::move(bdaBufferOrErr.value());
-  bdaBuffer.map();
+  auto bdaBufferOrErr = VuBuffer::make(m_vuDevice, bufferCreateInfo);
+  THROW_if_unexpected(bdaBufferOrErr);
+  m_bdaBuffer = std::move(bdaBufferOrErr.value());
+  THROW_if_fail(m_bdaBuffer.map());
 
-  vk::DescriptorBufferInfo descBufferInfo {};
-  descBufferInfo.buffer = bdaBuffer.buffer;
-  descBufferInfo.range  = bdaBuffer.sizeInBytes;
+  VkDescriptorBufferInfo descBufferInfo {};
+  descBufferInfo.buffer = m_bdaBuffer.m_buffer;
+  descBufferInfo.range  = m_bdaBuffer.m_sizeInBytes;
 
   for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++) {
-    vk::WriteDescriptorSet descriptorWrite {};
-    descriptorWrite.dstSet          = globalDescriptorSets[i];
-    descriptorWrite.dstBinding      = lastCreateInfo.storageBufferBinding;
+    VkWriteDescriptorSet descriptorWrite {.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+    descriptorWrite.dstSet          = m_globalDescriptorSets[i];
+    descriptorWrite.dstBinding      = m_lastCreateInfo.storageBufferBinding;
     descriptorWrite.dstArrayElement = 0;
-    descriptorWrite.descriptorType  = vk::DescriptorType::eStorageBuffer;
+    descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptorWrite.descriptorCount = 1;
     descriptorWrite.pBufferInfo     = &descBufferInfo;
 
-    vuDevice->device.updateDescriptorSets(descriptorWrite, {});
+    vkUpdateDescriptorSets(m_vuDevice->m_device, 1, &descriptorWrite, 0, nullptr);
   }
 }
-// todo
 VuImage
-VuRenderer::createImageFromAsset(const path& path, vk::Format format) {
+VuRenderer::createImageFromAsset(const path& path, VkFormat format) {
   int   texWidth;
   int   texHeight;
   int   texChannels;
   byte* pixels;
 
   Vu::VuImage::loadImageFile(path, texWidth, texHeight, texChannels, reinterpret_cast<stbi_uc*&>(pixels));
-  const auto imageSize = static_cast<vk::DeviceSize>(texWidth * texHeight * 4U);
+  const auto imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4U);
 
   if (pixels == nullptr) { throw std::runtime_error("failed to load texture image!"); }
 
@@ -739,9 +728,8 @@ VuRenderer::createImageFromAsset(const path& path, vk::Format format) {
   u32               h = texHeight;
   VuImageCreateInfo createInfo {.width = w, .height = h, .format = format};
 
-  auto vuImageOrrErr = VuImage::make(vuDevice, createInfo);
-  throw_if_unexpected(vuImageOrrErr);
-  // std::shared_ptr<VuImage> vuImage = std::make_shared<VuImage>(std::move(vuImageOrrErr.value()));
+  auto vuImageOrrErr = VuImage::make(m_vuDevice, createInfo);
+  THROW_if_unexpected(vuImageOrrErr);
   uploadToImage(vuImageOrrErr.value(), pixels, imageSize);
   stbi_image_free(pixels);
   return std::move(vuImageOrrErr.value());
@@ -751,124 +739,124 @@ std::shared_ptr<VuMaterialDataHandle>
 VuRenderer::createMaterialDataIndex() {
   std::shared_ptr<VuMaterialDataHandle> handle        = std::make_shared<VuMaterialDataHandle>();
   VuMaterialDataHandle*                 resource      = handle.get();
-  u32                                   bindlessIndex = materialDataBindlessIndexAllocator.allocate();
+  u32                                   bindlessIndex = m_materialDataBindlessIndexAllocator.allocate();
   resource->index                                     = bindlessIndex;
   return handle;
 }
 std::span<std::byte, config::MATERIAL_DATA_SIZE>
 VuRenderer::getMaterialDataSpan(const std::shared_ptr<VuMaterialDataHandle>& handle) const {
-  byte* dataPtr = &static_cast<byte*>(materialDataBuffer->mapPtr)[config::MATERIAL_DATA_SIZE * handle->index];
+  byte* dataPtr = &static_cast<byte*>(m_materialDataBuffer->m_mapPtr)[config::MATERIAL_DATA_SIZE * handle->index];
   return std::span<std::byte, config::MATERIAL_DATA_SIZE>(dataPtr, config::MATERIAL_DATA_SIZE);
 }
 
 void
-VuRenderer::bindMaterial(const vk::CommandBuffer& cb, const std::shared_ptr<VuMaterial>& material) {
+VuRenderer::bindMaterial(const VkCommandBuffer& cb, const std::shared_ptr<VuMaterial>& material) {
   VuMaterial*         mat        = material.get();
-  VuShader*           shader     = mat->shaderHnd.get();
-  VuGraphicsPipeline& vuPipeline = shader->requestPipeline(mat->materialSettings);
+  VuShader*           shader     = mat->m_shaderHnd.get();
+  VuGraphicsPipeline& vuPipeline = shader->requestPipeline(mat->m_materialSettings);
 
-  cb.bindPipeline(vk::PipelineBindPoint::eGraphics, vuPipeline.pipeline);
-  // vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
+  vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, vuPipeline.m_pipeline);
 }
 void
-VuRenderer::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size) {
-  vk::raii::CommandBuffer commandBuffer = BeginSingleTimeCommands();
-  vk::BufferCopy          copyRegion {};
+VuRenderer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+  VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+  VkBufferCopy    copyRegion {};
   copyRegion.srcOffset = 0;
   copyRegion.dstOffset = 0;
   copyRegion.size      = size;
-  commandBuffer.copyBuffer(srcBuffer, dstBuffer, copyRegion);
-  EndSingleTimeCommands(commandBuffer);
+  vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+  endSingleTimeCommands(commandBuffer);
 }
 void
-VuRenderer::uploadToImage(const VuImage& vuImage, const byte* data, const vk::DeviceSize size) {
+VuRenderer::uploadToImage(const VuImage& vuImage, const byte* data, const VkDeviceSize size) {
   // todo
-  auto res = stagingBuffer.setData(data, size);
+  auto res = m_stagingBuffer.setData(data, size);
 
-  transitionImageLayout(vuImage.image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+  transitionImageLayout(vuImage.m_image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-  copyBufferToImage(stagingBuffer.buffer, vuImage.image, vuImage.lastCreateInfo.width, vuImage.lastCreateInfo.height);
+  copyBufferToImage(
+      m_stagingBuffer.m_buffer, vuImage.m_image, vuImage.m_lastCreateInfo.width, vuImage.m_lastCreateInfo.height);
 
-  transitionImageLayout(vuImage.image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+  transitionImageLayout(
+      vuImage.m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 void
-VuRenderer::transitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout) {
-  vk::raii::CommandBuffer commandBuffer = BeginSingleTimeCommands();
+VuRenderer::transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout) {
+  VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
-  vk::ImageMemoryBarrier barrier {};
+  VkImageMemoryBarrier barrier {.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
   barrier.oldLayout                       = oldLayout;
   barrier.newLayout                       = newLayout;
   barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
   barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
   barrier.image                           = image;
-  barrier.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
+  barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
   barrier.subresourceRange.baseMipLevel   = 0;
   barrier.subresourceRange.levelCount     = 1;
   barrier.subresourceRange.baseArrayLayer = 0;
   barrier.subresourceRange.layerCount     = 1;
 
-  vk::PipelineStageFlags sourceStage;
-  vk::PipelineStageFlags destinationStage;
+  VkPipelineStageFlags sourceStage;
+  VkPipelineStageFlags destinationStage;
 
-  if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
-    barrier.srcAccessMask = {};
-    barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+  if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
-    sourceStage      = vk::PipelineStageFlagBits::eTopOfPipe;
-    destinationStage = vk::PipelineStageFlagBits::eTransfer;
-  } else if (oldLayout == vk::ImageLayout::eTransferDstOptimal &&
-             newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
-    barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-    barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+    sourceStage      = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+  } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+             newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-    sourceStage      = vk::PipelineStageFlagBits::eTransfer;
-    destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
+    sourceStage      = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
   } else {
     throw std::invalid_argument("Unsupported layout transition!");
   }
 
-  commandBuffer.pipelineBarrier(sourceStage, destinationStage, {}, nullptr, nullptr, barrier);
-
-  EndSingleTimeCommands(commandBuffer);
+  vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, ZERO_FLAG, 0, nullptr, 0, nullptr, 1, &barrier);
+  endSingleTimeCommands(commandBuffer);
 }
 void
-VuRenderer::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height) {
-  vk::raii::CommandBuffer commandBuffer = BeginSingleTimeCommands();
+VuRenderer::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+  VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
-  vk::BufferImageCopy region {};
+  VkBufferImageCopy region {};
   region.bufferOffset                    = 0;
   region.bufferRowLength                 = 0;
   region.bufferImageHeight               = 0;
-  region.imageSubresource.aspectMask     = vk::ImageAspectFlagBits::eColor;
+  region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
   region.imageSubresource.mipLevel       = 0;
   region.imageSubresource.baseArrayLayer = 0;
   region.imageSubresource.layerCount     = 1;
-  region.imageOffset                     = vk::Offset3D {0, 0, 0};
-  region.imageExtent                     = vk::Extent3D {width, height, 1};
+  region.imageOffset                     = VkOffset3D {0, 0, 0};
+  region.imageExtent                     = VkExtent3D {width, height, 1};
 
-  commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, region);
-  // vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-  EndSingleTimeCommands(commandBuffer);
+  vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+  endSingleTimeCommands(commandBuffer);
 }
 
 void
 VuRenderer::initImGui() {
 
-  vk::DescriptorPoolSize pool_sizes[] = {{.type = vk::DescriptorType::eCombinedImageSampler, .descriptorCount = 1000}};
+  VkDescriptorPoolSize pool_sizes[] = {{.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .descriptorCount = 1000}};
 
-  vk::DescriptorPoolCreateInfo poolInfo {};
+  VkDescriptorPoolCreateInfo poolInfo {.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
   poolInfo.poolSizeCount = 1;
   poolInfo.pPoolSizes    = pool_sizes;
   poolInfo.maxSets       = 1000;
-  poolInfo.flags         = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+  poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-  auto poolOrErr   = vuDevice->device.createDescriptorPool(poolInfo);
-  uiDescriptorPool = moveOrTHROW(poolOrErr);
+  VkResult descPoolRes =
+      vkCreateDescriptorPool(m_vuDevice->m_device, &poolInfo, NO_ALLOC_CALLBACK, &m_uiDescriptorPool);
+  THROW_if_fail(descPoolRes);
 
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
-  disposeStack.push([] { ImGui::DestroyContext(); });
   ImGuiIO& io = ImGui::GetIO();
   //(void) io;
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -879,26 +867,25 @@ VuRenderer::initImGui() {
   // Setup Dear ImGui style
   ImGui::StyleColorsDark();
 
-  ImGui_ImplSDL3_InitForVulkan(window);
-  disposeStack.push([] { ImGui_ImplSDL3_Shutdown(); });
+  ImGui_ImplSDL3_InitForVulkan(m_window);
 
   ImGui_ImplVulkan_InitInfo init_info = {};
-  init_info.Instance                  = *vuDevice->vuPhysicalDevice->vuInstance->instance;
-  init_info.PhysicalDevice            = *vuDevice->vuPhysicalDevice->physicalDevice;
-  init_info.Device                    = *vuDevice->device;
-  init_info.QueueFamily               = vuDevice->vuPhysicalDevice->indices.graphicsFamily;
-  init_info.Queue                     = *vuDevice->graphicsQueue;
-  init_info.DescriptorPool            = *uiDescriptorPool;
+  init_info.Instance                  = m_vuDevice->m_vuPhysicalDevice->m_vuInstance->m_instance;
+  init_info.PhysicalDevice            = m_vuDevice->m_vuPhysicalDevice->m_physicalDevice;
+  init_info.Device                    = m_vuDevice->m_device;
+  init_info.QueueFamily               = m_vuDevice->m_vuPhysicalDevice->m_indices.graphicsFamily;
+  init_info.Queue                     = m_vuDevice->m_graphicsQueue;
+  init_info.DescriptorPool            = m_uiDescriptorPool;
   init_info.MinImageCount             = 2;
   init_info.ImageCount                = 2;
   init_info.UseDynamicRendering       = false;
-  init_info.RenderPass                = *deferredRenderSpace.lightningPass->renderPass;
+  init_info.RenderPass                = m_deferredRenderSpace.m_lightningPass->m_renderPass;
 
   ImGui_ImplVulkan_Init(&init_info);
-  disposeStack.push([] { ImGui_ImplVulkan_Shutdown(); });
 
   ImGui_ImplVulkan_CreateFontsTexture();
-  disposeStack.push([] { ImGui_ImplVulkan_DestroyFontsTexture(); });
+
+
 }
 
 } // namespace Vu

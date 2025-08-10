@@ -1,42 +1,28 @@
 #include "VuSampler.h"
 
-#include "../02_OuterCore/VuCommon.h"
 #include "VuDevice.h"
 
-std::expected<Vu::VuSampler, vk::Result>
-Vu::VuSampler::make(const std::shared_ptr<VuDevice>& vuDevice, const VuSamplerCreateInfo& createInfo) {
-  try {
-    VuSampler outSampler {vuDevice, createInfo};
-    return outSampler;
+Vu::VuSampler::VuSampler(std::shared_ptr<VuDevice> vuDevice, const VuSamplerCreateInfo& createInfo) :
+    m_vuDevice {std::move(vuDevice)} {
 
-  } catch (vk::Result res) { return std::unexpected {res}; } catch (...) {
-    return std::unexpected {vk::Result::eErrorUnknown};
-  }
-}
-Vu::VuSampler::VuSampler(const std::shared_ptr<VuDevice>& vuDevice, const VuSamplerCreateInfo& createInfo)
-    : vuDevice {vuDevice} {
-  lastCreateInfo = createInfo;
-
-  vk::SamplerCreateInfo samplerInfo {};
-  samplerInfo.sType                   = vk::StructureType::eSamplerCreateInfo;
-  samplerInfo.magFilter               = vk::Filter::eLinear;
-  samplerInfo.minFilter               = vk::Filter::eLinear;
-  samplerInfo.addressModeU            = vk::SamplerAddressMode::eRepeat;
-  samplerInfo.addressModeV            = vk::SamplerAddressMode::eRepeat;
-  samplerInfo.addressModeW            = vk::SamplerAddressMode::eRepeat;
-  samplerInfo.anisotropyEnable        = vk::True;
+  VkSamplerCreateInfo samplerInfo     = {};
+  samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+  samplerInfo.magFilter               = VK_FILTER_LINEAR;
+  samplerInfo.minFilter               = VK_FILTER_LINEAR;
+  samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.anisotropyEnable        = VK_TRUE;
   samplerInfo.maxAnisotropy           = createInfo.maxAnisotropy;
-  samplerInfo.borderColor             = vk::BorderColor::eIntOpaqueBlack;
-  samplerInfo.unnormalizedCoordinates = vk::False;
-  samplerInfo.compareEnable           = vk::False;
-  samplerInfo.compareOp               = vk::CompareOp::eAlways;
-  samplerInfo.mipmapMode              = vk::SamplerMipmapMode::eLinear;
+  samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+  samplerInfo.unnormalizedCoordinates = VK_FALSE;
+  samplerInfo.compareEnable           = VK_FALSE;
+  samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
+  samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
   samplerInfo.mipLodBias              = 0.0f;
   samplerInfo.minLod                  = 0.0f;
   samplerInfo.maxLod                  = 0.0f;
 
-  auto samplerOrErr = this->vuDevice->device.createSampler(samplerInfo);
-  // todo
-  throw_if_unexpected(samplerOrErr);
-  sampler = std::move(samplerOrErr.value());
+  VkResult samplerRes = vkCreateSampler(this->m_vuDevice->m_device, &samplerInfo,NO_ALLOC_CALLBACK,&this->m_sampler);
+  THROW_if_fail(samplerRes);
 }

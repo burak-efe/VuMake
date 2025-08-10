@@ -6,54 +6,95 @@ namespace Vu {
 struct VuInstance;
 
 struct VuQueueFamilyIndices {
-  uint32_t graphicsFamily = {};
-  uint32_t presentFamily  = {};
+  uint32_t graphicsFamily {};
+  uint32_t presentFamily {};
 
   VuQueueFamilyIndices(std::nullptr_t);
 
-  static std::expected<VuQueueFamilyIndices, vk::Result>
-  make(const vk::raii::PhysicalDevice& physDevice, const vk::raii::SurfaceKHR& surface) noexcept;
+  static std::expected<VuQueueFamilyIndices, VkResult>
+  make(const VkPhysicalDevice& physDevice, const VkSurfaceKHR& surface) noexcept;
 
 private:
   VuQueueFamilyIndices();
 };
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// #####################################################################################################################
 
 struct VuSwapChainSupportDetails {
-  vk::SurfaceCapabilitiesKHR        capabilities = {};
-  std::vector<vk::SurfaceFormatKHR> formats      = {};
-  std::vector<vk::PresentModeKHR>   presentModes = {};
+  VkSurfaceCapabilitiesKHR        capabilities {};
+  std::vector<VkSurfaceFormatKHR> formats {};
+  std::vector<VkPresentModeKHR>   presentModes {};
 
-  static std::expected<VuSwapChainSupportDetails, vk::Result>
-  make(const vk::raii::PhysicalDevice& physicalDevice, const vk::raii::SurfaceKHR& surface) noexcept;
+  static std::expected<VuSwapChainSupportDetails, VkResult>
+  make(const VkPhysicalDevice& physicalDevice, const VkSurfaceKHR& surface) noexcept;
 };
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// #####################################################################################################################
 
 struct VuPhysicalDevice {
-  std::shared_ptr<VuInstance>        vuInstance       = {};
-  vk::raii::PhysicalDevice           physicalDevice   = {nullptr};
-  VuQueueFamilyIndices               indices          = {nullptr};
-  VuSwapChainSupportDetails          swapChainSupport = {};
-  vk::PhysicalDeviceProperties       properties       = {};
-  vk::PhysicalDeviceMemoryProperties memoryProperties = {};
-  vk::PhysicalDeviceFeatures         features         = {};
+  std::shared_ptr<VuInstance>      m_vuInstance {nullptr};
+  VkPhysicalDevice                 m_physicalDevice {nullptr};
+  VuQueueFamilyIndices             m_indices {nullptr};
+  VuSwapChainSupportDetails        m_swapChainSupport {};
+  VkPhysicalDeviceProperties       m_properties {};
+  VkPhysicalDeviceMemoryProperties m_memoryProperties {};
+  VkPhysicalDeviceFeatures         m_features {};
+  //--------------------------------------------------------------------------------------------------------------------
+  VuPhysicalDevice()                        = default;
+  VuPhysicalDevice(const VuPhysicalDevice&) = delete;
+  VuPhysicalDevice&
+  operator=(const VuPhysicalDevice&) = delete;
 
-  static std::expected<VuPhysicalDevice, vk::Result>
-  make(const std::shared_ptr<VuInstance>& vuInstance,
-       const vk::raii::SurfaceKHR&        surface,
-       std::span<const char*>             enabledExtensions) noexcept;
+  VuPhysicalDevice(VuPhysicalDevice&& other) noexcept :
+      m_vuInstance(std::move(other.m_vuInstance)),
+      m_physicalDevice(other.m_physicalDevice),
+      m_indices(std::move(other.m_indices)),
+      m_swapChainSupport(std::move(other.m_swapChainSupport)),
+      m_properties(other.m_properties),
+      m_memoryProperties(other.m_memoryProperties),
+      m_features(other.m_features) {
+    other.m_physicalDevice = VK_NULL_HANDLE;
+  }
 
+  VuPhysicalDevice&
+  operator=(VuPhysicalDevice&& other) noexcept {
+    if (this != &other) {
+      cleanup();
+      m_vuInstance       = std::move(other.m_vuInstance);
+      m_physicalDevice   = other.m_physicalDevice;
+      m_indices          = std::move(other.m_indices);
+      m_swapChainSupport = std::move(other.m_swapChainSupport);
+      m_properties       = other.m_properties;
+      m_memoryProperties = other.m_memoryProperties;
+      m_features         = other.m_features;
+
+      other.m_physicalDevice = VK_NULL_HANDLE;
+    }
+    return *this;
+  }
+
+  ~VuPhysicalDevice() { cleanup(); }
+
+  SETUP_EXPECTED_WRAPPER(VuPhysicalDevice,
+                         (std::shared_ptr<VuInstance> vuInstance,
+                          const VkSurfaceKHR&         surface,
+                          std::span<const char*>      enabledExtensions),
+                         (vuInstance, surface, enabledExtensions))
 private:
-  VuPhysicalDevice(const std::shared_ptr<VuInstance>& vuInstance,
-                   const vk::raii::SurfaceKHR&        surface,
-                   std::span<const char*>             enabledExtensions);
+  void
+  cleanup() {
+    // No Vulkan destruction needed for VkPhysicalDevice; just reset shared_ptr
+    m_physicalDevice = VK_NULL_HANDLE;
+    m_vuInstance.reset();
+  }
+  //--------------------------------------------------------------------------------------------------------------------
+
+  VuPhysicalDevice(std::shared_ptr<VuInstance> vuInstance,
+                   const VkSurfaceKHR&         surface,
+                   std::span<const char*>      enabledExtensions);
 
   static bool
-  isSupported(const vk::raii::PhysicalDevice& phyDevice,
-              const vk::raii::SurfaceKHR&     surface,
-              std::span<const char*>          enabledExtensions);
+  isSupported(const VkPhysicalDevice& phyDevice, const VkSurfaceKHR& surface, std::span<const char*> enabledExtensions);
 
   static bool
-  isExtensionsSupported(const vk::raii::PhysicalDevice& device, std::span<const char*> requestedExtensions);
+  isExtensionsSupported(const VkPhysicalDevice& device, std::span<const char*> requestedExtensions);
 };
 } // namespace Vu

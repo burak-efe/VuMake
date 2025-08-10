@@ -14,7 +14,7 @@ enum class MapType { baseColor, normal, ao_rough_metal };
 
 struct VuAssetLoader {
 
-  static std::expected<VuImage, vk::Result>
+  static std::expected<VuImage, VkResult>
   loadMapFromGLTF(VuRenderer& vuRenderer, const std::filesystem::path& gltfPath, MapType type);
 
   static void

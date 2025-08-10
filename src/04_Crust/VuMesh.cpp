@@ -9,14 +9,14 @@
 
 namespace Vu {
 
-vk::DeviceSize VuMesh::totalAttributesSizePerVertex() {
+VkDeviceSize VuMesh::totalAttributesSizePerVertex() {
   // pos, norm, tan , uv
   return sizeof(float3) + sizeof(float3) + sizeof(float4) + sizeof(float2);
 }
-vk::DeviceSize VuMesh::getNormalOffsetAsByte() const { return sizeof(float3) * vertexCount; }
-vk::DeviceSize VuMesh::getTangentOffsetAsByte() const { return (sizeof(float3) + sizeof(float3)) * vertexCount; }
-vk::DeviceSize VuMesh::getUV_OffsetAsByte() const {
-  return (sizeof(float3) + sizeof(float3) + sizeof(float4)) * vertexCount;
+VkDeviceSize VuMesh::getNormalOffsetAsByte() const { return sizeof(float3) * m_vertexCount; }
+VkDeviceSize VuMesh::getTangentOffsetAsByte() const { return (sizeof(float3) + sizeof(float3)) * m_vertexCount; }
+VkDeviceSize VuMesh::getUV_OffsetAsByte() const {
+  return (sizeof(float3) + sizeof(float3) + sizeof(float4)) * m_vertexCount;
 }
 void VuMesh::calculateTangents(const std::span<u32>    indices,
                                const std::span<float3> positions,

@@ -10,7 +10,8 @@ struct GBufferPassVSOutput
 float4 fragmentMain(GBufferPassVSOutput i)
     : SV_Target
 {
-    var fc = frameConst;
+    var fc = frameConst.data;
+    var pc = pushConstants.data;
 
     MatData_PbrDeferred *data = getMaterialDataAs<MatData_PbrDeferred>(pc.material_data_handle.index);
 

@@ -6,75 +6,65 @@
 #include "VuPhysicalDevice.h"
 
 namespace Vu {
-std::expected<VuDevice, vk::Result>
-VuDevice::make(const std::shared_ptr<VuPhysicalDevice>& vuPhyDevice,
-               const vk::PhysicalDeviceFeatures2&       requestedFeatureChain,
-               std::span<const char*>                   enabledExtensions) {
-  try {
-    VuDevice outDevice {vuPhyDevice, requestedFeatureChain, enabledExtensions};
-    return outDevice;
-  } catch (vk::Result res) {
-    return std::unexpected {res};
-  } //
-  catch (...) {
 
-    return std::unexpected {vk::Result::eErrorUnknown};
-  }
-}
-std::expected<vk::raii::PipelineLayout, vk::Result>
-VuDevice::createPipelineLayout(const std::span<vk::DescriptorSetLayout> descriptorSetLayouts,
-                               const uint32_t                           pushConstantSizeAsByte) const {
+std::expected<VkPipelineLayout, VkResult>
+VuDevice::createPipelineLayout(const std::span<VkDescriptorSetLayout> descriptorSetLayouts,
+                               const uint32_t                         pushConstantSizeAsByte) const {
 
-  vk::PushConstantRange pcRange {};
-  pcRange.stageFlags = vk::ShaderStageFlagBits::eAll;
+  VkPushConstantRange pcRange {};
+  pcRange.stageFlags = VK_SHADER_STAGE_ALL;
   pcRange.size       = pushConstantSizeAsByte;
 
-  vk::PipelineLayoutCreateInfo pipelineLayoutInfo {};
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo {.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
   pipelineLayoutInfo.setLayoutCount         = descriptorSetLayouts.size();
   pipelineLayoutInfo.pSetLayouts            = descriptorSetLayouts.data();
   pipelineLayoutInfo.pushConstantRangeCount = 1;
   pipelineLayoutInfo.pPushConstantRanges    = &pcRange;
 
-  // todo
-  return device.createPipelineLayout(pipelineLayoutInfo);
+  VkPipelineLayout pipelineLayout {};
+  VkResult pipelineRes = vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, NO_ALLOC_CALLBACK, &pipelineLayout);
+  RETURN_UNEXPECTED_ON_FAIL(pipelineRes);
+  return pipelineLayout;
 }
-std::expected<vk::raii::DeviceMemory, vk::Result>
-VuDevice::allocateMemory(const vk::MemoryPropertyFlags& memPropFlags,
-                         const vk::MemoryRequirements&  requirements) const {
+std::expected<VkDeviceMemory, VkResult>
+VuDevice::allocateMemory(const VkMemoryPropertyFlags& memPropFlags, const VkMemoryRequirements& requirements) const {
   auto memTypeIndex =
-      findMemoryTypeIndex(vuPhysicalDevice->memoryProperties, requirements.memoryTypeBits, memPropFlags);
+      findMemoryTypeIndex(m_vuPhysicalDevice->m_memoryProperties, requirements.memoryTypeBits, memPropFlags);
 
   if (!memTypeIndex) { return std::unexpected {memTypeIndex.error()}; }
 
-  vk::MemoryAllocateFlagsInfo allocFlagsInfo {};
-  allocFlagsInfo.flags = vk::MemoryAllocateFlagBits::eDeviceAddress;
+  VkMemoryAllocateFlagsInfo allocFlagsInfo {.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO};
+  allocFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
 
-  vk::MemoryAllocateInfo allocInfo {};
+  VkMemoryAllocateInfo allocInfo {.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
   allocInfo.pNext           = &allocFlagsInfo;
   allocInfo.allocationSize  = requirements.size;
   allocInfo.memoryTypeIndex = memTypeIndex.value();
 
-  return device.allocateMemory(allocInfo);
+  VkDeviceMemory memory {};
+  VkResult       memoryRes = vkAllocateMemory(m_device, &allocInfo, NO_ALLOC_CALLBACK, &memory);
+  RETURN_UNEXPECTED_ON_FAIL(memoryRes);
+  return memory;
 }
 VuDevice::VuDevice(const std::shared_ptr<VuPhysicalDevice>& vuPhyDevice,
-                   const vk::PhysicalDeviceFeatures2&       featuresChain,
-                   std::span<const char*>                   enabledExtensions)
-    : vuPhysicalDevice {vuPhyDevice} {
+                   const VkPhysicalDeviceFeatures2&         featuresChain,
+                   std::span<const char*>                   enabledExtensions) :
+    m_vuPhysicalDevice {vuPhyDevice} {
 
-  std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos {};
+  std::vector<VkDeviceQueueCreateInfo> queueCreateInfos {};
 
-  std::set<uint32_t> uniqueQueueFamilies = {vuPhyDevice->indices.graphicsFamily, vuPhyDevice->indices.presentFamily};
+  std::set<uint32_t> uniqueQueueFamilies = {vuPhyDevice->m_indices.graphicsFamily, vuPhyDevice->m_indices.presentFamily};
 
   float queuePriority = 1.0f;
   for (uint32_t queueFamily : uniqueQueueFamilies) {
-    vk::DeviceQueueCreateInfo queueCreateInfo {};
+    VkDeviceQueueCreateInfo queueCreateInfo {.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
     queueCreateInfo.queueFamilyIndex = queueFamily;
     queueCreateInfo.queueCount       = 1;
     queueCreateInfo.pQueuePriorities = &queuePriority;
     queueCreateInfos.push_back(queueCreateInfo);
   }
 
-  vk::DeviceCreateInfo createInfo {};
+  VkDeviceCreateInfo createInfo {.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
   createInfo.pNext                   = &featuresChain;
   createInfo.queueCreateInfoCount    = static_cast<uint32_t>(queueCreateInfos.size());
   createInfo.pQueueCreateInfos       = queueCreateInfos.data();
@@ -82,25 +72,16 @@ VuDevice::VuDevice(const std::shared_ptr<VuPhysicalDevice>& vuPhyDevice,
   createInfo.enabledExtensionCount   = static_cast<uint32_t>(enabledExtensions.size());
   createInfo.ppEnabledExtensionNames = enabledExtensions.data();
 
-  auto deviceOrErr = vuPhyDevice->physicalDevice.createDevice(createInfo);
-  // todo
-  throw_if_unexpected(deviceOrErr);
+  VkResult deviceRes = vkCreateDevice(vuPhyDevice->m_physicalDevice, &createInfo, NO_ALLOC_CALLBACK, &m_device);
+  THROW_if_fail(deviceRes);
 
-  auto graphicsQueueOrErr = deviceOrErr->getQueue(vuPhyDevice->indices.graphicsFamily, 0);
-  auto presentQueueOrErr  = deviceOrErr->getQueue(vuPhyDevice->indices.presentFamily, 0);
-
-  // todo
-  throw_if_unexpected(graphicsQueueOrErr);
-  throw_if_unexpected(presentQueueOrErr);
-
-  this->device        = std::move(deviceOrErr.value());
-  this->graphicsQueue = std::move(graphicsQueueOrErr.value());
-  this->presentQueue  = std::move(presentQueueOrErr.value());
+  vkGetDeviceQueue(m_device, vuPhyDevice->m_indices.graphicsFamily, 0, &m_graphicsQueue);
+  vkGetDeviceQueue(m_device, vuPhyDevice->m_indices.presentFamily, 0, &m_presentQueue);
 }
-std::expected<uint32_t, vk::Result>
-VuDevice::findMemoryTypeIndex(const vk::PhysicalDeviceMemoryProperties& memoryProperties,
-                              uint32_t                                  typeFilter,
-                              vk::MemoryPropertyFlags                   requiredProperties) {
+std::expected<uint32_t, VkResult>
+VuDevice::findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memoryProperties,
+                              uint32_t                                typeFilter,
+                              VkMemoryPropertyFlags                   requiredProperties) {
   for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
     const bool isTypeSuitable = (typeFilter & (1 << i)) != 0;
     const bool hasRequiredProperties =
@@ -108,6 +89,6 @@ VuDevice::findMemoryTypeIndex(const vk::PhysicalDeviceMemoryProperties& memoryPr
 
     if (isTypeSuitable && hasRequiredProperties) { return i; }
   }
-  return std::unexpected {vk::Result::eErrorOutOfDeviceMemory};
+  return std::unexpected {VK_ERROR_OUT_OF_DEVICE_MEMORY};
 }
 } // namespace Vu

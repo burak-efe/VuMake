@@ -11,20 +11,23 @@ struct VuPhysicalDevice;
 
 struct VuDeviceCreateFeatureChain {
 
-  vk::PhysicalDeviceRobustness2FeaturesEXT robustness2FeaturesEXT {
-      .pNext               = nullptr,
-      .robustBufferAccess2 = vk::True,
-      .robustImageAccess2  = vk::True,
-      .nullDescriptor      = vk::True,
-  };
+  // VkPhysicalDeviceRobustness2FeaturesEXT robustness2FeaturesEXT {
+  //     .sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT,
+  //     .pNext               = nullptr,
+  //     .robustBufferAccess2 = VK_TRUE,
+  //     .robustImageAccess2  = VK_TRUE,
+  //     .nullDescriptor      = VK_TRUE,
+  // };
+  //
+  // VkPhysicalDeviceSynchronization2FeaturesKHR sync2Features {
+  //     .sType            = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
+  //     .pNext            = &robustness2FeaturesEXT,
+  //     .synchronization2 = VK_TRUE,
+  // };
 
-  vk::PhysicalDeviceSynchronization2FeaturesKHR sync2Features {
-      .pNext            = &robustness2FeaturesEXT,
-      .synchronization2 = VK_TRUE,
-  };
-
-  vk::PhysicalDeviceVulkan11Features vk11_features {
-      .pNext                              = &sync2Features,
+  VkPhysicalDeviceVulkan11Features vk11_features {
+      .sType                              = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
+      .pNext                              = nullptr,
       .storageBuffer16BitAccess           = VK_FALSE,
       .uniformAndStorageBuffer16BitAccess = VK_FALSE,
       .storagePushConstant16              = VK_FALSE,
@@ -36,10 +39,12 @@ struct VuDeviceCreateFeatureChain {
       .variablePointers                   = VK_FALSE,
       .protectedMemory                    = VK_FALSE,
       .samplerYcbcrConversion             = VK_FALSE,
-      .shaderDrawParameters               = VK_FALSE,
+      .shaderDrawParameters               = VK_TRUE,
   };
 
-  vk::PhysicalDeviceVulkan12Features vk12_features {
+  VkPhysicalDeviceVulkan12Features vk12_features {
+      .sType                                              = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+      .pNext                                              = &vk11_features,
       .samplerMirrorClampToEdge                           = VK_FALSE,
       .drawIndirectCount                                  = VK_FALSE,
       .storageBuffer8BitAccess                            = VK_FALSE,
@@ -89,44 +94,90 @@ struct VuDeviceCreateFeatureChain {
       .subgroupBroadcastDynamicId                         = VK_FALSE,
   };
 
-  vk::PhysicalDeviceFeatures deviceFeatures {
+  VkPhysicalDeviceFeatures deviceFeatures {
       .samplerAnisotropy = VK_TRUE,
       .shaderInt64       = VK_TRUE,
   };
 
-  vk::PhysicalDeviceFeatures2 deviceFeatures2 {
+  VkPhysicalDeviceFeatures2 deviceFeatures2 {
+      .sType    = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
       .pNext    = &vk12_features,
       .features = deviceFeatures,
   };
 };
 
+// #####################################################################################################################
+
 struct VuDevice {
-  std::shared_ptr<VuPhysicalDevice> vuPhysicalDevice = {};
-  vk::raii::Device                  device           = {nullptr};
-  vk::raii::Queue                   graphicsQueue    = {nullptr};
-  vk::raii::Queue                   presentQueue     = {nullptr};
+  std::shared_ptr<VuPhysicalDevice> m_vuPhysicalDevice {nullptr};
+  VkDevice                          m_device {nullptr};
+  VkQueue                           m_graphicsQueue {nullptr};
+  VkQueue                           m_presentQueue {nullptr};
 
-  static std::expected<VuDevice, vk::Result>
-  make(const std::shared_ptr<VuPhysicalDevice>& vuPhyDevice,
-       const vk::PhysicalDeviceFeatures2&       requestedFeatureChain,
-       std::span<const char*>                   enabledExtensions);
+  [[nodiscard]] std::expected<VkPipelineLayout, VkResult>
+  createPipelineLayout(std::span<VkDescriptorSetLayout> descriptorSetLayouts, uint32_t pushConstantSizeAsByte) const;
 
-  [[nodiscard]] std::expected<vk::raii::PipelineLayout, vk::Result>
-  createPipelineLayout(const std::span<vk::DescriptorSetLayout> descriptorSetLayouts,
-                       const uint32_t                           pushConstantSizeAsByte) const;
+  [[nodiscard]] std::expected<VkDeviceMemory, VkResult>
+  allocateMemory(const VkMemoryPropertyFlags& memPropFlags, const VkMemoryRequirements& requirements) const;
 
-  [[nodiscard]] std::expected<vk::raii::DeviceMemory, vk::Result>
-  allocateMemory(const vk::MemoryPropertyFlags& memPropFlags, const vk::MemoryRequirements& requirements) const;
+  //--------------------------------------------------------------------------------------------------------------------
+  SETUP_EXPECTED_WRAPPER(VuDevice,
+                         (const std::shared_ptr<VuPhysicalDevice>& vuPhyDevice,
+                          const VkPhysicalDeviceFeatures2&         featuresChain,
+                          std::span<const char*>                   enabledExtensions),
+                         (vuPhyDevice, featuresChain, enabledExtensions))
+  VuDevice()                = default;
+  VuDevice(const VuDevice&) = delete;
+  VuDevice&
+  operator=(const VuDevice&) = delete;
+
+  VuDevice(VuDevice&& other) noexcept :
+      m_vuPhysicalDevice(std::move(other.m_vuPhysicalDevice)),
+      m_device(other.m_device),
+      m_graphicsQueue(other.m_graphicsQueue),
+      m_presentQueue(other.m_presentQueue) {
+    other.m_device        = VK_NULL_HANDLE;
+    other.m_graphicsQueue = VK_NULL_HANDLE;
+    other.m_presentQueue  = VK_NULL_HANDLE;
+  }
+
+  VuDevice&
+  operator=(VuDevice&& other) noexcept {
+    if (this != &other) {
+      cleanup();
+      m_vuPhysicalDevice    = std::move(other.m_vuPhysicalDevice);
+      m_device              = other.m_device;
+      m_graphicsQueue       = other.m_graphicsQueue;
+      m_presentQueue        = other.m_presentQueue;
+      other.m_device        = VK_NULL_HANDLE;
+      other.m_graphicsQueue = VK_NULL_HANDLE;
+      other.m_presentQueue  = VK_NULL_HANDLE;
+    }
+    return *this;
+  }
+
+  ~VuDevice() { cleanup(); }
 
 private:
+  void
+  cleanup() {
+    if (m_device != VK_NULL_HANDLE) {
+      vkDestroyDevice(m_device, nullptr);
+      m_device = VK_NULL_HANDLE;
+      m_graphicsQueue = VK_NULL_HANDLE;
+      m_presentQueue  = VK_NULL_HANDLE;
+      m_vuPhysicalDevice.reset();
+    }
+  }
+
   VuDevice(const std::shared_ptr<VuPhysicalDevice>& vuPhyDevice,
-           const vk::PhysicalDeviceFeatures2&       featuresChain,
+           const VkPhysicalDeviceFeatures2&         featuresChain,
            std::span<const char*>                   enabledExtensions);
 
-  static std::expected<uint32_t, vk::Result>
-  findMemoryTypeIndex(const vk::PhysicalDeviceMemoryProperties& memoryProperties,
-                      uint32_t                                  typeFilter,
-                      vk::MemoryPropertyFlags                   requiredProperties);
+  static std::expected<uint32_t, VkResult>
+  findMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memoryProperties,
+                      uint32_t                                typeFilter,
+                      VkMemoryPropertyFlags                   requiredProperties);
 };
 
 } // namespace Vu

@@ -1,46 +1,46 @@
 #include "IndexAllocator.h"
 
 IndexAllocator::IndexAllocator(const uint32_t cap, std::pmr::memory_resource* memoryResource) :
-    freeIndices {memoryResource},
-    capacity {cap},
-    nextIndex {0} {
-  freeIndices.reserve(capacity);
+    m_freeIndices {memoryResource},
+    m_capacity {cap},
+    m_nextIndex {0} {
+  m_freeIndices.reserve(m_capacity);
 }
 
 IndexAllocator::IndexAllocator(IndexAllocator&& other) noexcept :
-    freeIndices {std::move(other.freeIndices)},
-    capacity {other.capacity},
-    nextIndex {other.nextIndex} {}
+    m_freeIndices {std::move(other.m_freeIndices)},
+    m_capacity {other.m_capacity},
+    m_nextIndex {other.m_nextIndex} {}
 
 IndexAllocator&
 IndexAllocator::operator=(IndexAllocator&& other) noexcept {
   if (this == &other) return *this;
-  freeIndices = std::move(other.freeIndices);
-  capacity    = other.capacity;
-  nextIndex   = other.nextIndex;
+  m_freeIndices = std::move(other.m_freeIndices);
+  m_capacity    = other.m_capacity;
+  m_nextIndex   = other.m_nextIndex;
   return *this;
 }
 
 uint32_t
 IndexAllocator::allocate() {
-  std::lock_guard<std::mutex> lock(mtx);
-  if (!freeIndices.empty()) {
-    uint32_t idx = freeIndices.back();
-    freeIndices.pop_back();
+  std::lock_guard<std::mutex> lock(m_mtx);
+  if (!m_freeIndices.empty()) {
+    uint32_t idx = m_freeIndices.back();
+    m_freeIndices.pop_back();
     return idx;
   }
-  if (nextIndex < capacity) { return nextIndex++; }
+  if (m_nextIndex < m_capacity) { return m_nextIndex++; }
   throw std::runtime_error("IndexAllocator: capacity exhausted");
 }
 
 void
 IndexAllocator::deallocate(uint32_t idx) {
-  std::lock_guard<std::mutex> lock(mtx);
+  std::lock_guard<std::mutex> lock(m_mtx);
 
-  if (idx >= capacity) { throw std::runtime_error("IndexAllocator: Trying to free a index out of range!"); }
-  if (idx + 1 == nextIndex) {
-    --nextIndex;
+  if (idx >= m_capacity) { throw std::runtime_error("IndexAllocator: Trying to free a index out of range!"); }
+  if (idx + 1 == m_nextIndex) {
+    --m_nextIndex;
   } else {
-    freeIndices.push_back(idx);
+    m_freeIndices.push_back(idx);
   }
 }

@@ -9,86 +9,71 @@
 #include "03_Mantle/VuDevice.h"
 
 namespace Vu {
-std::expected<Vu::VuBuffer, vk::Result>
-VuBuffer::make(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo) {
-  try {
-    VuBuffer outBuffer {vuDevice, createInfo};
-    return std::move(outBuffer);
 
-  } catch (vk::Result res) { return std::unexpected {res}; } catch (...) {
-    return std::unexpected {vk::Result::eErrorUnknown};
-  }
-}
-
-void
+VkResult
 VuBuffer::map() {
-  // todo
-  auto res = buffer.getDevice().mapMemory(deviceMemory, 0ull, vk::WholeSize, {}, &mapPtr);
-  if (res != vk::Result::eSuccess) { throw std::bad_exception(); }
+  return vkMapMemory(m_vuDevice->m_device, m_deviceMemory, MakeVkOffset(0), VK_WHOLE_SIZE, ZERO_FLAG, &m_mapPtr);
 }
 
 void
 VuBuffer::unmap() {
-  buffer.getDevice().unmapMemory(deviceMemory);
-  mapPtr = nullptr;
+  vkUnmapMemory(m_vuDevice->m_device, m_deviceMemory);
+  m_mapPtr = nullptr;
 }
 
-vk::DeviceAddress
+VkDeviceAddress
 VuBuffer::getDeviceAddress() const {
-  vk::BufferDeviceAddressInfo deviceAddressInfo {};
-  deviceAddressInfo.buffer = buffer;
-
-  vk::DeviceAddress address = buffer.getDevice().getBufferAddress(deviceAddressInfo);
-  return address;
+  VkBufferDeviceAddressInfo deviceAddressInfo {.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO};
+  deviceAddressInfo.buffer = m_buffer;
+  return vkGetBufferDeviceAddress(m_vuDevice->m_device, &deviceAddressInfo);
 }
 
-vk::Result
-VuBuffer::setData(const void* data, vk::DeviceSize byteSize, vk::DeviceSize offsetInByte) const {
-  if (!mapPtr || !data || byteSize == 0) { return vk::Result::eErrorMemoryMapFailed; }
-  auto* dst = static_cast<std::byte*>(mapPtr) + offsetInByte;
+VkResult
+VuBuffer::setData(const void* data, VkDeviceSize byteSize, VkDeviceSize offsetInByte) const {
+  if (!m_mapPtr || !data || byteSize == 0) { return VK_ERROR_MEMORY_MAP_FAILED; }
+  auto* dst = static_cast<std::byte*>(m_mapPtr) + offsetInByte;
   std::memcpy(dst, data, static_cast<size_t>(byteSize));
 
-  return vk::Result::eSuccess;
+  return VK_SUCCESS;
 }
 
-vk::DeviceSize
+VkDeviceSize
 VuBuffer::getSizeInBytes() const {
-  return sizeInBytes;
+  return m_sizeInBytes;
 }
 
 std::span<byte>
 VuBuffer::getMappedSpan(VkDeviceSize start, VkDeviceSize sizeInBytes) const {
-  auto* base = static_cast<std::byte*>(mapPtr);
+  auto* base = static_cast<std::byte*>(m_mapPtr);
   return {base + start, sizeInBytes};
 }
 
-vk::DeviceSize
-VuBuffer::calculateAlignedSize(vk::DeviceSize sizeInBytes, vk::DeviceSize alignment) {
+VkDeviceSize
+VuBuffer::calculateAlignedSize(VkDeviceSize sizeInBytes, VkDeviceSize alignment) {
   return (sizeInBytes + alignment - 1) & ~(alignment - 1);
 }
-VuBuffer::VuBuffer(const VuDevice& vuDevice, const VuBufferCreateInfo& createInfo) {
+VuBuffer::VuBuffer(std::shared_ptr<VuDevice> vuDevice, const VuBufferCreateInfo& createInfo) {
 
-  this->sizeInBytes = createInfo.sizeInBytes;
-  this->name        = createInfo.name;
+  this->m_vuDevice    = vuDevice;
+  this->m_sizeInBytes = createInfo.sizeInBytes;
+  this->m_name        = createInfo.name;
 
-  vk::BufferCreateInfo bufferCreateInfo;
+  VkBufferCreateInfo bufferCreateInfo {.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
   bufferCreateInfo.size        = createInfo.sizeInBytes;
   bufferCreateInfo.usage       = createInfo.vkUsageFlags;
-  bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
+  bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-  auto bufferOrErr = vuDevice.device.createBuffer(bufferCreateInfo);
-  throw_if_unexpected(bufferOrErr);
-  this->buffer = std::move(bufferOrErr.value());
+  VkResult bufferRes = vkCreateBuffer(vuDevice->m_device, &bufferCreateInfo, NO_ALLOC_CALLBACK, &m_buffer);
+  THROW_if_fail(bufferRes);
 
-  auto memOrNull = vuDevice.allocateMemory(createInfo.vkMemoryPropertyFlags, buffer.getMemoryRequirements());
-  throw_if_unexpected(memOrNull);
-  this->deviceMemory = std::move(memOrNull.value());
+  VkMemoryRequirements memoryRequirements {};
+  vkGetBufferMemoryRequirements(vuDevice->m_device, m_buffer, &memoryRequirements);
 
-  vk::BindBufferMemoryInfo bindInfo {};
-  bindInfo.buffer       = buffer;
-  bindInfo.memory       = deviceMemory;
-  bindInfo.memoryOffset = 0ull;
+  auto memoryOrErr = vuDevice->allocateMemory(createInfo.vkMemoryPropertyFlags, memoryRequirements);
+  THROW_if_unexpected(memoryOrErr);
+  this->m_deviceMemory = std::move(memoryOrErr.value());
 
-  vuDevice.device.bindBufferMemory2(bindInfo);
+  VkResult bindRes = vkBindBufferMemory(vuDevice->m_device, m_buffer, m_deviceMemory, MakeVkOffset(0));
+  THROW_if_fail(bindRes);
 }
 } // namespace Vu

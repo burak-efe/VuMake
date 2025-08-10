@@ -16,7 +16,7 @@ Vu::drawMesh(VuRenderer& vuRenderer, Transform& transform, const MeshRenderer& m
   std::shared_ptr<VuMaterial> materialHnd = meshRenderer.materialHnd;
 
   VuMaterial*          matPtr       = materialHnd.get();
-  VuMaterialDataHandle matDataIndex = *matPtr->materialDataHnd;
+  VuMaterialDataHandle matDataIndex = *matPtr->m_materialDataHnd;
 
   // bind pipeline
   vuRenderer.bindMaterial(materialHnd);
@@ -26,16 +26,16 @@ Vu::drawMesh(VuRenderer& vuRenderer, Transform& transform, const MeshRenderer& m
   PushConsts_RawData pc {
       trs,
       matDataIndex,
-      {meshRenderer.mesh->vertexBuffer->bindlessIndex.value_or_THROW(), meshRenderer.mesh->vertexCount, 0}};
+      {meshRenderer.mesh->m_vertexBuffer->m_bindlessIndex.value_or_THROW(), meshRenderer.mesh->m_vertexCount, 0}};
   vuRenderer.pushConstants(pc);
   vuRenderer.bindMesh(*meshRenderer.mesh);
-  uint32_t indexCount = meshRenderer.mesh->indexBuffer->sizeInBytes / 4;
+  uint32_t indexCount = meshRenderer.mesh->m_indexBuffer->m_sizeInBytes / 4;
   vuRenderer.drawIndexed(indexCount);
 }
 void
 Vu::spinn(const VuRenderer& vuRenderer, Transform& trs, const Spinn& spin) {
 
-  trs.Rotate(spin.axis, spin.angle * vuRenderer.deltaAsSecond);
+  trs.Rotate(spin.axis, spin.angle * vuRenderer.m_deltaAsSecond);
 }
 void
 Vu::drawSpinUI(uint32_t elemID, Spinn& spinn) {
@@ -62,7 +62,7 @@ Vu::cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
   if (state[SDL_SCANCODE_E]) { input.y += 1; }
   if (state[SDL_SCANCODE_Q]) { input.y -= 1; }
 
-  float3 movement = input * velocity * vuRenderer.deltaAsSecond;
+  float3 movement = input * velocity * vuRenderer.m_deltaAsSecond;
   // Mouse
   auto mouseState = SDL_GetMouseState(nullptr, nullptr);
 
@@ -83,8 +83,8 @@ Vu::cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
       return;
     }
 
-    float xOffset = vuRenderer.mouseDeltaX;
-    float yOffset = vuRenderer.mouseDeltaY;
+    float xOffset = vuRenderer.m_mouseDeltaX;
+    float yOffset = vuRenderer.m_mouseDeltaY;
 
     xOffset *= cam.sensitivity;
     yOffset *= cam.sensitivity;
@@ -113,25 +113,25 @@ Vu::cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
   quaternion asEuler            = fromEulerYXZ(float3(cam.yaw, cam.pitch, cam.roll));
   float3     rotatedTranslation = rotate(asEuler, movement);
 
-  trs.position.x += rotatedTranslation.x;
-  trs.position.y += rotatedTranslation.y;
-  trs.position.z += rotatedTranslation.z;
+  trs.m_position.x += rotatedTranslation.x;
+  trs.m_position.y += rotatedTranslation.y;
+  trs.m_position.z += rotatedTranslation.z;
 
-  vuRenderer.frameConst.view = inverse(trs.ToTRS());
+  vuRenderer.m_frameConst.view = inverse(trs.ToTRS());
 
-  vuRenderer.frameConst.proj =
+  vuRenderer.m_frameConst.proj =
       createPerspectiveProjectionMatrix(cam.fov,
-                                        static_cast<float>(vuRenderer.deferredRenderSpace.vuSwapChain.extend2D.width),
-                                        static_cast<float>(vuRenderer.deferredRenderSpace.vuSwapChain.extend2D.height),
+                                        static_cast<float>(vuRenderer.m_deferredRenderSpace.m_vuSwapChain.m_extend2D.width),
+                                        static_cast<float>(vuRenderer.m_deferredRenderSpace.m_vuSwapChain.m_extend2D.height),
                                         cam.near,
                                         cam.far);
 
-  vuRenderer.frameConst.inverseView = trs.ToTRS();
-  vuRenderer.frameConst.inverseProj = Math::inverse(vuRenderer.frameConst.proj);
+  vuRenderer.m_frameConst.inverseView = trs.ToTRS();
+  vuRenderer.m_frameConst.inverseProj = Math::inverse(vuRenderer.m_frameConst.proj);
 
-  vuRenderer.frameConst.cameraPos = float4(trs.position, 0);
-  vuRenderer.frameConst.cameraDir = float4(float3(cam.yaw, cam.pitch, cam.roll), 0);
-  vuRenderer.frameConst.time      = float4(vuRenderer.time(), 0, 0, 0).x;
+  vuRenderer.m_frameConst.cameraPos = float4(trs.m_position, 0);
+  vuRenderer.m_frameConst.cameraDir = float4(float3(cam.yaw, cam.pitch, cam.roll), 0);
+  vuRenderer.m_frameConst.time      = float4(vuRenderer.time(), 0, 0, 0).x;
 
   // const auto* state = SDL_GetKeyboardState(nullptr);
 
@@ -158,5 +158,5 @@ Vu::cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
   //      ctx::frameConst.debugIndex = 7;
   //  }
 
-  vuRenderer.updateFrameConstantBuffer(vuRenderer.frameConst);
+  vuRenderer.updateFrameConstantBuffer(vuRenderer.m_frameConst);
 }

@@ -4,32 +4,26 @@
 #include "VuMaterial.h"
 
 namespace Vu {
-
 struct VuRenderer;
 struct VuRenderPass;
 struct VuDevice;
 
-struct VuGraphicsShaderCreateInfo {
-  path           vertexShaderPath;
-  path           fragmentShaderPath;
-  vk::RenderPass renderPass;
-};
-
 struct VuShader {
-  std::shared_ptr<VuRenderer>                              vuRenderer           = {};
-  std::shared_ptr<VuRenderPass>                            vuRenderPass         = {};
-  path                                                     vertexShaderPath     = {"error"};
-  path                                                     fragmentShaderPath   = {"error"};
-  vk::raii::ShaderModule                                   vertexShaderModule   = {nullptr};
-  vk::raii::ShaderModule                                   fragmentShaderModule = {nullptr};
-  time_t                                                   lastModifiedTime     = {0};
-  std::unordered_map<MaterialSettings, VuGraphicsPipeline> compiledPipelines    = {};
+  std::shared_ptr<VuRenderer>                              m_vuRenderer {};
+  std::shared_ptr<VuRenderPass>                            m_vuRenderPass {};
+  path                                                     m_vertexShaderPath {"error"};
+  path                                                     m_fragmentShaderPath {"error"};
+  VkShaderModule                                           m_vertexShaderModule {nullptr};   // owned
+  VkShaderModule                                           m_fragmentShaderModule {nullptr}; // owned
+  time_t                                                   m_lastModifiedTime {0};
+  std::unordered_map<MaterialSettings, VuGraphicsPipeline> m_compiledPipelines {};
 
-  static std::expected<VuShader, vk::Result>
-  make(const std::shared_ptr<VuRenderer>&   vuRenderer,
-       const std::shared_ptr<VuRenderPass>& vuRenderPass,
-       const path&                          vertexShaderPath,
-       const path&                          fragmentShaderPath);
+  SETUP_EXPECTED_WRAPPER(VuShader,
+                         (std::shared_ptr<VuRenderer>   vuRenderer,
+                          std::shared_ptr<VuRenderPass> vuRenderPass,
+                          path                          vertexShaderPath,
+                          path                          fragmentShaderPath),
+                         (vuRenderer, vuRenderPass, vertexShaderPath, fragmentShaderPath))
 
   void
   tryRecompile();
@@ -41,7 +35,7 @@ struct VuShader {
   static path
   compileToSpirv(const path& shaderCodePath);
 
-  static vk::raii::ShaderModule
+  static VkShaderModule
   createShaderModule(const VuDevice& vuDevice, const void* code, size_t size);
 
 private:

@@ -16,10 +16,13 @@ enum class LogLevel {
   None // No logs
 };
 
-class Logger {
+struct Logger {
+private:
+  inline static LogLevel   m_currentLevel;
+  inline static std::mutex m_mutex;
 public:
-  static void     SetLevel(LogLevel level) { currentLevel = level; }
-  static LogLevel GetLevel() { return currentLevel; }
+  static void     SetLevel(LogLevel level) { m_currentLevel = level; }
+  static LogLevel GetLevel() { return m_currentLevel; }
 
   template <typename... Args> static void Trace(std::format_string<Args...> fmt, Args &&...args) {
     Log(LogLevel::Trace, "TRACE", fmt, std::forward<Args>(args)...);
@@ -42,14 +45,12 @@ public:
   }
 
 private:
-  inline static LogLevel   currentLevel;
-  inline static std::mutex mutex;
 
   template <typename... Args>
   static void Log(LogLevel level, std::string_view levelStr, std::format_string<Args...> fmt, Args &&...args) {
-    std::lock_guard lock(mutex);
+    std::lock_guard lock(m_mutex);
 
-    if (level < currentLevel)
+    if (level < m_currentLevel)
       return;
 
     std::string   message = std::format(fmt, std::forward<Args>(args)...);

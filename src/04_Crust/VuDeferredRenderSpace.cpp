@@ -4,194 +4,190 @@
 #include <expected>
 #include <stdint.h>
 #include <utility>
-#include <vulkan/vulkan_enums.hpp>
-#include <vulkan/vulkan_structs.hpp>
 
-#include "../02_OuterCore/VuCommon.h"
+#include "02_OuterCore/VuCommon.h"
 #include "03_Mantle/VuDevice.h"
 #include "03_Mantle/VuImage.h"
 #include "03_Mantle/VuRenderPass.h"
 #include "VuRenderer.h"
 
 namespace Vu {
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-VuDeferredRenderSpace::VuDeferredRenderSpace(const std::shared_ptr<VuDevice>&             vuDevice,
-                                             const std::shared_ptr<vk::raii::SurfaceKHR>& surface) :
-    vuDevice {vuDevice},
-    vuSwapChain(vuDevice, surface) {
 
+VuDeferredRenderSpace::VuDeferredRenderSpace(std::shared_ptr<VuDevice>     vuDevice,
+                                             std::shared_ptr<VkSurfaceKHR> surface) :
+    m_vuDevice(vuDevice) {
+
+  auto swpChain       = VuSwapChain::make(vuDevice, surface);
+  this->m_vuSwapChain = move_or_THROW(swpChain);
   // Color image handle
-  auto colorImgOrrErr =
-      VuImage::make(vuDevice,
-                    VuImageCreateInfo {
-                        .width      = vuSwapChain.extend2D.width,
-                        .height     = vuSwapChain.extend2D.height,
-                        .format     = vk::Format::eR8G8B8A8Unorm,
-                        .usage      = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
-                        .aspectMask = vk::ImageAspectFlagBits::eColor,
-                    });
-  throw_if_unexpected(colorImgOrrErr);
-  colorImage = std::make_shared<VuImage>(std::move(colorImgOrrErr.value()));
+  auto colorImgOrrErr = VuImage::make(vuDevice,
+                                      VuImageCreateInfo {
+                                          .width  = m_vuSwapChain.m_extend2D.width,
+                                          .height = m_vuSwapChain.m_extend2D.height,
+                                          .format = VK_FORMAT_R8G8B8A8_UNORM,
+                                          .usage  = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                          .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                      });
+  THROW_if_unexpected(colorImgOrrErr);
+  m_colorImage = std::make_shared<VuImage>(std::move(colorImgOrrErr.value()));
 
   // Normal image handle
-  auto normalImgOrrErr =
-      VuImage::make(vuDevice,
-                    VuImageCreateInfo {
-                        .width      = vuSwapChain.extend2D.width,
-                        .height     = vuSwapChain.extend2D.height,
-                        .format     = vk::Format::eR32G32B32A32Sfloat,
-                        .usage      = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
-                        .aspectMask = vk::ImageAspectFlagBits::eColor,
-                    });
-  throw_if_unexpected(normalImgOrrErr);
-  normalImage = std::make_shared<VuImage>(std::move(normalImgOrrErr.value()));
+  auto normalImgOrrErr = VuImage::make(vuDevice,
+                                       VuImageCreateInfo {
+                                           .width  = m_vuSwapChain.m_extend2D.width,
+                                           .height = m_vuSwapChain.m_extend2D.height,
+                                           .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+                                           .usage  = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                           .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                       });
+  THROW_if_unexpected(normalImgOrrErr);
+  m_normalImage = std::make_shared<VuImage>(std::move(normalImgOrrErr.value()));
 
   // Arm image handle
-  auto armImgOrrErr =
-      VuImage::make(vuDevice,
-                    VuImageCreateInfo {
-                        .width      = vuSwapChain.extend2D.width,
-                        .height     = vuSwapChain.extend2D.height,
-                        .format     = vk::Format::eR32G32B32A32Sfloat,
-                        .usage      = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
-                        .aspectMask = vk::ImageAspectFlagBits::eColor,
-                    });
-  throw_if_unexpected(armImgOrrErr);
-  aoRoughMetalImage = std::make_shared<VuImage>(std::move(armImgOrrErr.value()));
+  auto armImgOrrErr = VuImage::make(vuDevice,
+                                    VuImageCreateInfo {
+                                        .width      = m_vuSwapChain.m_extend2D.width,
+                                        .height     = m_vuSwapChain.m_extend2D.height,
+                                        .format     = VK_FORMAT_R32G32B32A32_SFLOAT,
+                                        .usage      = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                    });
+  THROW_if_unexpected(armImgOrrErr);
+  m_aoRoughMetalImage = std::make_shared<VuImage>(std::move(armImgOrrErr.value()));
 
   // world space pos image handle
-  auto wsPosImageOrErr =
-      VuImage::make(vuDevice,
-                    VuImageCreateInfo {
-                        .width      = vuSwapChain.extend2D.width,
-                        .height     = vuSwapChain.extend2D.height,
-                        .format     = vk::Format::eR32G32B32A32Sfloat,
-                        .usage      = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment,
-                        .aspectMask = vk::ImageAspectFlagBits::eColor,
-                    });
-  throw_if_unexpected(wsPosImageOrErr);
-  worldSpacePosImage = std::make_shared<VuImage>(std::move(wsPosImageOrErr.value()));
+  auto wsPosImageOrErr = VuImage::make(vuDevice,
+                                       VuImageCreateInfo {
+                                           .width  = m_vuSwapChain.m_extend2D.width,
+                                           .height = m_vuSwapChain.m_extend2D.height,
+                                           .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+                                           .usage  = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                           .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                       });
+  THROW_if_unexpected(wsPosImageOrErr);
+  m_worldSpacePosImage = std::make_shared<VuImage>(std::move(wsPosImageOrErr.value()));
 
   // Depth-stencil image handle
   auto depthStencilImgOrrErr =
       VuImage::make(vuDevice,
                     VuImageCreateInfo {
-                        .width  = vuSwapChain.extend2D.width,
-                        .height = vuSwapChain.extend2D.height,
-                        .format = vk::Format::eD32Sfloat,
-                        .usage  = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eDepthStencilAttachment,
-                        .aspectMask = vk::ImageAspectFlagBits::eDepth,
+                        .width      = m_vuSwapChain.m_extend2D.width,
+                        .height     = m_vuSwapChain.m_extend2D.height,
+                        .format     = VK_FORMAT_D32_SFLOAT,
+                        .usage      = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                        .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
                     });
-  throw_if_unexpected(depthStencilImgOrrErr);
-  depthStencilImage = std::make_shared<VuImage>(std::move(depthStencilImgOrrErr.value()));
+  THROW_if_unexpected(depthStencilImgOrrErr);
+  m_depthStencilImage = std::make_shared<VuImage>(std::move(depthStencilImgOrrErr.value()));
 
-  gBufferPass   = std::make_shared<VuRenderPass>();
-  lightningPass = std::make_shared<VuRenderPass>();
+  m_gBufferPass   = std::make_shared<VuRenderPass>(nullptr);
+  m_lightningPass = std::make_shared<VuRenderPass>(nullptr);
 
-  gBufferPass->initAsGBufferPass(vuDevice->device,
-                                 colorImage->lastCreateInfo.format,
-                                 normalImage->lastCreateInfo.format,
-                                 aoRoughMetalImage->lastCreateInfo.format,
-                                 worldSpacePosImage->lastCreateInfo.format,
-                                 depthStencilImage->lastCreateInfo.format);
-  lightningPass->initAsLightningPass(vuDevice->device, vuSwapChain.imageFormat);
+  m_gBufferPass->initAsGBufferPass(vuDevice,
+                                   m_colorImage->m_lastCreateInfo.format,
+                                   m_normalImage->m_lastCreateInfo.format,
+                                   m_aoRoughMetalImage->m_lastCreateInfo.format,
+                                   m_worldSpacePosImage->m_lastCreateInfo.format,
+                                   m_depthStencilImage->m_lastCreateInfo.format);
+  m_lightningPass->initAsLightningPass(vuDevice, m_vuSwapChain.m_imageFormat);
 
   createFramebuffers(*vuDevice);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void
 VuDeferredRenderSpace::registerImagesToBindless(VuRenderer& vuRenderer) {
-  vuRenderer.registerToBindless(*colorImage);
-  vuRenderer.registerToBindless(*normalImage);
-  vuRenderer.registerToBindless(*aoRoughMetalImage);
-  vuRenderer.registerToBindless(*worldSpacePosImage);
-  vuRenderer.registerToBindless(*depthStencilImage);
-  lightningPassMaterialData.colorTexture         = colorImage->bindlessIndex.value_or_THROW();
-  lightningPassMaterialData.normalTexture        = normalImage->bindlessIndex.value_or_THROW();
-  lightningPassMaterialData.aoRoughMetalTexture  = aoRoughMetalImage->bindlessIndex.value_or_THROW();
-  lightningPassMaterialData.worldSpacePosTexture = worldSpacePosImage->bindlessIndex.value_or_THROW();
-  lightningPassMaterialData.depthTexture         = depthStencilImage->bindlessIndex.value_or_THROW();
+  vuRenderer.registerToBindless(*m_colorImage);
+  vuRenderer.registerToBindless(*m_normalImage);
+  vuRenderer.registerToBindless(*m_aoRoughMetalImage);
+  vuRenderer.registerToBindless(*m_worldSpacePosImage);
+  vuRenderer.registerToBindless(*m_depthStencilImage);
+  m_lightningPassMaterialData.colorTexture         = m_colorImage->m_bindlessIndex.value_or_THROW();
+  m_lightningPassMaterialData.normalTexture        = m_normalImage->m_bindlessIndex.value_or_THROW();
+  m_lightningPassMaterialData.aoRoughMetalTexture  = m_aoRoughMetalImage->m_bindlessIndex.value_or_THROW();
+  m_lightningPassMaterialData.worldSpacePosTexture = m_worldSpacePosImage->m_bindlessIndex.value_or_THROW();
+  m_lightningPassMaterialData.depthTexture         = m_depthStencilImage->m_bindlessIndex.value_or_THROW();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void
 VuDeferredRenderSpace::createFramebuffers(const VuDevice& vuDevice) {
-  gPassFrameBuffers.clear();
-  for (size_t i = 0; i < vuSwapChain.imageViews.size(); i++) {
-    std::array<vk::ImageView, 5> attachments = {
-        colorImage->imageView,
-        normalImage->imageView,
-        aoRoughMetalImage->imageView,
-        worldSpacePosImage->imageView,
-        depthStencilImage->imageView,
+  m_gPassFrameBuffers.clear();
+  m_gPassFrameBuffers.resize(m_vuSwapChain.m_imageViews.size());
+  for (size_t i = 0; i < m_vuSwapChain.m_imageViews.size(); i++) {
+    std::array<VkImageView, 5> attachments = {
+        m_colorImage->m_imageView,
+        m_normalImage->m_imageView,
+        m_aoRoughMetalImage->m_imageView,
+        m_worldSpacePosImage->m_imageView,
+        m_depthStencilImage->m_imageView,
     };
-    vk::FramebufferCreateInfo framebufferInfo {};
-    framebufferInfo.renderPass      = gBufferPass->renderPass;
+    VkFramebufferCreateInfo framebufferInfo {.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
+    framebufferInfo.renderPass      = m_gBufferPass->m_renderPass;
     framebufferInfo.attachmentCount = attachments.size();
     framebufferInfo.pAttachments    = attachments.data();
-    framebufferInfo.width           = vuSwapChain.extend2D.width;
-    framebufferInfo.height          = vuSwapChain.extend2D.height;
+    framebufferInfo.width           = m_vuSwapChain.m_extend2D.width;
+    framebufferInfo.height          = m_vuSwapChain.m_extend2D.height;
     framebufferInfo.layers          = 1;
 
-    auto frameBufferOrErr = vuDevice.device.createFramebuffer(framebufferInfo);
-    // todo
-    throw_if_unexpected(frameBufferOrErr);
-    gPassFrameBuffers.emplace_back(std::move(frameBufferOrErr.value()));
+    VkResult frameBufferRes =
+        vkCreateFramebuffer(vuDevice.m_device, &framebufferInfo, NO_ALLOC_CALLBACK, &m_gPassFrameBuffers[i]);
+    THROW_if_fail(frameBufferRes);
   }
 
-  lightningPassFrameBuffers.clear();
-  for (size_t i = 0; i < vuSwapChain.imageViews.size(); i++) {
-    std::array<vk::ImageView, 1> attachments = {
-        vuSwapChain.imageViews[i],
+  m_lightningPassFrameBuffers.clear();
+  m_lightningPassFrameBuffers.resize(m_vuSwapChain.m_imageViews.size());
+  for (size_t i = 0; i < m_vuSwapChain.m_imageViews.size(); i++) {
+    std::array<VkImageView, 1> attachments = {
+        m_vuSwapChain.m_imageViews[i],
     };
-    vk::FramebufferCreateInfo framebufferInfo {};
-    framebufferInfo.renderPass      = lightningPass->renderPass;
+    VkFramebufferCreateInfo framebufferInfo {.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
+    framebufferInfo.renderPass      = m_lightningPass->m_renderPass;
     framebufferInfo.attachmentCount = attachments.size();
     framebufferInfo.pAttachments    = attachments.data();
-    framebufferInfo.width           = vuSwapChain.extend2D.width;
-    framebufferInfo.height          = vuSwapChain.extend2D.height;
+    framebufferInfo.width           = m_vuSwapChain.m_extend2D.width;
+    framebufferInfo.height          = m_vuSwapChain.m_extend2D.height;
     framebufferInfo.layers          = 1;
 
-    auto frameBufferOrErr = vuDevice.device.createFramebuffer(framebufferInfo);
-    // todo
-    throw_if_unexpected(frameBufferOrErr);
-    lightningPassFrameBuffers.emplace_back(std::move(frameBufferOrErr.value()));
+    VkResult frameBufferRes =
+        vkCreateFramebuffer(vuDevice.m_device, &framebufferInfo, NO_ALLOC_CALLBACK, &m_lightningPassFrameBuffers[i]);
+    THROW_if_fail(frameBufferRes);
   }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void
-VuDeferredRenderSpace::beginLightningPass(const vk::CommandBuffer& commandBuffer, const u32 frameIndex) const {
-  std::array<vk::ClearValue, 1> clearValues {};
-  clearValues[0].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
+VuDeferredRenderSpace::beginLightningPass(const VkCommandBuffer& commandBuffer, const u32 frameIndex) const {
+  std::array<VkClearValue, 1> clearValues {};
+  clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
 
-  vk::RenderPassBeginInfo renderPassInfo {};
-  renderPassInfo.renderPass        = lightningPass->renderPass;
-  renderPassInfo.framebuffer       = lightningPassFrameBuffers[frameIndex];
-  renderPassInfo.renderArea.offset = vk::Offset2D {0, 0};
-  renderPassInfo.renderArea.extent = vuSwapChain.extend2D;
+  VkRenderPassBeginInfo renderPassInfo {.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+  renderPassInfo.renderPass        = m_lightningPass->m_renderPass;
+  renderPassInfo.framebuffer       = m_lightningPassFrameBuffers[frameIndex];
+  renderPassInfo.renderArea.offset = VkOffset2D {0, 0};
+  renderPassInfo.renderArea.extent = m_vuSwapChain.m_extend2D;
   renderPassInfo.clearValueCount   = static_cast<uint32_t>(clearValues.size());
   renderPassInfo.pClearValues      = clearValues.data();
 
-  commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+  vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void
-VuDeferredRenderSpace::beginGBufferPass(const vk::CommandBuffer& commandBuffer, const u32 frameIndex) const {
-  std::array<vk::ClearValue, 5> clearValues {};
-  clearValues[0].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
-  clearValues[1].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
-  clearValues[2].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
-  clearValues[3].color.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
-  clearValues[4].depthStencil.setDepth(1.0f);
+VuDeferredRenderSpace::beginGBufferPass(const VkCommandBuffer& commandBuffer, const u32 frameIndex) const {
+  std::array<VkClearValue, 5> clearValues {
+      {{.color = {0, 0, 0, 1}},
+       {.color = {0, 0, 0, 1}},
+       {.color = {0, 0, 0, 1}},
+       {.color = {0, 0, 0, 1}},
+       {.depthStencil = {.depth = 1}}},
+  };
 
-  vk::RenderPassBeginInfo renderPassInfo {};
-  renderPassInfo.renderPass        = gBufferPass->renderPass;
-  renderPassInfo.framebuffer       = gPassFrameBuffers[frameIndex];
-  renderPassInfo.renderArea.offset = vk::Offset2D {0, 0};
-  renderPassInfo.renderArea.extent = vuSwapChain.extend2D;
+  VkRenderPassBeginInfo renderPassInfo {.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+  renderPassInfo.renderPass        = m_gBufferPass->m_renderPass;
+  renderPassInfo.framebuffer       = m_gPassFrameBuffers[frameIndex];
+  renderPassInfo.renderArea.offset = VkOffset2D {0, 0};
+  renderPassInfo.renderArea.extent = m_vuSwapChain.m_extend2D;
   renderPassInfo.clearValueCount   = static_cast<uint32_t>(clearValues.size());
   renderPassInfo.pClearValues      = clearValues.data();
 
-  commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+  vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace Vu

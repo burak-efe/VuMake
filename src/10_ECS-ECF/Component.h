@@ -9,8 +9,8 @@ namespace Vu {
 struct GameObject;
 
 struct Component {
-  GameObject* gameObject = nullptr;
-  bool        enabled    = true;
+  GameObject* m_gameObject = nullptr;
+  bool        m_enabled    = true;
 
   virtual ~Component() = default;
 
@@ -20,7 +20,7 @@ struct Component {
 };
 
 struct Transform : Component {
-  float3 position;
+  float3 m_position;
 
   void Start() override { std::cout << "Transform Start()\n"; }
 

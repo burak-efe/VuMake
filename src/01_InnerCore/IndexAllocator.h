@@ -2,15 +2,12 @@
 #include <memory_resource>
 #include <mutex>
 
-#include "TypeDefs.h"
-
 struct IndexAllocator {
-public:
 private:
-  std::pmr::vector<uint32_t> freeIndices = {};
-  uint32_t                   capacity    = {};
-  uint32_t                   nextIndex   = {};
-  std::mutex                 mtx         = {};
+  std::pmr::vector<uint32_t> m_freeIndices {};
+  uint32_t                   m_capacity {};
+  uint32_t                   m_nextIndex {};
+  std::mutex                 m_mtx {};
 
 public:
   IndexAllocator() = delete;

@@ -10,7 +10,6 @@
 #include <string>  // for basic_string, string
 #include <utility> // for pair
 #include <vector>  // for vector
-#include <vulkan/vulkan_structs.hpp>
 
 #include "../02_OuterCore/VuCommon.h"
 #include "01_InnerCore/TypeDefs.h" // for u32
@@ -22,30 +21,17 @@
 #include "04_Crust/VuMaterial.h"
 #include "VuRenderer.h"
 
-std::expected<Vu::VuShader, vk::Result> Vu::VuShader::make(const std::shared_ptr<VuRenderer>&   vuRenderer,
-                                                           const std::shared_ptr<VuRenderPass>& vuRenderPass,
-                                                           const path&                          vertexShaderPath,
-                                                           const path&                          fragmentShaderPath) {
-
-  try {
-    VuShader vuShader {vuRenderer, vuRenderPass, vertexShaderPath, fragmentShaderPath};
-    return vuShader;
-  } catch (vk::Result result) {
-    return std::unexpected {result}; //
-  } catch (...) {
-    return std::unexpected {vk::Result::eErrorUnknown}; //
-  }
-}
 
 Vu::VuShader::VuShader(std::shared_ptr<VuRenderer>   vuRenderer,
                        std::shared_ptr<VuRenderPass> vuRenderPass,
                        path                          vertexShaderPath,
-                       path                          fragmentShaderPath)
-    : vuRenderer {vuRenderer}, vuRenderPass {vuRenderPass} {
-  this->vertexShaderPath   = vertexShaderPath;
-  this->fragmentShaderPath = fragmentShaderPath;
+                       path                          fragmentShaderPath) :
+    m_vuRenderer {vuRenderer},
+    m_vuRenderPass {vuRenderPass} {
+  this->m_vertexShaderPath   = vertexShaderPath;
+  this->m_fragmentShaderPath = fragmentShaderPath;
 
-  lastModifiedTime = std::max(getlastModifiedTime(vertexShaderPath), getlastModifiedTime(fragmentShaderPath));
+  m_lastModifiedTime = std::max(getlastModifiedTime(vertexShaderPath), getlastModifiedTime(fragmentShaderPath));
 
   auto vertOutPath = compileToSpirv(vertexShaderPath);
   auto fragOutPath = compileToSpirv(fragmentShaderPath);
@@ -54,70 +40,83 @@ Vu::VuShader::VuShader(std::shared_ptr<VuRenderer>   vuRenderer,
   const auto fragSpv = Vu::readFile(fragOutPath);
 
   if (vertSpv.has_value()) {
-    vertexShaderModule = createShaderModule(*vuRenderer->vuDevice, vertSpv.value().data(), vertSpv.value().size());
+    m_vertexShaderModule = createShaderModule(*vuRenderer->m_vuDevice, vertSpv.value().data(), vertSpv.value().size());
   } else {
     Logger::Error("vertex spv file cannot be read!");
   }
 
   if (fragSpv.has_value()) {
-    fragmentShaderModule = createShaderModule(*vuRenderer->vuDevice, fragSpv.value().data(), fragSpv.value().size());
+    m_fragmentShaderModule = createShaderModule(*vuRenderer->m_vuDevice, fragSpv.value().data(), fragSpv.value().size());
   } else {
     Logger::Error("frag spv file cannot be read!");
   }
 }
 
-void Vu::VuShader::tryRecompile() {
-  auto maxTime = std::max(getlastModifiedTime(vertexShaderPath), getlastModifiedTime(fragmentShaderPath));
-  if (maxTime <= lastModifiedTime) { return; }
+void
+Vu::VuShader::tryRecompile() {
+  auto maxTime = std::max(getlastModifiedTime(m_vertexShaderPath), getlastModifiedTime(m_fragmentShaderPath));
+  if (maxTime <= m_lastModifiedTime) { return; }
 
   // store material settings to recreate them later
   std::vector<MaterialSettings> currentlyAvailableMatSettings;
   std::vector<std::string>      keys;
-  keys.reserve(compiledPipelines.size());
-  for (const auto& pair : compiledPipelines) {
+  keys.reserve(m_compiledPipelines.size());
+  for (const auto& pair : m_compiledPipelines) {
     currentlyAvailableMatSettings.push_back(pair.first);
   }
 
-  vuRenderer->vuDevice->device.waitIdle();
+  VkResult waitRes = vkDeviceWaitIdle(m_vuRenderer->m_vuDevice->m_device);
+  THROW_if_fail(waitRes);
 
-  auto newVuShaderOrErr = make(vuRenderer, vuRenderPass, vertexShaderPath, fragmentShaderPath);
-  throw_if_unexpected(newVuShaderOrErr);
+  auto newVuShaderOrErr = make(m_vuRenderer, m_vuRenderPass, m_vertexShaderPath, m_fragmentShaderPath);
+  THROW_if_unexpected(newVuShaderOrErr);
   *this = std::move(newVuShaderOrErr.value());
 
   for (auto& setting : currentlyAvailableMatSettings) {
 
-    VuGraphicsPipeline pipline {vuRenderer->vuDevice->device, vuRenderer->globalPipelineLayout,
-                                vertexShaderModule,           fragmentShaderModule,
-                                vuRenderPass->renderPass,     vuRenderPass->colorBlendAttachmentStates};
-    compiledPipelines.emplace(setting, std::move(pipline));
+    auto pipelineOrErr = VuGraphicsPipeline::make(m_vuRenderer->m_vuDevice,
+                                                  m_vuRenderer->m_globalPipelineLayout,
+                                                  m_vertexShaderModule,
+                                                  m_fragmentShaderModule,
+                                                  m_vuRenderPass->m_renderPass,
+                                                  m_vuRenderPass->m_colorBlendAttachmentStates);
+
+    m_compiledPipelines.emplace(setting, move_or_THROW(pipelineOrErr));
   }
 }
 
-Vu::VuGraphicsPipeline& Vu::VuShader::requestPipeline(MaterialSettings materialSettings) {
-  bool contains = compiledPipelines.contains(materialSettings);
+Vu::VuGraphicsPipeline&
+Vu::VuShader::requestPipeline(MaterialSettings materialSettings) {
+  bool contains = m_compiledPipelines.contains(materialSettings);
   if (!contains) {
-    VuGraphicsPipeline pipeline {vuRenderer->vuDevice->device, vuRenderer->globalPipelineLayout,
-                                 vertexShaderModule,           fragmentShaderModule,
-                                 vuRenderPass->renderPass,     vuRenderPass->colorBlendAttachmentStates};
+    auto pipelineOrErr = VuGraphicsPipeline::make(m_vuRenderer->m_vuDevice,
+                                                  m_vuRenderer->m_globalPipelineLayout,
+                                                  m_vertexShaderModule,
+                                                  m_fragmentShaderModule,
+                                                  m_vuRenderPass->m_renderPass,
+                                                  m_vuRenderPass->m_colorBlendAttachmentStates);
 
-    compiledPipelines.emplace(materialSettings, std::move(pipeline));
+    m_compiledPipelines.emplace(materialSettings, move_or_THROW(pipelineOrErr));
   }
-  return compiledPipelines[materialSettings];
+  return m_compiledPipelines[materialSettings];
 }
 
-vk::raii::ShaderModule Vu::VuShader::createShaderModule(const VuDevice& vuDevice, const void* code, size_t size) {
-  vk::ShaderModuleCreateInfo createInfo {};
+VkShaderModule
+Vu::VuShader::createShaderModule(const VuDevice& vuDevice, const void* code, size_t size) {
+  VkShaderModuleCreateInfo createInfo {.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
   createInfo.codeSize = size;
   createInfo.pCode    = static_cast<const u32*>(code);
   createInfo.pNext    = nullptr;
 
-  auto shaderModuleOrErr = vuDevice.device.createShaderModule(createInfo);
-  throw_if_unexpected(shaderModuleOrErr);
+  VkShaderModule shaderModule    = VK_NULL_HANDLE;
+  VkResult       shaderModuleRes = vkCreateShaderModule(vuDevice.m_device, &createInfo, NO_ALLOC_CALLBACK, &shaderModule);
 
-  return std::move(shaderModuleOrErr.value());
+  THROW_if_fail(shaderModuleRes);
+  return shaderModule;
 }
 
-path Vu::VuShader::compileToSpirv(const path& shaderCodePath) {
+path
+Vu::VuShader::compileToSpirv(const path& shaderCodePath) {
   path shaderPath = shaderCodePath;
   shaderPath.make_preferred();
 
@@ -128,8 +127,10 @@ path Vu::VuShader::compileToSpirv(const path& shaderCodePath) {
   path compilerPath = config::getShaderCompilerPath();
   compilerPath.make_preferred();
 
-  std::string cmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout -o {2}", compilerPath.string(),
-                                shaderPath.string(), spirvFilePath.string());
+  std::string cmd = std::format("{0} {1} -target spirv -fvk-use-scalar-layout -o {2}",
+                                compilerPath.string(),
+                                shaderPath.string(),
+                                spirvFilePath.string());
 
   int compileResult = system(cmd.c_str());
   assert(compileResult == 0);

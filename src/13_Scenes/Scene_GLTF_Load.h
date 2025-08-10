@@ -43,12 +43,12 @@ public:
     VuAssetLoader::loadGLTF(*vuRenderer, gltfPath, mesh);
 
     // basic shader
-    std::shared_ptr<VuShader> basicShader = std::make_shared<VuShader>(
-        moveOrTHROW(VuShader::make(vuRenderer, vuRenderer->deferredRenderSpace.gBufferPass, pbrVertPath, pbrFragPath)));
+    std::shared_ptr<VuShader> basicShader = std::make_shared<VuShader>(move_or_THROW(
+        VuShader::make(vuRenderer, vuRenderer->m_deferredRenderSpace.m_gBufferPass, pbrVertPath, pbrFragPath)));
 
     // deffered lpas shder
-    std::shared_ptr<VuShader> lPassShader = std::make_shared<VuShader>(moveOrTHROW(
-        VuShader::make(vuRenderer, vuRenderer->deferredRenderSpace.lightningPass, defVertPath, defFragPath)));
+    std::shared_ptr<VuShader> lPassShader = std::make_shared<VuShader>(move_or_THROW(
+        VuShader::make(vuRenderer, vuRenderer->m_deferredRenderSpace.m_lightningPass, defVertPath, defFragPath)));
 
     MaterialSettings defaultMaterialSettings {};
 
@@ -59,17 +59,18 @@ public:
 
     // write material data
     auto*   basicMatData   = vuRenderer->getMaterialDataPointerAs<MatData_PbrDeferred>(*basicMatDataHnd);
-    VuImage colorMapOrErr  = moveOrTHROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::baseColor));
-    VuImage normalMapOrErr = moveOrTHROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::normal));
-    VuImage arm_MapOrErr = moveOrTHROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::ao_rough_metal));
+    VuImage colorMapOrErr  = move_or_THROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::baseColor));
+    VuImage normalMapOrErr = move_or_THROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::normal));
+    VuImage arm_MapOrErr =
+        move_or_THROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::ao_rough_metal));
 
     vuRenderer->registerToBindless(colorMapOrErr);
     vuRenderer->registerToBindless(normalMapOrErr);
     vuRenderer->registerToBindless(arm_MapOrErr);
 
-    basicMatData->colorTexture        = colorMapOrErr.bindlessIndex.value_or_THROW();
-    basicMatData->normalTexture       = normalMapOrErr.bindlessIndex.value_or_THROW();
-    basicMatData->aoRoughMetalTexture = arm_MapOrErr.bindlessIndex.value_or_THROW();
+    basicMatData->colorTexture        = colorMapOrErr.m_bindlessIndex.value_or_THROW();
+    basicMatData->normalTexture       = normalMapOrErr.m_bindlessIndex.value_or_THROW();
+    basicMatData->aoRoughMetalTexture = arm_MapOrErr.m_bindlessIndex.value_or_THROW();
 
     // lightning pass material
     std::shared_ptr<VuMaterialDataHandle> lPassMatDataHandle = vuRenderer->createMaterialDataIndex();
@@ -77,10 +78,10 @@ public:
         std::make_shared<VuMaterial>(defaultMaterialSettings, lPassShader, lPassMatDataHandle);
 
     auto* lPassMatData = vuRenderer->getMaterialDataPointerAs<MatData_PbrDeferred>(*lPassMatDataHandle);
-    *lPassMatData      = vuRenderer->deferredRenderSpace.lightningPassMaterialData;
+    *lPassMatData      = vuRenderer->m_deferredRenderSpace.m_lightningPassMaterialData;
 
     auto obj0Trs = Transform {
-        .position = float3(0.0f, 0.0f, 0.0f), .rotation = quaternion::identity(), .scale = float3(10.0F, 10.0F, 10.0F)};
+        .m_position = float3(0.0f, 0.0f, 0.0f), .rotation = quaternion::identity(), .scale = float3(10.0F, 10.0F, 10.0F)};
 
     auto obj1MeshRenderer = MeshRenderer {.mesh = &mesh, .materialHnd = basicMaterial};
     auto obj1Spinn        = Spinn {};
@@ -93,8 +94,8 @@ public:
       vuRenderer->preUpdate();
       vuRenderer->pollUserInput();
 
-      auto& pl0 = vuRenderer->frameConst.pointLights[0];
-      auto& pl1 = vuRenderer->frameConst.pointLights[1];
+      auto& pl0 = vuRenderer->m_frameConst.pointLights[0];
+      auto& pl1 = vuRenderer->m_frameConst.pointLights[1];
 
       pl0.range = 100;
       pl1.range = 100;
@@ -124,9 +125,9 @@ public:
 
         vuRenderer->beginLightningPass();
         vuRenderer->bindMaterial(lPassMaterial);
-        VuMaterialDataHandle dataIndex = *lPassMaterial->materialDataHnd;
+        VuMaterialDataHandle dataIndex = *lPassMaterial->m_materialDataHnd;
         vuRenderer->pushConstants({float4x4(), dataIndex});
-        vuRenderer->commandBuffers[vuRenderer->currentFrame].draw(3, 1, 0, 0);
+        vkCmdDraw(vuRenderer->m_commandBuffers[vuRenderer->m_currentFrame], 3, 1, 0, 0);
 
         // UI
         {
@@ -150,7 +151,7 @@ public:
 
             ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
             ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
-            auto extend = vuRenderer->deferredRenderSpace.vuSwapChain.extend2D;
+            auto extend = vuRenderer->m_deferredRenderSpace.m_vuSwapChain.m_extend2D;
             ImGui::DockBuilderSetNodeSize(dockspace_id,
                                           {static_cast<float>(extend.width), static_cast<float>(extend.height)});
 
@@ -167,7 +168,9 @@ public:
         vuRenderer->endFrame();
       }
     }
-    vuRenderer->vuDevice->device.waitIdle();
+    VkResult waitRes = vkDeviceWaitIdle(vuRenderer->m_vuDevice->m_device);
+
+    THROW_if_fail(waitRes);
   }
 };
 } // namespace Vu
