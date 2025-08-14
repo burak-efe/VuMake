@@ -1,15 +1,8 @@
-# VuMake: A Terrible Vulkan Renderer
+# VuMake: Not so bad Vulkan Renderer
 ![2025-03-22 08_40_35-Window](https://github.com/user-attachments/assets/afd97f4a-7664-454d-a0c2-002d9e2f95af)
 
-This is a terrible vulkan renderer, barely functioning.
-This renderer is meant to be prototyping space for my purposes and I would not recommend to use on any project.
+This renderer is meant to be a prototyping space for my purposes and I would not recommend to use on any project.
 
-Some non-optimal things in this project, that should be avioded in normal circumstances:
-- Only header files: to faster prorotyping
-- A lot of third party library usage: Im just experimenting with them
-- Excessive file count: because I like it
-- Global, static variables global context: to make prototyping faster
-- Unnecesary ECS: im just experimenting
 
 ### Capabilites
 - ✅ Bindless Resources (via Descriptor indexing)
@@ -21,13 +14,16 @@ Some non-optimal things in this project, that should be avioded in normal circum
 - ✅ Normals / Tangents
 - ✅ Normal - Bump Mappping
 - ✅ Frame Profiling (via Tracy)
+- ✅ Deffered Rendering
+- ✅ Directional Ligths
+- ✅ Point Ligths
 
 <details> 
   <summary>
   Incapabilities (there is only few)
   </summary>
   
-- ❌ Deffered Rendering
+
 - ❌ Vulkan Sync Abstraction
 - ❌ Directional Ligths
 - ❌ Point Ligths
@@ -100,17 +96,12 @@ Some non-optimal things in this project, that should be avioded in normal circum
 </details>
 
 ### It Uses:
-- Vulkan Memory Allocator
 - IMGUI
 - FastGLTF
 - SDL3
-- flecs
 - SLang
 - Tracy
-- Volk
 
-### Vulkan Notes
-- TODO
 
 ### How to build and run
 - have vulkan sdk
