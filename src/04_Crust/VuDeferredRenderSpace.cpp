@@ -14,7 +14,7 @@
 namespace Vu {
 
 VuDeferredRenderSpace::VuDeferredRenderSpace(std::shared_ptr<VuDevice>     vuDevice,
-                                             std::shared_ptr<VkSurfaceKHR> surface) :
+                                             std::shared_ptr<VuSurface> surface) :
     m_vuDevice(vuDevice) {
 
   auto swpChain       = VuSwapChain::make(vuDevice, surface);

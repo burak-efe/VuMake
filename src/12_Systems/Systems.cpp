@@ -16,17 +16,18 @@ Vu::drawMesh(VuRenderer& vuRenderer, Transform& transform, const MeshRenderer& m
   std::shared_ptr<VuMaterial> materialHnd = meshRenderer.materialHnd;
 
   VuMaterial*          matPtr       = materialHnd.get();
-  VuMaterialDataHandle matDataIndex = *matPtr->m_materialDataHnd;
+  GPU::VuMaterialDataHandle matDataIndex = *matPtr->m_materialDataHnd;
 
   // bind pipeline
   vuRenderer.bindMaterial(materialHnd);
 
   // push constant
-  float4x4           trs = transform.ToTRS();
-  PushConsts_RawData pc {
-      trs,
-      matDataIndex,
-      {meshRenderer.mesh->m_vertexBuffer->m_bindlessIndex.value_or_THROW(), meshRenderer.mesh->m_vertexCount, 0}};
+  float4x4     trs = transform.ToTRS();
+  GPU::PushConstant pc {.model              = trs,
+                   .materialDataHandle = matDataIndex,
+                   .mesh               = {meshRenderer.mesh->m_vertexBuffer->m_bindlessIndex.value_or_THROW(),
+                                          meshRenderer.mesh->m_vertexCount,
+                                          ZERO_FLAG}};
   vuRenderer.pushConstants(pc);
   vuRenderer.bindMesh(*meshRenderer.mesh);
   uint32_t indexCount = meshRenderer.mesh->m_indexBuffer->m_sizeInBytes / 4;
@@ -69,14 +70,8 @@ Vu::cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
   bool mouseRightClick = (mouseState & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) != 0;
 
   if (mouseRightClick) {
-    // if (!SDL_GetWindowRelativeMouseMode(ctx::sdlWindow)) {
-    //     std::cout << 1 << std::endl;
-    //     SDL_SetWindowRelativeMouseMode(ctx::sdlWindow, true);
-    // }
 
     SDL_HideCursor();
-    // SDL_SetWindowMouseGrab(ctx::sdlWindow, true);
-    // if (true) {
 
     if (cam.firstClick) {
       cam.firstClick = false;
@@ -102,9 +97,6 @@ Vu::cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
     cam.lastY = smoothedDeltaY;
   } else {
     SDL_ShowCursor();
-    // if (SDL_GetWindowRelativeMouseMode(ctx::sdlWindow)) {
-    //     SDL_SetWindowRelativeMouseMode(ctx::sdlWindow, false);
-    // }
     cam.firstClick = true;
   }
 
@@ -117,46 +109,20 @@ Vu::cameraFlySystem(VuRenderer& vuRenderer, Transform& trs, Camera& cam) {
   trs.m_position.y += rotatedTranslation.y;
   trs.m_position.z += rotatedTranslation.z;
 
-  vuRenderer.m_frameConst.view = inverse(trs.ToTRS());
+  vuRenderer.m_frameConstant.camera.view = inverse(trs.ToTRS());
 
-  vuRenderer.m_frameConst.proj =
-      createPerspectiveProjectionMatrix(cam.fov,
-                                        static_cast<float>(vuRenderer.m_deferredRenderSpace.m_vuSwapChain.m_extend2D.width),
-                                        static_cast<float>(vuRenderer.m_deferredRenderSpace.m_vuSwapChain.m_extend2D.height),
-                                        cam.near,
-                                        cam.far);
+  vuRenderer.m_frameConstant.camera.proj = createPerspectiveProjectionMatrix(
+      cam.fov,
+      static_cast<float>(vuRenderer.m_deferredRenderSpace.m_vuSwapChain.m_extend2D.width),
+      static_cast<float>(vuRenderer.m_deferredRenderSpace.m_vuSwapChain.m_extend2D.height),
+      cam.near,
+      cam.far);
 
-  vuRenderer.m_frameConst.inverseView = trs.ToTRS();
-  vuRenderer.m_frameConst.inverseProj = Math::inverse(vuRenderer.m_frameConst.proj);
+  vuRenderer.m_frameConstant.camera.inverseView = trs.ToTRS();
+  vuRenderer.m_frameConstant.camera.inverseProj = Math::inverse(vuRenderer.m_frameConstant.camera.proj);
 
-  vuRenderer.m_frameConst.cameraPos = float4(trs.m_position, 0);
-  vuRenderer.m_frameConst.cameraDir = float4(float3(cam.yaw, cam.pitch, cam.roll), 0);
-  vuRenderer.m_frameConst.time      = float4(vuRenderer.time(), 0, 0, 0).x;
-
-  // const auto* state = SDL_GetKeyboardState(nullptr);
-
-  // ubo.debugIndex = 0;
-  //  if (state[SDL_SCANCODE_F1]) {
-  //      ctx::frameConst.debugIndex = 1;
-  //  }
-  //  if (state[SDL_SCANCODE_F2]) {
-  //      ctx::frameConst.debugIndex = 2;
-  //  }
-  //  if (state[SDL_SCANCODE_F3]) {
-  //      ctx::frameConst.debugIndex = 3;
-  //  }
-  //  if (state[SDL_SCANCODE_F4]) {
-  //      ctx::frameConst.debugIndex = 4;
-  //  }
-  //  if (state[SDL_SCANCODE_F5]) {
-  //      ctx::frameConst.debugIndex = 5;
-  //  }
-  //  if (state[SDL_SCANCODE_F6]) {
-  //      ctx::frameConst.debugIndex = 6;
-  //  }
-  //  if (state[SDL_SCANCODE_F7]) {
-  //      ctx::frameConst.debugIndex = 7;
-  //  }
-
-  vuRenderer.updateFrameConstantBuffer(vuRenderer.m_frameConst);
+  vuRenderer.m_frameConstant.camera.position  = float4(trs.m_position, 0);
+  vuRenderer.m_frameConstant.camera.direction = float4(float3(cam.yaw, cam.pitch, cam.roll), 0);
+  vuRenderer.m_frameConstant.time             = float4(vuRenderer.time(), 0, 0, 0).x;
+  vuRenderer.updateFrameConstantBuffer(vuRenderer.m_frameConstant);
 }

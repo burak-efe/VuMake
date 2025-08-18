@@ -5,15 +5,16 @@
 
 namespace Vu {
 struct VuDevice;
+struct VuSurface;
 
 struct VuSwapChain {
-  std::shared_ptr<VuDevice>     m_vuDevice {nullptr};
-  std::shared_ptr<VkSurfaceKHR> m_surface {nullptr};
-  VkSwapchainKHR                m_swapchain {nullptr};
-  std::vector<VkImage>          m_images {};
-  std::vector<VkImageView>      m_imageViews {};
-  VkFormat                      m_imageFormat {};
-  VkExtent2D                    m_extend2D {};
+  std::shared_ptr<VuDevice>  m_vuDevice {nullptr};
+  std::shared_ptr<VuSurface> m_vuSurface {nullptr};
+  VkSwapchainKHR             m_swapchain {nullptr};
+  std::vector<VkImage>       m_images {};
+  std::vector<VkImageView>   m_imageViews {};
+  VkFormat                   m_imageFormat {};
+  VkExtent2D                 m_extend2D {};
 
   static VkSurfaceFormatKHR
   chooseSwapSurfaceFormat(std::span<const VkSurfaceFormatKHR> availableFormats);
@@ -32,7 +33,7 @@ struct VuSwapChain {
 
   VuSwapChain(VuSwapChain&& other) noexcept :
       m_vuDevice(std::move(other.m_vuDevice)),
-      m_surface(std::move(other.m_surface)),
+      m_vuSurface(std::move(other.m_vuSurface)),
       m_swapchain(other.m_swapchain),
       m_images(std::move(other.m_images)),
       m_imageViews(std::move(other.m_imageViews)),
@@ -46,7 +47,7 @@ struct VuSwapChain {
     if (this != &other) {
       cleanup();
       m_vuDevice    = std::move(other.m_vuDevice);
-      m_surface     = std::move(other.m_surface);
+      m_vuSurface     = std::move(other.m_vuSurface);
       m_swapchain   = other.m_swapchain;
       m_images      = std::move(other.m_images);
       m_imageViews  = std::move(other.m_imageViews);
@@ -61,7 +62,7 @@ struct VuSwapChain {
   ~VuSwapChain() { cleanup(); }
 
   SETUP_EXPECTED_WRAPPER(VuSwapChain,
-                         (std::shared_ptr<VuDevice> vuDevice, std::shared_ptr<VkSurfaceKHR> surface),
+                         (std::shared_ptr<VuDevice> vuDevice, std::shared_ptr<VuSurface> surface),
                          (vuDevice, surface))
 private:
   void
@@ -78,12 +79,12 @@ private:
     m_images.clear();
 
     m_vuDevice.reset();
-    m_surface.reset();
+    m_vuSurface.reset();
   }
   //--------------------------------------------------------------------------------------------------------------------
 
 private:
-  VuSwapChain(std::shared_ptr<VuDevice> vuDevice, std::shared_ptr<VkSurfaceKHR> surface);
+  VuSwapChain(std::shared_ptr<VuDevice> vuDevice, std::shared_ptr<VuSurface> surface);
 };
 
 } // namespace Vu

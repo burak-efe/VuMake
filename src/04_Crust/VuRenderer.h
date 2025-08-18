@@ -3,6 +3,7 @@
 #include "01_InnerCore/TypeDefs.h"
 #include "02_OuterCore/VuConfig.h"
 #include "03_Mantle/VuBuffer.h"
+#include "03_Mantle/VuSurface.h"
 #include "03_Mantle/VuTypes.h"
 #include "SDL3/SDL.h"
 #include "VuDeferredRenderSpace.h"
@@ -48,7 +49,7 @@ struct VuRenderer {
   std::shared_ptr<VuPhysicalDevice> m_vuPhysicalDevice {};
   SDL_Window*                       m_window {};
   SDL_Event                         m_sdlEvent {};
-  std::shared_ptr<VkSurfaceKHR>     m_surface {};
+  std::shared_ptr<VuSurface>        m_vuSurface {};
   std::shared_ptr<VuDevice>         m_vuDevice {};
   VuDeferredRenderSpace             m_deferredRenderSpace {};
   ImGui_ImplVulkanH_Window*         m_imguiMainWindowData {};
@@ -61,18 +62,20 @@ struct VuRenderer {
   //
   std::vector<VkDescriptorSet> m_globalDescriptorSets {};
   std::vector<VkCommandBuffer> m_commandBuffers {};
-  std::vector<VkSemaphore>     m_imageAvailableSemaphores {};
-  std::vector<VkSemaphore>     m_renderFinishedSemaphores {};
-  std::vector<VkFence>         m_inFlightFences {};
-  std::vector<VuBuffer>        m_uniformBuffers {};
-  u32                          m_currentFrame {};
-  u32                          m_currentFrameImageIndex {};
+  //
+  std::vector<VkSemaphore> m_imageAvailableSemaphores {};
+  std::vector<VkSemaphore> m_renderFinishedSemaphores {};
+  std::vector<VkFence>     m_inFlightFences {};
+  //
+  std::vector<VuBuffer> m_uniformBuffers {};
+  u32                   m_currentFrame {};
+  u32                   m_currentFrameImageIndex {};
   // VuDisposeStack               m_disposeStack {};
   IndexAllocator             m_imgBindlessIndexAllocator;
   IndexAllocator             m_samplerBindlessIndexAllocator;
   IndexAllocator             m_bufferBindlessIndexAllocator;
   IndexAllocator             m_materialDataBindlessIndexAllocator;
-  FrameConst_RawData         m_frameConst {};
+  GPU::FrameConstant              m_frameConstant {};
   float                      m_deltaAsSecond {};
   u64                        m_prevTimeAsNanoSecond {};
   float                      m_mouseX {};
@@ -102,16 +105,7 @@ public:
   VuRenderer&
   operator=(VuRenderer&& other) noexcept = default;
 
-  ~VuRenderer() {
-    ImGui_ImplVulkan_DestroyFontsTexture();
-    ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
-    ImGui::DestroyContext();
-    vkDestroyCommandPool(m_vuDevice->m_device, m_commandPool, NO_ALLOC_CALLBACK);
-    vkDestroyDescriptorPool(m_vuDevice->m_device, m_descriptorPool, NO_ALLOC_CALLBACK);
-    vkDestroyDescriptorPool(m_vuDevice->m_device, m_uiDescriptorPool, NO_ALLOC_CALLBACK);
-    SDL_DestroyWindow(this->m_window);
-  }
+  ~VuRenderer();
 
   [[nodiscard]] bool
   shouldWindowClose() const;
@@ -132,7 +126,7 @@ public:
   bindMaterial(std::shared_ptr<VuMaterial>& material);
 
   void
-  pushConstants(const PushConsts_RawData& pushConstant);
+  pushConstants(const GPU::PushConstant& pushConstant);
 
   void
   drawIndexed(u32 indexCount) const;
@@ -144,7 +138,7 @@ public:
   endImgui() const;
 
   void
-  updateFrameConstantBuffer(FrameConst_RawData ubo) const;
+  updateFrameConstantBuffer(GPU::FrameConstant ubo) const;
 
   void
   preUpdate();
@@ -219,7 +213,7 @@ public:
   VuImage
   createImageFromAsset(const path& path, VkFormat format);
 
-  std::shared_ptr<VuMaterialDataHandle>
+  std::shared_ptr<GPU::VuMaterialDataHandle>
   createMaterialDataIndex();
 
   static void
@@ -238,11 +232,11 @@ public:
   copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
   std::span<std::byte, Vu::config::MATERIAL_DATA_SIZE>
-  getMaterialDataSpan(const std::shared_ptr<VuMaterialDataHandle>& handle) const;
+  getMaterialDataSpan(const std::shared_ptr<GPU::VuMaterialDataHandle>& handle) const;
 
   template <typename T>
   T*
-  getMaterialDataPointerAs(const VuMaterialDataHandle handle) {
+  getMaterialDataPointerAs(const GPU::VuMaterialDataHandle handle) {
     static_assert(sizeof(T) == config::MATERIAL_DATA_SIZE, "Material data type mismatch");
     const size_t offset  = config::MATERIAL_DATA_SIZE * handle.index;
     byte*        dataPtr = static_cast<byte*>(m_materialDataBuffer->m_mapPtr);

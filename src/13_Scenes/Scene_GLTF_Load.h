@@ -53,12 +53,12 @@ public:
     MaterialSettings defaultMaterialSettings {};
 
     // creating basic material for object
-    std::shared_ptr<VuMaterialDataHandle> basicMatDataHnd = vuRenderer->createMaterialDataIndex();
-    std::shared_ptr<VuMaterial>           basicMaterial =
+    std::shared_ptr<GPU::VuMaterialDataHandle> basicMatDataHnd = vuRenderer->createMaterialDataIndex();
+    std::shared_ptr<VuMaterial>                basicMaterial =
         std::make_shared<VuMaterial>(defaultMaterialSettings, basicShader, basicMatDataHnd);
 
     // write material data
-    auto*   basicMatData   = vuRenderer->getMaterialDataPointerAs<MatData_PbrDeferred>(*basicMatDataHnd);
+    auto*   basicMatData   = vuRenderer->getMaterialDataPointerAs<GPU::MatData_PbrDeferred>(*basicMatDataHnd);
     VuImage colorMapOrErr  = move_or_THROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::baseColor));
     VuImage normalMapOrErr = move_or_THROW(VuAssetLoader::loadMapFromGLTF(*vuRenderer, gltfPath, MapType::normal));
     VuImage arm_MapOrErr =
@@ -73,15 +73,16 @@ public:
     basicMatData->aoRoughMetalTexture = arm_MapOrErr.m_bindlessIndex.value_or_THROW();
 
     // lightning pass material
-    std::shared_ptr<VuMaterialDataHandle> lPassMatDataHandle = vuRenderer->createMaterialDataIndex();
-    std::shared_ptr<VuMaterial>           lPassMaterial =
+    std::shared_ptr<GPU::VuMaterialDataHandle> lPassMatDataHandle = vuRenderer->createMaterialDataIndex();
+    std::shared_ptr<VuMaterial>                lPassMaterial =
         std::make_shared<VuMaterial>(defaultMaterialSettings, lPassShader, lPassMatDataHandle);
 
-    auto* lPassMatData = vuRenderer->getMaterialDataPointerAs<MatData_PbrDeferred>(*lPassMatDataHandle);
+    auto* lPassMatData = vuRenderer->getMaterialDataPointerAs<GPU::MatData_PbrDeferred>(*lPassMatDataHandle);
     *lPassMatData      = vuRenderer->m_deferredRenderSpace.m_lightningPassMaterialData;
 
-    auto obj0Trs = Transform {
-        .m_position = float3(0.0f, 0.0f, 0.0f), .rotation = quaternion::identity(), .scale = float3(10.0F, 10.0F, 10.0F)};
+    auto obj0Trs = Transform {.m_position = float3(0.0f, 0.0f, 0.0f),
+                              .rotation   = quaternion::identity(),
+                              .scale      = float3(10.0F, 10.0F, 10.0F)};
 
     auto obj1MeshRenderer = MeshRenderer {.mesh = &mesh, .materialHnd = basicMaterial};
     auto obj1Spinn        = Spinn {};
@@ -94,20 +95,20 @@ public:
       vuRenderer->preUpdate();
       vuRenderer->pollUserInput();
 
-      auto& pl0 = vuRenderer->m_frameConst.pointLights[0];
-      auto& pl1 = vuRenderer->m_frameConst.pointLights[1];
-
-      pl0.range = 100;
-      pl1.range = 100;
-
-      pl0.color = float3(1.0f, 0.0f, 0.0f);
-      pl1.color = float3(1.0f, 1.0f, 1.0f);
-
-      pl0.intensity = 1000.0f;
-      pl1.intensity = 1000.0f;
-
-      pl0.position = float3(5.0f, 10.0f, 0.0f);
-      pl1.position = float3(-5.0f, 10.0f, 0.0f);
+      // auto& pl0 = vuRenderer->m_frameConstant.pointLights[0];
+      // auto& pl1 = vuRenderer->m_frameConstant.pointLights[1];
+      //
+      // pl0.range = 100;
+      // pl1.range = 100;
+      //
+      // pl0.color = float3(1.0f, 0.0f, 0.0f);
+      // pl1.color = float3(1.0f, 1.0f, 1.0f);
+      //
+      // pl0.intensity = 1000.0f;
+      // pl1.intensity = 1000.0f;
+      //
+      // pl0.position = float3(5.0f, 10.0f, 0.0f);
+      // pl1.position = float3(-5.0f, 10.0f, 0.0f);
 
       // Pre-Render Begins
       cameraFlySystem(*vuRenderer, camTrs, cam);
@@ -125,7 +126,7 @@ public:
 
         vuRenderer->beginLightningPass();
         vuRenderer->bindMaterial(lPassMaterial);
-        VuMaterialDataHandle dataIndex = *lPassMaterial->m_materialDataHnd;
+        GPU::VuMaterialDataHandle dataIndex = *lPassMaterial->m_materialDataHnd;
         vuRenderer->pushConstants({float4x4(), dataIndex});
         vkCmdDraw(vuRenderer->m_commandBuffers[vuRenderer->m_currentFrame], 3, 1, 0, 0);
 
@@ -138,7 +139,14 @@ public:
               ImGui::DockSpaceOverViewport(dockspace_id, nullptr, ImGuiDockNodeFlags_PassthruCentralNode, nullptr);
 
           auto wRes = ImGui::Begin("Info");
-          // ImGui::Text("Image Count: %u", vuRenderer.vuDevice.imagePool.getUsedSlotCount());
+
+          drawCameraUI(vuRenderer->m_frameConstant.camera, camTrs);
+          uint32_t index = 0;
+          for (GPU::PointLight& pointLight : vuRenderer->m_frameConstant.pointLights) {
+           drawPointLightUi(pointLight, index);
+            index++;
+          }
+          // ImGui::Text("Image Count: %u", vuRenderer.imagePool.getUsedSlotCount());
           // ImGui::Text("Sampler Count: %u", vuRenderer.vuDevice.samplerPool.getUsedSlotCount());
           // ImGui::Text("Buffer Count: %u", vuRenderer.vuDevice.bufferPool.getUsedSlotCount());
           ImGui::End();

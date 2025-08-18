@@ -10,7 +10,6 @@ GBufferPassVSOutput vertexMain(uint32_t vertexIndex: SV_VertexID)
 {
     GBufferPassVSOutput output;
 
-
 /////      Top Right
 //           ▲
 //          /|

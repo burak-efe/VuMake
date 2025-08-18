@@ -1,53 +1,53 @@
 
 #include "InteroptStructs.h"
 
-struct Mesh {
-    Mesh_RawData raw_data;
+// struct Mesh {
+//     Mesh_RawData raw_data;
 
-    Ptr<float3> getPositionPtr()
-    {
-        return (Ptr<float3>)globalStorageBuffers[raw_data.vertex_buffer_handle];
-    }
+//     Ptr<float3> getPositionPtr()
+//     {
+//         return (Ptr<float3>)globalStorageBuffers[raw_data.vertex_buffer_handle];
+//     }
 
-    Ptr<float3> getNormalPtr()
-    {
-        uint64_t prev = (uint64_t)getPositionPtr();
-        uint64_t p = prev + sizeof(float3) * raw_data.vertex_count;
-        return (Ptr<float3>)p;
-    }
+//     Ptr<float3> getNormalPtr()
+//     {
+//         uint64_t prev = (uint64_t)getPositionPtr();
+//         uint64_t p = prev + sizeof(float3) * raw_data.vertex_count;
+//         return (Ptr<float3>)p;
+//     }
 
-    Ptr<float4> getTangentPtr()
-    {
-        uint64_t prev = (uint64_t)getNormalPtr();
-        uint64_t p = prev + sizeof(float3) * raw_data.vertex_count;
-        return (Ptr<float4>)p;
-    }
+//     Ptr<float4> getTangentPtr()
+//     {
+//         uint64_t prev = (uint64_t)getNormalPtr();
+//         uint64_t p = prev + sizeof(float3) * raw_data.vertex_count;
+//         return (Ptr<float4>)p;
+//     }
 
-    Ptr<float2> getUV_Ptr()
-    {
-        uint64_t prev = (uint64_t)getTangentPtr();
-        uint64_t p = prev + sizeof(float4) * raw_data.vertex_count;
-        return (Ptr<float2>)p;
-    }
+//     Ptr<float2> getUV_Ptr()
+//     {
+//         uint64_t prev = (uint64_t)getTangentPtr();
+//         uint64_t p = prev + sizeof(float4) * raw_data.vertex_count;
+//         return (Ptr<float2>)p;
+//     }
 
-}
+// }
 
-struct PushConsts {
-    PushConsts_RawData data;
-    //property Mesh mesh { get { return (Mesh)mesh_rd;}};
-}
+// struct PushConsts {
+//     PushConsts_RawData data;
+//     //property Mesh mesh { get { return (Mesh)mesh_rd;}};
+// }
 
-struct FrameConst
-{
-    FrameConst_RawData data;
-};
+// struct FrameConst
+// {
+//     FrameConst_RawData data;
+// };
 
 
 [[vk::push_constant]]
-PushConsts pushConstants;
+GPU::PushConstant pushConstant;
 
 [[vk::binding(0, 0)]]
-ConstantBuffer<FrameConst> frameConst;
+ConstantBuffer<GPU::FrameConstant> frameConstant;
 
 [[vk::binding(1, 0)]]
 SamplerState globalSamplers[];

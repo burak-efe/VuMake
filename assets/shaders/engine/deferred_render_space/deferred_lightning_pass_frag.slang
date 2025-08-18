@@ -6,14 +6,15 @@ struct GBufferPassVSOutput
     float2 UV : TEXCOORD;
 };
 
+
 [shader("fragment")]
 float4 fragmentMain(GBufferPassVSOutput i)
     : SV_Target
 {
-    var fc = frameConst.data;
-    var pc = pushConstants.data;
+    var fc = frameConstant;
+    var pc = pushConstant;
 
-    MatData_PbrDeferred *data = getMaterialDataAs<MatData_PbrDeferred>(pc.material_data_handle.index);
+    GPU::MatData_PbrDeferred *data = getMaterialDataAs<GPU::MatData_PbrDeferred>(pc.materialDataHandle.index);
 
     float2 uv = i.UV;
 
@@ -28,7 +29,7 @@ float4 fragmentMain(GBufferPassVSOutput i)
     float roughness = armSample.y;
     float metallic = armSample.z;
 
-    float3 viewDir = normalize(fc.cameraPos.xyz - posWS);
+    float3 viewDir = normalize(fc.camera.position.xyz - posWS);
     float shininess = pow(1.0 - roughness, 4.0) * 128.0;
 
     float3 totalDiffuse = 0;
@@ -77,5 +78,6 @@ float4 fragmentMain(GBufferPassVSOutput i)
 
     float3 ambient =  baseColor * ao;
     float3 finalColor = ambient + totalDiffuse + totalSpecular;
+    finalColor = finalColor * fc.camera.exposureScale;
     return float4(finalColor, 1.0);
 }

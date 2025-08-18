@@ -9,7 +9,6 @@
 #include "03_Mantle/VuTypes.h"
 #include "InteroptStructs.h"
 
-struct VuMaterialDataHandle;
 
 namespace Vu {
 struct VuShader;
@@ -42,12 +41,12 @@ struct MaterialSettings {
 struct VuMaterial {
   MaterialSettings                      m_materialSettings {};
   std::shared_ptr<VuShader>             m_shaderHnd {};
-  std::shared_ptr<VuMaterialDataHandle> m_materialDataHnd {};
+  std::shared_ptr<GPU::VuMaterialDataHandle> m_materialDataHnd {};
 
   VuMaterial();
   VuMaterial(MaterialSettings                             matSettings,
              const std::shared_ptr<VuShader>&             shaderHnd,
-             const std::shared_ptr<VuMaterialDataHandle>& materialDataHnd);
+             const std::shared_ptr<GPU::VuMaterialDataHandle>& materialDataHnd);
 };
 } // namespace Vu
 

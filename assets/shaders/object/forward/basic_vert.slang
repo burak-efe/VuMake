@@ -4,16 +4,15 @@
 VSOutput vertexMain(uint32_t id :SV_VertexID )
 {
     VSOutput o = {};
-        var pc = pushConstants.data;
-    var fc = frameConst.data;
-            var mesh = (Mesh)pc.mesh_rd;
+    var pc = pushConstant;
+    var fc = frameConstant;
 
-    float3 pos = mesh.getPositionPtr()[id];
-    float3 norm = mesh.getNormalPtr()[id];
-    float4 tan = mesh.getTangentPtr()[id];
-    float2 uv = mesh.getUV_Ptr()[id];
+    float3 pos = pc.mesh.getPositionPtr()[id];
+    float3 norm = pc.mesh.getNormalPtr()[id];
+    float4 tan = pc.mesh.getTangentPtr()[id];
+    float2 uv = pc.mesh.getUV_Ptr()[id];
 
-    o.Pos = mul(fc.proj, mul(fc.view, mul(pc.model, float4(pos, 1))));
+    o.Pos = mul(fc.camera.proj, mul(fc.camera.view, mul(pc.model, float4(pos, 1))));
     o.PosWS = mul( float4(pos, 1.0),pc.model ).xyz;
     o.Normal    =   normalize(mul((float3x3)pc.model, norm.xyz));
     o.Tangent   =   normalize(mul((float3x3)pc.model, tan.xyz));

@@ -2,11 +2,12 @@
 
 #include "VuDevice.h"
 #include "VuPhysicalDevice.h"
+#include "VuSurface.h"
 
 namespace Vu {
-VuSwapChain::VuSwapChain(std::shared_ptr<VuDevice> vuDevice, std::shared_ptr<VkSurfaceKHR> surface) :
+VuSwapChain::VuSwapChain(std::shared_ptr<VuDevice> vuDevice, std::shared_ptr<VuSurface> surface) :
     m_vuDevice {std::move(vuDevice)},
-    m_surface {std::move(surface)} {
+    m_vuSurface{std::move(surface)} {
 
   auto& physicalDevice = m_vuDevice->m_vuPhysicalDevice;
 
@@ -14,12 +15,12 @@ VuSwapChain::VuSwapChain(std::shared_ptr<VuDevice> vuDevice, std::shared_ptr<VkS
   VkExtent2D         extend                         = chooseSwapExtent(capabilities);
   VkSurfaceFormatKHR surfaceFormat                  = chooseSwapSurfaceFormat(formats);
   VkPresentModeKHR   presentMode                    = chooseSwapPresentMode(presentModes);
-  uint32_t           imageCount                     = capabilities.minImageCount;
+  uint32_t           minImageCount                     = capabilities.minImageCount;
 
   VkSwapchainCreateInfoKHR swapChainCreateInfo {};
   swapChainCreateInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-  swapChainCreateInfo.surface          = *this->m_surface;
-  swapChainCreateInfo.minImageCount    = imageCount;
+  swapChainCreateInfo.surface          = m_vuSurface->m_surface;
+  swapChainCreateInfo.minImageCount    = minImageCount;
   swapChainCreateInfo.imageFormat      = surfaceFormat.format;
   swapChainCreateInfo.imageColorSpace  = surfaceFormat.colorSpace;
   swapChainCreateInfo.imageExtent      = extend;

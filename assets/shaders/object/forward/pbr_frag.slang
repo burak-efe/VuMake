@@ -10,12 +10,12 @@ static const float specularIntensity = 0.5f;
 [shader("fragment")]
 float4 fragmentMain(VSOutput i) : SV_Target
 {
-        var pc = pushConstants.data;
-    var fc = frameConst.data;
+    var pc = pushConstant;
+    var fc = frameConstant;
 
-    float3 lightPos = fc.cameraPos.xyz;
+    float3 lightPos = fc.camera.position.xyz;
 
-    MatData_PbrDeferred* data = getMaterialDataAs<MatData_PbrDeferred>(pc.material_data_handle.index);
+    GPU::MatData_PbrDeferred* data = getMaterialDataAs<GPU::MatData_PbrDeferred>(pc.materialDataHandle.index);
 
     float2 uv = i.UV;
 
@@ -30,7 +30,7 @@ float4 fragmentMain(VSOutput i) : SV_Target
 
 
     // Calculate lighting
-    float3 viewDir = normalize(fc.cameraPos.xyz - i.PosWS);
+    float3 viewDir = normalize(fc.camera.position.xyz - i.PosWS);
 
     float3 lightDir = normalize(lightPos - i.PosWS);
 

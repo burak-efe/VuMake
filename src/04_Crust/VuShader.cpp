@@ -21,7 +21,7 @@
 #include "04_Crust/VuMaterial.h"
 #include "VuRenderer.h"
 
-
+//======================================================================================================================
 Vu::VuShader::VuShader(std::shared_ptr<VuRenderer>   vuRenderer,
                        std::shared_ptr<VuRenderPass> vuRenderPass,
                        path                          vertexShaderPath,
@@ -46,12 +46,70 @@ Vu::VuShader::VuShader(std::shared_ptr<VuRenderer>   vuRenderer,
   }
 
   if (fragSpv.has_value()) {
-    m_fragmentShaderModule = createShaderModule(*vuRenderer->m_vuDevice, fragSpv.value().data(), fragSpv.value().size());
+    m_fragmentShaderModule =
+        createShaderModule(*vuRenderer->m_vuDevice, fragSpv.value().data(), fragSpv.value().size());
   } else {
     Logger::Error("frag spv file cannot be read!");
   }
 }
+//======================================================================================================================
+Vu::VuShader::VuShader() = default;
+//======================================================================================================================
+Vu::VuShader::VuShader(VuShader&& other) noexcept :
+    m_vuRenderer(std::move(other.m_vuRenderer)),
+    m_vuRenderPass(std::move(other.m_vuRenderPass)),
+    m_vertexShaderPath(std::move(other.m_vertexShaderPath)),
+    m_fragmentShaderPath(std::move(other.m_fragmentShaderPath)),
+    m_vertexShaderModule(other.m_vertexShaderModule),
+    m_fragmentShaderModule(other.m_fragmentShaderModule),
+    m_lastModifiedTime(other.m_lastModifiedTime),
+    m_compiledPipelines(std::move(other.m_compiledPipelines)) {
+  other.m_vertexShaderModule   = VK_NULL_HANDLE;
+  other.m_fragmentShaderModule = VK_NULL_HANDLE;
+  other.m_lastModifiedTime     = 0;
+}
+//======================================================================================================================
+Vu::VuShader&
+Vu::VuShader::operator=(VuShader&& other) noexcept {
+  if (this != &other) {
+    cleanup();
+    m_vuRenderer           = std::move(other.m_vuRenderer);
+    m_vuRenderPass         = std::move(other.m_vuRenderPass);
+    m_vertexShaderPath     = std::move(other.m_vertexShaderPath);
+    m_fragmentShaderPath   = std::move(other.m_fragmentShaderPath);
+    m_vertexShaderModule   = other.m_vertexShaderModule;
+    m_fragmentShaderModule = other.m_fragmentShaderModule;
+    m_lastModifiedTime     = other.m_lastModifiedTime;
+    m_compiledPipelines    = std::move(other.m_compiledPipelines);
 
+    other.m_vertexShaderModule   = VK_NULL_HANDLE;
+    other.m_fragmentShaderModule = VK_NULL_HANDLE;
+    other.m_lastModifiedTime     = 0;
+  }
+  return *this;
+}
+//======================================================================================================================
+Vu::VuShader::~VuShader() { cleanup(); }
+//======================================================================================================================
+void
+Vu::VuShader::cleanup() {
+  if (m_vuRenderer) {
+
+    if (m_vertexShaderModule != VK_NULL_HANDLE) {
+      vkDestroyShaderModule(m_vuRenderer->m_vuDevice->m_device, m_vertexShaderModule, nullptr);
+      m_vertexShaderModule = VK_NULL_HANDLE;
+    }
+    if (m_fragmentShaderModule != VK_NULL_HANDLE) {
+      vkDestroyShaderModule(m_vuRenderer->m_vuDevice->m_device, m_fragmentShaderModule, nullptr);
+      m_fragmentShaderModule = VK_NULL_HANDLE;
+    }
+  }
+  m_compiledPipelines.clear();
+  m_lastModifiedTime = 0;
+  m_vuRenderer.reset();
+  m_vuRenderPass.reset();
+}
+//======================================================================================================================
 void
 Vu::VuShader::tryRecompile() {
   auto maxTime = std::max(getlastModifiedTime(m_vertexShaderPath), getlastModifiedTime(m_fragmentShaderPath));
@@ -84,7 +142,7 @@ Vu::VuShader::tryRecompile() {
     m_compiledPipelines.emplace(setting, move_or_THROW(pipelineOrErr));
   }
 }
-
+//======================================================================================================================
 Vu::VuGraphicsPipeline&
 Vu::VuShader::requestPipeline(MaterialSettings materialSettings) {
   bool contains = m_compiledPipelines.contains(materialSettings);
@@ -100,7 +158,7 @@ Vu::VuShader::requestPipeline(MaterialSettings materialSettings) {
   }
   return m_compiledPipelines[materialSettings];
 }
-
+//======================================================================================================================
 VkShaderModule
 Vu::VuShader::createShaderModule(const VuDevice& vuDevice, const void* code, size_t size) {
   VkShaderModuleCreateInfo createInfo {.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
@@ -108,13 +166,13 @@ Vu::VuShader::createShaderModule(const VuDevice& vuDevice, const void* code, siz
   createInfo.pCode    = static_cast<const u32*>(code);
   createInfo.pNext    = nullptr;
 
-  VkShaderModule shaderModule    = VK_NULL_HANDLE;
-  VkResult       shaderModuleRes = vkCreateShaderModule(vuDevice.m_device, &createInfo, NO_ALLOC_CALLBACK, &shaderModule);
+  VkShaderModule shaderModule = VK_NULL_HANDLE;
+  VkResult shaderModuleRes    = vkCreateShaderModule(vuDevice.m_device, &createInfo, NO_ALLOC_CALLBACK, &shaderModule);
 
   THROW_if_fail(shaderModuleRes);
   return shaderModule;
 }
-
+//======================================================================================================================
 path
 Vu::VuShader::compileToSpirv(const path& shaderCodePath) {
   path shaderPath = shaderCodePath;
@@ -136,3 +194,4 @@ Vu::VuShader::compileToSpirv(const path& shaderCodePath) {
   assert(compileResult == 0);
   return spirvFilePath;
 }
+//======================================================================================================================

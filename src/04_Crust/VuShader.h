@@ -37,8 +37,24 @@ struct VuShader {
 
   static VkShaderModule
   createShaderModule(const VuDevice& vuDevice, const void* code, size_t size);
+  //--------------------------------------------------------------------------------------------------------------------
+  VuShader();
+  VuShader(const VuShader&) = delete;
+  VuShader&
+  operator=(const VuShader&) = delete;
+
+  VuShader(VuShader&& other) noexcept;
+
+  VuShader&
+  operator=(VuShader&& other) noexcept;
+
+  ~VuShader();
 
 private:
+  void
+  cleanup();
+  //--------------------------------------------------------------------------------------------------------------------
+
   VuShader(std::shared_ptr<VuRenderer>   vuRenderer,
            std::shared_ptr<VuRenderPass> vuRenderPass,
            path                          vertexShaderPath,

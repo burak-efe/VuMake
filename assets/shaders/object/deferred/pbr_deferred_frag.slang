@@ -12,8 +12,8 @@ struct GPassFragOutput
 [shader("fragment")]
 GPassFragOutput fragmentMain(VSOutput input)
 {    
-    var pc = pushConstants.data;
-    MatData_PbrDeferred *matData = getMaterialDataAs<MatData_PbrDeferred>(pc.material_data_handle.index);
+    var pc = pushConstant;
+    GPU::MatData_PbrDeferred *matData = getMaterialDataAs<GPU::MatData_PbrDeferred>(pc.materialDataHandle.index);
     
     GPassFragOutput outData = {};
 

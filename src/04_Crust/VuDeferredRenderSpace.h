@@ -20,13 +20,29 @@ struct VuDeferredRenderSpace {
   std::vector<VkFramebuffer>    m_lightningPassFrameBuffers {};
   std::shared_ptr<VuRenderPass> m_gBufferPass {};
   std::shared_ptr<VuRenderPass> m_lightningPass {};
-  MatData_PbrDeferred           m_lightningPassMaterialData {};
+  GPU::MatData_PbrDeferred           m_lightningPassMaterialData {};
   VuSwapChain                   m_vuSwapChain {};
 
-  // TODO member funcs
-  VuDeferredRenderSpace() = default;
+  ~VuDeferredRenderSpace() {
+    for (auto frameBuffer : m_gPassFrameBuffers) {
 
-  VuDeferredRenderSpace(std::shared_ptr<VuDevice> vuDevice, std::shared_ptr<VkSurfaceKHR> surface);
+      vkDestroyFramebuffer(m_vuDevice->m_device, frameBuffer, NO_ALLOC_CALLBACK);
+    }
+    for (auto frameBuffer : m_lightningPassFrameBuffers) {
+
+      vkDestroyFramebuffer(m_vuDevice->m_device, frameBuffer, NO_ALLOC_CALLBACK);
+    }
+  }
+
+  VuDeferredRenderSpace()                             = default;
+  VuDeferredRenderSpace(const VuDeferredRenderSpace&) = delete;
+  VuDeferredRenderSpace&
+  operator=(const VuDeferredRenderSpace&)        = delete;
+  VuDeferredRenderSpace(VuDeferredRenderSpace&&) = default;
+  VuDeferredRenderSpace&
+  operator=(VuDeferredRenderSpace&&) = default;
+
+  VuDeferredRenderSpace(std::shared_ptr<VuDevice> vuDevice, std::shared_ptr<VuSurface> surface);
 
   void
   registerImagesToBindless(VuRenderer& vuInstance);

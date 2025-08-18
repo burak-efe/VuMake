@@ -8,6 +8,10 @@
 #include "13_Scenes/Scene_GLTF_Load.h"
 #include "GetTimeSinceProcessStart.h"
 
+#if defined(__linux__)
+#include <malloc.h>
+#endif
+
 int
 main(int argc, char* argv[]) {
 
@@ -18,5 +22,9 @@ main(int argc, char* argv[]) {
   try {
     scene0->run();
   } catch (const std::exception& e) { std::puts(e.what()); }
+
+#if defined(__linux__)
+  malloc_stats();
+#endif
   return EXIT_SUCCESS;
 }

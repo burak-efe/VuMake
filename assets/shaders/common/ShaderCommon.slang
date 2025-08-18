@@ -59,7 +59,7 @@ struct VSOutput
 const static float PI = 3.14159274;
 
 
-float3 calculatePointLight(PointLight light, float3 worldPos, float3 normal)
+float3 calculatePointLight(GPU::PointLight light, float3 worldPos, float3 normal)
 {
     float3 toLight = light.position - worldPos;
     float distance = length(toLight);
