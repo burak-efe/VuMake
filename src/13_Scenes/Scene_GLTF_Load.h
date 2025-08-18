@@ -90,25 +90,24 @@ public:
     auto camTrs = Transform(float3(0.0f, 0.0f, 3.5f), quaternion::identity(), float3(1, 1, 1));
     auto cam    = Camera {};
 
+    auto& pl0 = vuRenderer->m_frameConstant.pointLights[0];
+    auto& pl1 = vuRenderer->m_frameConstant.pointLights[1];
+
+    pl0.position = float3(5.0f, 10.0f, 0.0f);
+    pl1.position = float3(-5.0f, 10.0f, 0.0f);
+    pl0.range    = 100;
+    pl1.range    = 100;
+
+    pl0.color = float3(1.0f, 0.0f, 0.0f);
+    pl1.color = float3(1.0f, 1.0f, 1.0f);
+
+    pl0.intensity = 1000.0f;
+    pl1.intensity = 1000.0f;
+
     // Update Loop
     while (!vuRenderer->shouldWindowClose()) {
       vuRenderer->preUpdate();
       vuRenderer->pollUserInput();
-
-      // auto& pl0 = vuRenderer->m_frameConstant.pointLights[0];
-      // auto& pl1 = vuRenderer->m_frameConstant.pointLights[1];
-      //
-      // pl0.range = 100;
-      // pl1.range = 100;
-      //
-      // pl0.color = float3(1.0f, 0.0f, 0.0f);
-      // pl1.color = float3(1.0f, 1.0f, 1.0f);
-      //
-      // pl0.intensity = 1000.0f;
-      // pl1.intensity = 1000.0f;
-      //
-      // pl0.position = float3(5.0f, 10.0f, 0.0f);
-      // pl1.position = float3(-5.0f, 10.0f, 0.0f);
 
       // Pre-Render Begins
       cameraFlySystem(*vuRenderer, camTrs, cam);
@@ -143,7 +142,7 @@ public:
           drawCameraUI(vuRenderer->m_frameConstant.camera, camTrs);
           uint32_t index = 0;
           for (GPU::PointLight& pointLight : vuRenderer->m_frameConstant.pointLights) {
-           drawPointLightUi(pointLight, index);
+            drawPointLightUi(pointLight, index);
             index++;
           }
           // ImGui::Text("Image Count: %u", vuRenderer.imagePool.getUsedSlotCount());
