@@ -34,7 +34,7 @@ jobs:
     - name: Prepare Vulkan SDK
       uses: burak-efe/setup-vulkan-sdk@0.0.1
       with:
-       vulkan-query-version: 1.4.304.1
+       vulkan-query-version: 1.4.321.1
        vulkan-components: Vulkan-Headers, Vulkan-Loader, Vulkan-Utility-Libraries
        vulkan-use-cache: true
 
