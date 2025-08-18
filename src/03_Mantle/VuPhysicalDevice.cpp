@@ -1,6 +1,7 @@
 
 #include "VuPhysicalDevice.h"
 
+#include <iostream>
 #include <set>
 
 #include "../02_OuterCore/VuCommon.h"

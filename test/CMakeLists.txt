@@ -8,6 +8,7 @@ project(VuTest)
 add_executable(Google_Tests_run
         Test1.cpp
         VuListTest1.cpp)
+set_property(TARGET Google_Tests_run PROPERTY CXX_STANDARD 23)
 
 if(ENABLE_TESTING)
     enable_testing()

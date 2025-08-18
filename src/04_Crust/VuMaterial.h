@@ -6,9 +6,9 @@
 #include <string_view> // for hash
 #include <variant>
 
+#include "02_OuterCore/VuCommon.h"
 #include "03_Mantle/VuTypes.h"
 #include "InteroptStructs.h"
-
 
 namespace Vu {
 struct VuShader;
@@ -39,13 +39,13 @@ struct MaterialSettings {
 //  Material owns the pipeline, uses shared material data
 //  when parent shader recompiled, it should be recompiled too
 struct VuMaterial {
-  MaterialSettings                      m_materialSettings {};
-  std::shared_ptr<VuShader>             m_shaderHnd {};
+  MaterialSettings                           m_materialSettings {};
+  std::shared_ptr<VuShader>                  m_shaderHnd {};
   std::shared_ptr<GPU::VuMaterialDataHandle> m_materialDataHnd {};
 
   VuMaterial();
-  VuMaterial(MaterialSettings                             matSettings,
-             const std::shared_ptr<VuShader>&             shaderHnd,
+  VuMaterial(MaterialSettings                                  matSettings,
+             const std::shared_ptr<VuShader>&                  shaderHnd,
              const std::shared_ptr<GPU::VuMaterialDataHandle>& materialDataHnd);
 };
 } // namespace Vu

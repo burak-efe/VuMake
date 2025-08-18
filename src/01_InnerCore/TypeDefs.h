@@ -1,4 +1,7 @@
 #pragma once
+#include <cstdint>
+#include <climits>
+#include <stdexcept>
 
 using byte = std::byte;
 
@@ -22,22 +25,19 @@ using i64 = int64_t;
 // using i32orNull = int32_t;
 // using i64orNull = int64_t;
 
+template <typename T> using PtrOrNull = T*;
 
-template <typename T> using PtrOrNull = T *;
+// template <typename T> using vector = std::pmr::vector<T>;
+// using string = std::pmr::string;
 
-//template <typename T> using vector = std::pmr::vector<T>;
-//using string = std::pmr::string;
-
-consteval std::uint8_t operator""_u8(unsigned long long value) {
-  if (value > UCHAR_MAX) {
-    throw std::out_of_range("Value exceeds uint8_t range");
-  }
+consteval std::uint8_t
+operator""_u8(unsigned long long value) {
+  if (value > UCHAR_MAX) { throw std::out_of_range("Value exceeds uint8_t range"); }
   return static_cast<std::uint8_t>(value);
 }
 
-consteval std::uint16_t operator""_u16(unsigned long long value) {
-  if (value > UINT16_MAX) {
-    throw std::out_of_range("Value exceeds uint16_t range");
-  }
+consteval std::uint16_t
+operator""_u16(unsigned long long value) {
+  if (value > UINT16_MAX) { throw std::out_of_range("Value exceeds uint16_t range"); }
   return static_cast<std::uint16_t>(value);
 }

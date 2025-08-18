@@ -1,5 +1,7 @@
 #include "VuSurface.h"
 
+#include <cassert>
+
 #include "SDL3/SDL_vulkan.h"
 #include "VuInstance.h"
 

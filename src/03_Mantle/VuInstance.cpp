@@ -1,6 +1,8 @@
 #include "VuInstance.h"
 
+#include <cstring>
 #include <iostream>
+#include <vector>
 
 namespace Vu {
 

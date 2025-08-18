@@ -2,7 +2,6 @@
 
 #include "02_OuterCore/Color32.h"
 #include "02_OuterCore/Common.h"
-#include "02_OuterCore/collections/VuAllocator.h"
 
 // Clamp float to [0,1] while setting
 TEST(Color32Test, SaturateFloatSetter)
@@ -67,11 +66,3 @@ TEST(Color32Test, SetAndGetMethods)
     EXPECT_EQ(color.getB(), 70);
     EXPECT_EQ(color.getA(), 80);
 }
-
-// TEST(AllocatorTest, allocate)
-// {
-//     for (int i = 0; i < 255; ++i)
-//     {
-//         void* ptr = AllocatorManager::allocate(i, 1);
-//     }
-// }

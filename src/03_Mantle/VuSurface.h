@@ -3,6 +3,8 @@
 
 #include "02_OuterCore/VuCommon.h"
 
+struct SDL_Window;
+
 namespace Vu {
 struct VuInstance;
 

@@ -1,5 +1,7 @@
 #include "VuAssetLoader.h"
 
+#include <iostream>
+
 #include "02_OuterCore/CollectionUtils.h"
 #include "02_OuterCore/math/VuFloat2.h"
 #include "02_OuterCore/math/VuFloat3.h"

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "02_OuterCore/math/VuFloat.h"
+#include "imgui.h"
 #include "Transform.h"
 
 #define CONCAT(lhs, rhs)         lhs #rhs

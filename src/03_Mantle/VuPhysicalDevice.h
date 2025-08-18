@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 #include "02_OuterCore/VuCommon.h"
 

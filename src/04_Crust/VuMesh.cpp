@@ -1,28 +1,38 @@
 #include "VuMesh.h"
 
-#include "02_OuterCore/VuCommon.h"
+#include <vector>
 
 #include "01_InnerCore/TypeDefs.h"
 #include "02_OuterCore/math/VuFloat2.h"
 #include "02_OuterCore/math/VuFloat3.h"
 #include "02_OuterCore/math/VuFloat4.h"
+#include "02_OuterCore/VuCommon.h"
 
 namespace Vu {
 
-VkDeviceSize VuMesh::totalAttributesSizePerVertex() {
+VkDeviceSize
+VuMesh::totalAttributesSizePerVertex() {
   // pos, norm, tan , uv
   return sizeof(float3) + sizeof(float3) + sizeof(float4) + sizeof(float2);
 }
-VkDeviceSize VuMesh::getNormalOffsetAsByte() const { return sizeof(float3) * m_vertexCount; }
-VkDeviceSize VuMesh::getTangentOffsetAsByte() const { return (sizeof(float3) + sizeof(float3)) * m_vertexCount; }
-VkDeviceSize VuMesh::getUV_OffsetAsByte() const {
+VkDeviceSize
+VuMesh::getNormalOffsetAsByte() const {
+  return sizeof(float3) * m_vertexCount;
+}
+VkDeviceSize
+VuMesh::getTangentOffsetAsByte() const {
+  return (sizeof(float3) + sizeof(float3)) * m_vertexCount;
+}
+VkDeviceSize
+VuMesh::getUV_OffsetAsByte() const {
   return (sizeof(float3) + sizeof(float3) + sizeof(float4)) * m_vertexCount;
 }
-void VuMesh::calculateTangents(const std::span<u32>    indices,
-                               const std::span<float3> positions,
-                               const std::span<float3> normals,
-                               const std::span<float2> uvs,
-                               std::span<float4>       tangents) {
+void
+VuMesh::calculateTangents(const std::span<u32>    indices,
+                          const std::span<float3> positions,
+                          const std::span<float3> normals,
+                          const std::span<float2> uvs,
+                          std::span<float4>       tangents) {
 
   u32 vertexCount   = positions.size();
   u32 triangleCount = indices.size() / 3;

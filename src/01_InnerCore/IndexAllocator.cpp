@@ -1,5 +1,7 @@
 #include "IndexAllocator.h"
 
+#include <stdexcept>
+
 IndexAllocator::IndexAllocator(const uint32_t cap, std::pmr::memory_resource* memoryResource) :
     m_freeIndices {memoryResource},
     m_capacity {cap},

@@ -1,8 +1,9 @@
 #pragma once
 
+#include <vector>
+
 #include "02_OuterCore/VuCommon.h"
 #include "VuDevice.h"
-
 namespace Vu {
 struct VuDevice;
 struct VuRenderPass {

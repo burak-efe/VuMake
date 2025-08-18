@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 #include "02_OuterCore/VuCommon.h"
 #include "VuDevice.h"
@@ -47,7 +48,7 @@ struct VuSwapChain {
     if (this != &other) {
       cleanup();
       m_vuDevice    = std::move(other.m_vuDevice);
-      m_vuSurface     = std::move(other.m_vuSurface);
+      m_vuSurface   = std::move(other.m_vuSurface);
       m_swapchain   = other.m_swapchain;
       m_images      = std::move(other.m_images);
       m_imageViews  = std::move(other.m_imageViews);
