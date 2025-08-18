@@ -24,12 +24,16 @@
 // - Introduction, links and more at the top of imgui.cpp
 
 #pragma once
+#include <stddef.h>
+
 #include "imgui.h"      // IMGUI_IMPL_API
+#include "SDL3/SDL_events.h"
 #ifndef IMGUI_DISABLE
 
 struct SDL_Window;
 struct SDL_Renderer;
 struct SDL_Gamepad;
+
 typedef union SDL_Event SDL_Event;
 
 // Follow "Getting Started" link and check examples/ folder to learn about using backends!

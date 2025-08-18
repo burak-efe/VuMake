@@ -40,12 +40,19 @@ Index of this file:
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
 
+#include <float.h>
+#include <limits.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
-#include "imgui_internal.h"
-
 // System includes
 #include <stdint.h>     // intptr_t
+
+#include "imgui_internal.h"
 
 //-------------------------------------------------------------------------
 // Warnings
@@ -1118,28 +1125,6 @@ bool ImGui::ImageButton(const char* str_id, ImTextureID user_texture_id, const I
 
     return ImageButtonEx(window->GetID(str_id), user_texture_id, image_size, uv0, uv1, bg_col, tint_col);
 }
-
-#ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS
-// Legacy API obsoleted in 1.89. Two differences with new ImageButton()
-// - old ImageButton() used ImTextureId as item id (created issue with multiple buttons with same image, transient texture id values, opaque computation of ID)
-// - new ImageButton() requires an explicit 'const char* str_id'
-// - old ImageButton() had frame_padding' override argument.
-// - new ImageButton() always use style.FramePadding.
-/*
-bool ImGui::ImageButton(ImTextureID user_texture_id, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col)
-{
-    // Default to using texture ID as ID. User can still push string/integer prefixes.
-    PushID((ImTextureID)(intptr_t)user_texture_id);
-    if (frame_padding >= 0)
-        PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2((float)frame_padding, (float)frame_padding));
-    bool ret = ImageButton("", user_texture_id, size, uv0, uv1, bg_col, tint_col);
-    if (frame_padding >= 0)
-        PopStyleVar();
-    PopID();
-    return ret;
-}
-*/
-#endif // #ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 
 bool ImGui::Checkbox(const char* label, bool* v)
 {

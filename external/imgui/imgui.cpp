@@ -1075,12 +1075,16 @@ CODE
 #endif
 
 #include "imgui.h"
-#ifndef IMGUI_DISABLE
-#include "imgui_internal.h"
 
+#include <limits.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#ifndef IMGUI_DISABLE
 // System includes
 #include <stdio.h>      // vsnprintf, sscanf, printf
 #include <stdint.h>     // intptr_t
+
+#include "imgui_internal.h"
 
 // [Windows] On non-Visual Studio compilers, we default to IMGUI_DISABLE_WIN32_DEFAULT_IME_FUNCTIONS unless explicitly enabled
 #if defined(_WIN32) && !defined(_MSC_VER) && !defined(IMGUI_ENABLE_WIN32_DEFAULT_IME_FUNCTIONS) && !defined(IMGUI_DISABLE_WIN32_DEFAULT_IME_FUNCTIONS)
@@ -20484,6 +20488,7 @@ static void Platform_SetClipboardTextFn_DefaultImpl(ImGuiContext*, const char* t
 #elif defined(__APPLE__) && TARGET_OS_OSX && defined(IMGUI_ENABLE_OSX_DEFAULT_CLIPBOARD_FUNCTIONS)
 
 #include <Carbon/Carbon.h>  // Use old API to avoid need for separate .mm file
+
 static PasteboardRef main_clipboard = 0;
 
 // OSX clipboard implementation
@@ -20580,6 +20585,7 @@ static bool Platform_OpenInShellFn_DefaultImpl(ImGuiContext*, const char* path)
 #else
 #include <sys/wait.h>
 #include <unistd.h>
+
 static bool Platform_OpenInShellFn_DefaultImpl(ImGuiContext*, const char* path)
 {
 #if defined(__APPLE__)

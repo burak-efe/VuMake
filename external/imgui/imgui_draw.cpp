@@ -31,6 +31,10 @@ Index of this file:
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
 
+#include <float.h>
+#include <stddef.h>
+#include <string.h>
+
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
 #include "imgui_internal.h"

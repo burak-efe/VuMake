@@ -1,0 +1,11 @@
+CPP
+
+- Use uniform init syntax "{}" or "= {}", latter is better because can be aligned by formatter, first should be used when align
+no needed, for example initializer list
+
+- initilaztion preference order is like this
+1 in member declarartion
+2 in initilazer list
+3 constructor (or make function)
+
+avoid multi state initilaztion and make it  obvius  when its necesarry

@@ -104,6 +104,11 @@ Index of this file:
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#include <float.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <string.h>
+
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
 
@@ -113,7 +118,6 @@ Index of this file:
 #include <math.h>           // sqrtf, powf, cosf, sinf, floorf, ceilf
 #include <stdio.h>          // vsnprintf, sscanf, printf
 #include <stdlib.h>         // NULL, malloc, free, atoi
-#include <stdint.h>         // intptr_t
 #if !defined(_MSC_VER) || _MSC_VER >= 1800
 #include <inttypes.h>       // PRId64/PRIu64, not avail in some MinGW headers.
 #endif
@@ -204,6 +208,7 @@ Index of this file:
 
 // Forward Declarations
 struct ImGuiDemoWindowData;
+
 static void ShowExampleAppMainMenuBar();
 static void ShowExampleAppAssetsBrowser(bool* p_open);
 static void ShowExampleAppConsole(bool* p_open);
