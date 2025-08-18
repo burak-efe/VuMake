@@ -57,7 +57,7 @@ constexpr bool ENABLE_VALIDATION_LAYERS_LAYERS = true;
 
 inline std::filesystem::path
 getShaderCompilerPath() {
-  std::filesystem::path shaderCompilerPath = "bin";
+  std::filesystem::path shaderCompilerPath = "assets/bin";
 
   appendTargetVariablePath(shaderCompilerPath);
   shaderCompilerPath /= "slang/slangc";
